@@ -1,0 +1,467 @@
+import 'package:flutter/material.dart';
+import 'dart:ui';
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({Key? key}) : super(key: key);
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen>
+    with TickerProviderStateMixin {
+  bool _isLoading = false;
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+  late AnimationController _scaleController;
+  
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+    
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+    
+    _scaleController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeIn,
+    );
+    
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _slideController,
+      curve: Curves.easeOutCubic,
+    ));
+    
+    _scaleAnimation = CurvedAnimation(
+      parent: _scaleController,
+      curve: Curves.easeOutBack,
+    );
+    
+    _fadeController.forward();
+    _slideController.forward();
+    _scaleController.forward();
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    _slideController.dispose();
+    _scaleController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
+    await Future.delayed(const Duration(seconds: 2));
+    setState(() => _isLoading = false);
+    
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, '/home');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF6B9BD1),
+              Color(0xFF89CFF0),
+              Color(0xFFB4E7CE),
+            ],
+          ),
+        ),
+        child: Stack(
+          children: [
+            // Círculos decorativos con blur
+            ..._buildBackgroundCircles(),
+            
+            // Contenido principal
+            SafeArea(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 40),
+                      
+                      // Logo con animación
+                      FadeTransition(
+                        opacity: _fadeAnimation,
+                        child: ScaleTransition(
+                          scale: _scaleAnimation,
+                          child: Hero(
+                            tag: 'app_logo',
+                            child: Container(
+                              width: 110,
+                              height: 110,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 25,
+                                    spreadRadius: 3,
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.favorite,
+                                size: 55,
+                                color: Color(0xFF6B9BD1),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 30),
+                      
+                      // Título
+                      FadeTransition(
+                        opacity: CurvedAnimation(
+                          parent: _fadeController,
+                          curve: const Interval(0.3, 1.0),
+                        ),
+                        child: SlideTransition(
+                          position: _slideAnimation,
+                          child: const Text(
+                            'Mi Refugio',
+                            style: TextStyle(
+                              fontSize: 42,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: 1.5,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black26,
+                                  blurRadius: 10,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      
+                      // Subtítulo
+                      FadeTransition(
+                        opacity: CurvedAnimation(
+                          parent: _fadeController,
+                          curve: const Interval(0.5, 1.0),
+                        ),
+                        child: const Text(
+                          'Tu espacio de bienestar emocional',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w300,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 50),
+                      
+                      // Card de login con glassmorphism
+                      FadeTransition(
+                        opacity: CurvedAnimation(
+                          parent: _fadeController,
+                          curve: const Interval(0.6, 1.0),
+                        ),
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0, 0.5),
+                            end: Offset.zero,
+                          ).animate(CurvedAnimation(
+                            parent: _slideController,
+                            curve: const Interval(0.3, 1.0, curve: Curves.easeOutCubic),
+                          )),
+                          child: _buildLoginCard(),
+                        ),
+                      ),
+                      const SizedBox(height: 30),
+                      
+                      // Footer
+                      FadeTransition(
+                        opacity: CurvedAnimation(
+                          parent: _fadeController,
+                          curve: const Interval(0.8, 1.0),
+                        ),
+                        child: _buildFooter(),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildBackgroundCircles() {
+    return [
+      Positioned(
+        top: -50,
+        right: -50,
+        child: Container(
+          width: 200,
+          height: 200,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white.withOpacity(0.1),
+          ),
+        ),
+      ),
+      Positioned(
+        bottom: -80,
+        left: -80,
+        child: Container(
+          width: 250,
+          height: 250,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white.withOpacity(0.08),
+          ),
+        ),
+      ),
+    ];
+  }
+
+  Widget _buildLoginCard() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(maxWidth: 400),
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.9),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.3),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 30,
+                spreadRadius: 5,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Iniciar Sesión',
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF6B9BD1),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Accede a tu refugio personal',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 28),
+              
+              // Botón de Google
+              _buildGoogleButton(),
+              const SizedBox(height: 20),
+              
+              // Divider
+              Row(
+                children: [
+                  Expanded(child: Divider(color: Colors.grey[300])),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      'O',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  Expanded(child: Divider(color: Colors.grey[300])),
+                ],
+              ),
+              const SizedBox(height: 20),
+              
+              // Botón de invitado
+              _buildGuestButton(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGoogleButton() {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      width: double.infinity,
+      height: 54,
+      decoration: BoxDecoration(
+        color: _isLoading ? Colors.grey[100] : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 8,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _isLoading ? null : _handleGoogleSignIn,
+          borderRadius: BorderRadius.circular(12),
+          child: Center(
+            child: _isLoading
+                ? const SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Color(0xFF6B9BD1),
+                      ),
+                    ),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(
+                        Icons.g_mobiledata,
+                        size: 34,
+                        color: Colors.red,
+                      ),
+                      SizedBox(width: 12),
+                      Text(
+                        'Continuar con Google',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGuestButton() {
+    return Container(
+      width: double.infinity,
+      height: 54,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF6B9BD1), Color(0xFF89CFF0)],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6B9BD1).withOpacity(0.4),
+            blurRadius: 12,
+            spreadRadius: 1,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _isLoading
+              ? null
+              : () => Navigator.pushReplacementNamed(context, '/home'),
+          borderRadius: BorderRadius.circular(12),
+          child: const Center(
+            child: Text(
+              'Continuar como invitado',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFooter() {
+    return Column(
+      children: [
+        Text(
+          'Al continuar, aceptas nuestros',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.white.withOpacity(0.9),
+          ),
+        ),
+        const SizedBox(height: 6),
+        GestureDetector(
+          onTap: () {},
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: Colors.white.withOpacity(0.7)),
+              ),
+            ),
+            child: const Text(
+              'Términos y Condiciones',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

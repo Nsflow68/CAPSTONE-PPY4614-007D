@@ -1,0 +1,407 @@
+import 'package:flutter/material.dart';
+import 'dart:math' as math;
+
+class WelcomeScreen extends StatefulWidget {
+  const WelcomeScreen({Key? key}) : super(key: key);
+
+  @override
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends State<WelcomeScreen>
+    with TickerProviderStateMixin {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+  
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+  
+  final List<OnboardingData> _pages = [
+    OnboardingData(
+      icon: Icons.favorite_border,
+      title: 'Bienvenido a\nMi Refugio',
+      description: 'Un espacio seguro donde puedes expresar tus emociones libremente',
+      color: const Color(0xFF6B9BD1),
+      gradient: [const Color(0xFF6B9BD1), const Color(0xFF89CFF0)],
+    ),
+    OnboardingData(
+      icon: Icons.edit_note,
+      title: 'Diario Personal',
+      description: 'Registra tus emociones diarias y descubre patrones en tu bienestar',
+      color: const Color(0xFF89CFF0),
+      gradient: [const Color(0xFF89CFF0), const Color(0xFFB4E7CE)],
+    ),
+    OnboardingData(
+      icon: Icons.psychology_outlined,
+      title: 'ChatBot de Apoyo',
+      description: 'Contención emocional disponible 24/7 para acompañarte',
+      color: const Color(0xFFB4E7CE),
+      gradient: [const Color(0xFFB4E7CE), const Color(0xFF9DCBBA)],
+    ),
+    OnboardingData(
+      icon: Icons.self_improvement,
+      title: 'Mindfulness',
+      description: 'Ejercicios de meditación y técnicas de relajación',
+      color: const Color(0xFF9DCBBA),
+      gradient: [const Color(0xFF9DCBBA), const Color(0xFF6B9BD1)],
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    
+    _fadeController.forward();
+    _slideController.forward();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _fadeController.dispose();
+    _slideController.dispose();
+    super.dispose();
+  }
+
+  void _onPageChanged(int page) {
+    setState(() {
+      _currentPage = page;
+    });
+    
+    // Reanimar elementos
+    _fadeController.reset();
+    _slideController.reset();
+    _fadeController.forward();
+    _slideController.forward();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: AnimatedContainer(
+        duration: const Duration(milliseconds: 500),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white,
+              _pages[_currentPage].color.withOpacity(0.1),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Header con botón skip
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Logo pequeño
+                    Hero(
+                      tag: 'app_logo',
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: _pages[_currentPage].color,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.favorite,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                    // Botón saltar
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pushReplacementNamed(context, '/login');
+                      },
+                      child: Text(
+                        'Saltar',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: _pages[_currentPage].color,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // PageView
+              Expanded(
+                child: PageView.builder(
+                  controller: _pageController,
+                  itemCount: _pages.length,
+                  onPageChanged: _onPageChanged,
+                  itemBuilder: (context, index) {
+                    return _buildPage(_pages[index], index == _currentPage);
+                  },
+                ),
+              ),
+              
+              // Indicadores animados
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: _buildPageIndicators(),
+              ),
+              
+              // Botón siguiente con animación
+              Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: _buildNavigationButton(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPage(OnboardingData data, bool isActive) {
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(height: 40),
+            
+            // Ícono con animación
+            FadeTransition(
+              opacity: _fadeController,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, -0.3),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(
+                  parent: _slideController,
+                  curve: Curves.easeOutCubic,
+                )),
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: isActive ? 1.0 : 0.8),
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeOutBack,
+                  builder: (context, scale, child) {
+                    return Transform.scale(
+                      scale: scale,
+                      child: Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: data.gradient,
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: data.color.withOpacity(0.3),
+                              blurRadius: 20,
+                              spreadRadius: 5,
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          data.icon,
+                          size: 60,
+                          color: Colors.white,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 50),
+            
+            // Título con animación
+            FadeTransition(
+              opacity: CurvedAnimation(
+                parent: _fadeController,
+                curve: const Interval(0.3, 1.0),
+              ),
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.2),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(
+                  parent: _slideController,
+                  curve: const Interval(0.2, 1.0, curve: Curves.easeOutCubic),
+                )),
+                child: Text(
+                  data.title,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: data.color,
+                    height: 1.2,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // Descripción con animación
+            FadeTransition(
+              opacity: CurvedAnimation(
+                parent: _fadeController,
+                curve: const Interval(0.5, 1.0),
+              ),
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.3),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(
+                  parent: _slideController,
+                  curve: const Interval(0.4, 1.0, curve: Curves.easeOutCubic),
+                )),
+                child: Text(
+                  data.description,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[700],
+                    height: 1.5,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPageIndicators() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(_pages.length, (index) {
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          width: _currentPage == index ? 32 : 8,
+          height: 8,
+          decoration: BoxDecoration(
+            gradient: _currentPage == index
+                ? LinearGradient(
+                    colors: _pages[_currentPage].gradient,
+                  )
+                : null,
+            color: _currentPage == index ? null : Colors.grey[300],
+            borderRadius: BorderRadius.circular(4),
+            boxShadow: _currentPage == index
+                ? [
+                    BoxShadow(
+                      color: _pages[_currentPage].color.withOpacity(0.4),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                : null,
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildNavigationButton() {
+    final isLastPage = _currentPage == _pages.length - 1;
+    
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      width: double.infinity,
+      height: 56,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: _pages[_currentPage].gradient,
+        ),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: _pages[_currentPage].color.withOpacity(0.4),
+            blurRadius: 15,
+            spreadRadius: 1,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            if (isLastPage) {
+              Navigator.pushReplacementNamed(context, '/login');
+            } else {
+              _pageController.nextPage(
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeInOutCubic,
+              );
+            }
+          },
+          borderRadius: BorderRadius.circular(28),
+          child: Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  isLastPage ? 'Comenzar' : 'Siguiente',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  isLastPage ? Icons.check : Icons.arrow_forward,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class OnboardingData {
+  final IconData icon;
+  final String title;
+  final String description;
+  final Color color;
+  final List<Color> gradient;
+
+  OnboardingData({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.color,
+    required this.gradient,
+  });
+}
