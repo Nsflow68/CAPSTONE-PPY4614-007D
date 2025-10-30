@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'dart:ui';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key}) ;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -98,7 +98,7 @@ class _LoginScreenState extends State<LoginScreen>
         ),
         child: Stack(
           children: [
-            // Círculos decorativos con blur
+            // CÃ­rculos decorativos con blur
             ..._buildBackgroundCircles(),
             
             // Contenido principal
@@ -111,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen>
                     children: [
                       const SizedBox(height: 40),
                       
-                      // Logo con animación
+                      // Logo con animaciÃ³n
                       FadeTransition(
                         opacity: _fadeAnimation,
                         child: ScaleTransition(
@@ -126,7 +126,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.2),
+                                    color: Colors.black.withValues(alpha: 0.2),
                                     blurRadius: 25,
                                     spreadRadius: 3,
                                   ),
@@ -143,7 +143,7 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
                       const SizedBox(height: 30),
                       
-                      // Título
+                      // TÃ­tulo
                       FadeTransition(
                         opacity: CurvedAnimation(
                           parent: _fadeController,
@@ -171,7 +171,7 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
                       const SizedBox(height: 8),
                       
-                      // Subtítulo
+                      // SubtÃ­tulo
                       FadeTransition(
                         opacity: CurvedAnimation(
                           parent: _fadeController,
@@ -236,7 +236,7 @@ class _LoginScreenState extends State<LoginScreen>
           height: 200,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withValues(alpha: 0.1),
           ),
         ),
       ),
@@ -248,7 +248,7 @@ class _LoginScreenState extends State<LoginScreen>
           height: 250,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.white.withOpacity(0.08),
+            color: Colors.white.withValues(alpha: 0.08),
           ),
         ),
       ),
@@ -265,15 +265,15 @@ class _LoginScreenState extends State<LoginScreen>
           constraints: const BoxConstraints(maxWidth: 400),
           padding: const EdgeInsets.all(28),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
+            color: Colors.white.withValues(alpha: 0.9),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: Colors.white.withValues(alpha: 0.3),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 30,
                 spreadRadius: 5,
               ),
@@ -283,7 +283,7 @@ class _LoginScreenState extends State<LoginScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                'Iniciar Sesión',
+                'Iniciar SesiÃ³n',
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
@@ -300,7 +300,7 @@ class _LoginScreenState extends State<LoginScreen>
               ),
               const SizedBox(height: 28),
               
-              // Botón de Google
+              // BotÃ³n de Google
               _buildGoogleButton(),
               const SizedBox(height: 20),
               
@@ -323,7 +323,7 @@ class _LoginScreenState extends State<LoginScreen>
               ),
               const SizedBox(height: 20),
               
-              // Botón de invitado
+              // BotÃ³n de invitado
               _buildGuestButton(),
             ],
           ),
@@ -343,7 +343,7 @@ class _LoginScreenState extends State<LoginScreen>
         border: Border.all(color: Colors.grey[300]!),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 8,
             spreadRadius: 1,
           ),
@@ -402,7 +402,7 @@ class _LoginScreenState extends State<LoginScreen>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6B9BD1).withOpacity(0.4),
+            color: const Color(0xFF6B9BD1).withValues(alpha: 0.4),
             blurRadius: 12,
             spreadRadius: 1,
             offset: const Offset(0, 4),
@@ -438,7 +438,7 @@ class _LoginScreenState extends State<LoginScreen>
           'Al continuar, aceptas nuestros',
           style: TextStyle(
             fontSize: 12,
-            color: Colors.white.withOpacity(0.9),
+            color: Colors.white.withValues(alpha: 0.9),
           ),
         ),
         const SizedBox(height: 6),
@@ -448,11 +448,11 @@ class _LoginScreenState extends State<LoginScreen>
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               border: Border(
-                bottom: BorderSide(color: Colors.white.withOpacity(0.7)),
+                bottom: BorderSide(color: Colors.white.withValues(alpha: 0.7)),
               ),
             ),
             child: const Text(
-              'Términos y Condiciones',
+              'TÃ©rminos y Condiciones',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.white,
@@ -465,3 +465,4 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 }
+

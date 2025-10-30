@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'screens/splash_screen.dart';
 import 'screens/welcome_screen.dart';
@@ -11,19 +11,19 @@ void main() {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  
+
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
     ),
   );
-  
+
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +35,7 @@ class MyApp extends StatelessWidget {
         primaryColor: const Color(0xFF6B9BD1),
         scaffoldBackgroundColor: Colors.white,
         fontFamily: 'Roboto',
-        
+
         // AppBar Theme
         appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFF6B9BD1),
@@ -48,7 +48,7 @@ class MyApp extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        
+
         // Elevated Button Theme
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
@@ -65,7 +65,7 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ),
-        
+
         // Text Button Theme
         textButtonTheme: TextButtonThemeData(
           style: TextButton.styleFrom(
@@ -76,7 +76,7 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ),
-        
+
         // Input Decoration Theme
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
@@ -99,7 +99,7 @@ class MyApp extends StatelessWidget {
           ),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
-        
+
         // Card Theme
         cardTheme: CardThemeData(
           elevation: 4,
@@ -108,28 +108,26 @@ class MyApp extends StatelessWidget {
           ),
           margin: const EdgeInsets.all(8),
         ),
-        
-        // Color Scheme
+
+        // Color Scheme (sin duplicados)
         colorScheme: const ColorScheme.light(
           primary: Color(0xFF6B9BD1),
           secondary: Color(0xFF89CFF0),
           tertiary: Color(0xFFB4E7CE),
           surface: Colors.white,
-          background: Colors.white,
           error: Colors.red,
           onPrimary: Colors.white,
           onSecondary: Colors.white,
           onSurface: Colors.black87,
-          onBackground: Colors.black87,
           onError: Colors.white,
         ),
-        
+
         // Icon Theme
         iconTheme: const IconThemeData(
           color: Color(0xFF6B9BD1),
         ),
       ),
-      
+
       // Rutas de navegación
       initialRoute: '/',
       routes: {
@@ -144,7 +142,7 @@ class MyApp extends StatelessWidget {
 
 // Placeholder para la pantalla principal
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

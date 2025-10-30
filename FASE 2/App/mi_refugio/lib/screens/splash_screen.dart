@@ -1,9 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'dart:async';
-import 'dart:math' as math;
-
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key}) ;
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -77,7 +75,7 @@ class _SplashScreenState extends State<SplashScreen>
     _rotateController.forward();
     _shimmerController.forward();
     
-    // Navegar después de 3 segundos
+    // Navegar despuÃ©s de 3 segundos
     Timer(const Duration(seconds: 3), () {
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/welcome');
@@ -121,7 +119,7 @@ class _SplashScreenState extends State<SplashScreen>
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Logo con múltiples animaciones
+                    // Logo con mÃºltiples animaciones
                     ScaleTransition(
                       scale: _scaleAnimation,
                       child: RotationTransition(
@@ -136,13 +134,13 @@ class _SplashScreenState extends State<SplashScreen>
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
+                                  color: Colors.black.withValues(alpha: 0.2),
                                   blurRadius: 30,
                                   spreadRadius: 5,
                                   offset: const Offset(0, 10),
                                 ),
                                 BoxShadow(
-                                  color: Colors.white.withOpacity(0.3),
+                                  color: Colors.white.withValues(alpha: 0.3),
                                   blurRadius: 20,
                                   spreadRadius: -5,
                                   offset: const Offset(0, -5),
@@ -171,7 +169,7 @@ class _SplashScreenState extends State<SplashScreen>
                                               end: Alignment.bottomRight,
                                               colors: [
                                                 Colors.transparent,
-                                                Colors.white.withOpacity(0.3),
+                                                Colors.white.withValues(alpha: 0.3),
                                                 Colors.transparent,
                                               ],
                                               stops: [
@@ -197,7 +195,7 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                     const SizedBox(height: 40),
                     
-                    // Título con efecto de aparición
+                    // TÃ­tulo con efecto de apariciÃ³n
                     SlideTransition(
                       position: Tween<Offset>(
                         begin: const Offset(0, 0.5),
@@ -223,7 +221,7 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                     const SizedBox(height: 16),
                     
-                    // Subtítulo con fade
+                    // SubtÃ­tulo con fade
                     FadeTransition(
                       opacity: CurvedAnimation(
                         parent: _fadeController,
@@ -253,7 +251,7 @@ class _SplashScreenState extends State<SplashScreen>
                         height: 40,
                         child: CircularProgressIndicator(
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white.withOpacity(0.7),
+                            Colors.white.withValues(alpha: 0.7),
                           ),
                           strokeWidth: 3,
                         ),
@@ -269,3 +267,4 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 }
+

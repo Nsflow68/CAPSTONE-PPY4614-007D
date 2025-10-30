@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 /// Constantes de colores y estilos para Mi Refugio
 class AppColors {
@@ -37,7 +37,7 @@ class AppColors {
 
 /// Constantes de estilos de texto
 class AppTextStyles {
-  // Títulos
+  // TÃ­tulos
   static const TextStyle h1 = TextStyle(
     fontSize: 36,
     fontWeight: FontWeight.bold,
@@ -79,7 +79,7 @@ class AppTextStyles {
     fontWeight: FontWeight.bold,
   );
   
-  // Subtítulos
+  // SubtÃ­tulos
   static const TextStyle subtitle = TextStyle(
     fontSize: 14,
     fontWeight: FontWeight.w300,
@@ -111,7 +111,7 @@ class AppRadius {
   static const double circle = 100.0;
 }
 
-/// Constantes de elevación/sombras
+/// Constantes de elevaciÃ³n/sombras
 class AppElevation {
   static const double none = 0.0;
   static const double sm = 2.0;
@@ -120,7 +120,7 @@ class AppElevation {
   static const double xl = 16.0;
 }
 
-/// Constantes de animación
+/// Constantes de animaciÃ³n
 class AppAnimation {
   static const Duration fast = Duration(milliseconds: 200);
   static const Duration normal = Duration(milliseconds: 300);
@@ -131,7 +131,7 @@ class AppAnimation {
   static const Curve bouncy = Curves.easeOutBack;
 }
 
-/// Constantes de iconos según tipo de emoción
+/// Constantes de iconos segÃºn tipo de emociÃ³n
 class AppIcons {
   static const IconData happy = Icons.sentiment_very_satisfied;
   static const IconData sad = Icons.sentiment_dissatisfied;
@@ -149,7 +149,7 @@ class AppIcons {
   static const IconData settings = Icons.settings_outlined;
 }
 
-/// Constantes de configuración
+/// Constantes de configuraciÃ³n
 class AppConfig {
   static const String appName = 'Mi Refugio';
   static const String appSlogan = 'Tu espacio de bienestar emocional';
@@ -158,7 +158,7 @@ class AppConfig {
   static const int splashDuration = 3; // segundos
   static const int tokenExpiration = 24; // horas
   
-  // URLs (por configurar según backend)
+  // URLs (por configurar segÃºn backend)
   static const String baseUrl = 'https://api.mirefugio.cl';
   static const String apiVersion = '/api/v1';
 }

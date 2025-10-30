@@ -1,8 +1,6 @@
-import 'package:flutter/material.dart';
-import 'dart:math' as math;
-
+﻿import 'package:flutter/material.dart';
 class WelcomeScreen extends StatefulWidget {
-  const WelcomeScreen({Key? key}) : super(key: key);
+  const WelcomeScreen({super.key}) ;
 
   @override
   State<WelcomeScreen> createState() => _WelcomeScreenState();
@@ -34,14 +32,14 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     OnboardingData(
       icon: Icons.psychology_outlined,
       title: 'ChatBot de Apoyo',
-      description: 'Contención emocional disponible 24/7 para acompañarte',
+      description: 'ContenciÃ³n emocional disponible 24/7 para acompaÃ±arte',
       color: const Color(0xFFB4E7CE),
       gradient: [const Color(0xFFB4E7CE), const Color(0xFF9DCBBA)],
     ),
     OnboardingData(
       icon: Icons.self_improvement,
       title: 'Mindfulness',
-      description: 'Ejercicios de meditación y técnicas de relajación',
+      description: 'Ejercicios de meditaciÃ³n y tÃ©cnicas de relajaciÃ³n',
       color: const Color(0xFF9DCBBA),
       gradient: [const Color(0xFF9DCBBA), const Color(0xFF6B9BD1)],
     ),
@@ -96,20 +94,20 @@ class _WelcomeScreenState extends State<WelcomeScreen>
             end: Alignment.bottomRight,
             colors: [
               Colors.white,
-              _pages[_currentPage].color.withOpacity(0.1),
+              _pages[_currentPage].color.withValues(alpha: 0.1),
             ],
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
-              // Header con botón skip
+              // Header con botÃ³n skip
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Logo pequeño
+                    // Logo pequeÃ±o
                     Hero(
                       tag: 'app_logo',
                       child: Container(
@@ -126,7 +124,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                         ),
                       ),
                     ),
-                    // Botón saltar
+                    // BotÃ³n saltar
                     TextButton(
                       onPressed: () {
                         Navigator.pushReplacementNamed(context, '/login');
@@ -162,7 +160,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                 child: _buildPageIndicators(),
               ),
               
-              // Botón siguiente con animación
+              // BotÃ³n siguiente con animaciÃ³n
               Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: _buildNavigationButton(),
@@ -184,7 +182,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
           children: [
             const SizedBox(height: 40),
             
-            // Ícono con animación
+            // Ãcono con animaciÃ³n
             FadeTransition(
               opacity: _fadeController,
               child: SlideTransition(
@@ -214,7 +212,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: data.color.withOpacity(0.3),
+                              color: data.color.withValues(alpha: 0.3),
                               blurRadius: 20,
                               spreadRadius: 5,
                             ),
@@ -233,7 +231,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
             ),
             const SizedBox(height: 50),
             
-            // Título con animación
+            // TÃ­tulo con animaciÃ³n
             FadeTransition(
               opacity: CurvedAnimation(
                 parent: _fadeController,
@@ -262,7 +260,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
             ),
             const SizedBox(height: 24),
             
-            // Descripción con animación
+            // DescripciÃ³n con animaciÃ³n
             FadeTransition(
               opacity: CurvedAnimation(
                 parent: _fadeController,
@@ -315,7 +313,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
             boxShadow: _currentPage == index
                 ? [
                     BoxShadow(
-                      color: _pages[_currentPage].color.withOpacity(0.4),
+                      color: _pages[_currentPage].color.withValues(alpha: 0.4),
                       blurRadius: 8,
                       spreadRadius: 1,
                     ),
@@ -341,7 +339,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: _pages[_currentPage].color.withOpacity(0.4),
+            color: _pages[_currentPage].color.withValues(alpha: 0.4),
             blurRadius: 15,
             spreadRadius: 1,
             offset: const Offset(0, 5),
@@ -405,3 +403,4 @@ class OnboardingData {
     required this.gradient,
   });
 }
+
