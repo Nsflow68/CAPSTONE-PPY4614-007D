@@ -1,0 +1,46 @@
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Packaging and build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Entorno virtual
+mi_entorno/
+
+# Logs y outputs
+pip-log.txt
+pip-delete-this-directory.txt
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# IDE 
+.idea/
+.vscode/
+.DS_Store
+
+# INIT
+app/utils/__init__.py
+app/ui/__init__.py
+app/ui/views/__init__.py
+app/services/__init__.py
+app/models/__init__.py
+app/database/repositories/__init__.py
+app/database/__init__.py
+app/__init__.py
+
+**/__init__.py

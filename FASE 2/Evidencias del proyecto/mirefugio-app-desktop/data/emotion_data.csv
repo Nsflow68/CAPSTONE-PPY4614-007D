@@ -1,0 +1,101 @@
+user_id,timestamp,emotion,text_entry,gender,age,activity_level
+user_2,2025-08-27 14:35:25.140846,Felicidad,Me ascendieron en el trabajo.,Masculino,33,59
+user_1,2025-08-27 17:35:25.140846,Alegría,Todo salió bien en el examen.,No binario,25,81
+user_4,2025-08-19 20:35:25.140846,Calma,Todo está en orden.,Femenino,22,3
+user_3,2025-08-20 18:35:25.140846,Felicidad,Me ascendieron en el trabajo.,Femenino,45,57
+user_5,2025-08-14 03:35:25.140846,Ansiedad,No puedo dormir bien.,No binario,19,54
+user_2,2025-08-22 11:35:25.140846,Ira,Estoy frustrado con el tráfico.,No binario,19,51
+user_2,2025-08-07 03:35:25.140846,Calma,Todo está en orden.,Femenino,22,25
+user_5,2025-08-21 20:35:25.140846,Ansiedad,Tengo mucho trabajo acumulado.,Masculino,33,73
+user_5,2025-08-09 23:35:25.140846,Felicidad,Una cena increíble con mi pareja.,No binario,25,16
+user_4,2025-08-07 12:35:25.140846,Calma,Todo está en orden.,Femenino,33,80
+user_1,2025-08-12 12:35:25.140846,Felicidad,Me ascendieron en el trabajo.,Femenino,45,85
+user_5,2025-08-28 19:35:25.140846,Alegría,Hoy fue un gran día.,Femenino,25,22
+user_2,2025-08-29 18:35:25.140846,Ira,Estoy frustrado con el tráfico.,Masculino,33,99
+user_2,2025-08-09 00:35:25.140846,Alegría,Todo salió bien en el examen.,Femenino,33,52
+user_1,2025-08-26 03:35:25.140846,Tristeza,No me sentí valorado hoy.,Masculino,19,100
+user_1,2025-08-19 09:35:25.140846,Calma,Todo está en orden.,Masculino,25,84
+user_1,2025-08-06 02:35:25.140846,Tristeza,Un día gris.,No binario,33,92
+user_5,2025-08-04 02:35:25.140846,Alegría,Me siento muy feliz por el logro de mi amigo.,Femenino,33,14
+user_2,2025-08-07 21:35:25.140846,Ira,Estoy frustrado con el tráfico.,No binario,19,28
+user_5,2025-08-14 22:35:25.140846,Ansiedad,Tengo mucho trabajo acumulado.,Masculino,33,44
+user_5,2025-08-29 10:35:25.140846,Ira,No puedo creer lo que sucedió.,No binario,33,7
+user_5,2025-08-19 21:35:25.140846,Calma,Meditando en el parque.,Masculino,45,8
+user_3,2025-08-28 14:35:25.140846,Ira,No puedo creer lo que sucedió.,Femenino,25,74
+user_2,2025-08-17 09:35:25.140846,Ansiedad,No puedo dormir bien.,No binario,45,33
+user_3,2025-08-20 05:35:25.140846,Alegría,Me siento muy feliz por el logro de mi amigo.,Femenino,45,81
+user_4,2025-08-23 22:35:25.140846,Felicidad,Me ascendieron en el trabajo.,Femenino,25,4
+user_4,2025-08-24 00:35:25.140846,Ira,Estoy frustrado con el tráfico.,No binario,22,98
+user_5,2025-08-06 20:35:25.140846,Tristeza,No me sentí valorado hoy.,Femenino,22,23
+user_4,2025-08-11 18:35:25.140846,Ansiedad,Tengo mucho trabajo acumulado.,Masculino,22,36
+user_1,2025-08-30 12:35:25.140846,Ira,Estoy frustrado con el tráfico.,Masculino,45,100
+user_5,2025-08-23 16:35:25.140846,Alegría,Hoy fue un gran día.,Femenino,25,6
+user_4,2025-08-18 23:35:25.140846,Alegría,Hoy fue un gran día.,No binario,25,14
+user_2,2025-08-15 17:35:25.140846,Tristeza,No me sentí valorado hoy.,Masculino,30,79
+user_2,2025-08-03 11:35:25.140846,Ansiedad,Tengo mucho trabajo acumulado.,Masculino,33,76
+user_3,2025-08-03 18:35:25.140846,Ira,Una persona me faltó el respeto.,No binario,45,36
+user_1,2025-08-31 13:35:25.140846,Ansiedad,No puedo dormir bien.,No binario,33,10
+user_5,2025-08-10 05:35:25.140846,Calma,Todo está en orden.,Femenino,30,39
+user_4,2025-08-21 14:35:25.140846,Alegría,Me siento muy feliz por el logro de mi amigo.,No binario,22,54
+user_5,2025-08-12 16:35:25.140846,Ansiedad,No puedo dormir bien.,Femenino,30,30
+user_4,2025-08-03 21:35:25.140846,Ansiedad,Preocupado por el futuro.,No binario,19,1
+user_2,2025-08-28 20:35:25.140846,Ansiedad,No puedo dormir bien.,No binario,19,63
+user_5,2025-08-18 13:35:25.140846,Ira,Una persona me faltó el respeto.,No binario,30,65
+user_2,2025-09-01 13:35:25.140846,Ansiedad,No puedo dormir bien.,No binario,25,34
+user_3,2025-08-19 00:35:25.140846,Alegría,Todo salió bien en el examen.,No binario,19,45
+user_5,2025-08-21 16:35:25.140846,Alegría,Hoy fue un gran día.,No binario,45,79
+user_5,2025-08-24 21:35:25.140846,Alegría,Me siento muy feliz por el logro de mi amigo.,Masculino,45,7
+user_1,2025-08-22 04:35:25.140846,Ansiedad,Preocupado por el futuro.,No binario,30,61
+user_1,2025-08-30 23:35:25.140846,Alegría,Me siento muy feliz por el logro de mi amigo.,Femenino,33,59
+user_3,2025-08-30 21:35:25.140846,Felicidad,Una cena increíble con mi pareja.,No binario,33,35
+user_2,2025-08-17 23:35:25.140846,Felicidad,Una cena increíble con mi pareja.,Femenino,33,34
+user_3,2025-09-01 11:35:25.140846,Ira,Una persona me faltó el respeto.,Femenino,30,62
+user_5,2025-08-07 08:35:25.140846,Ansiedad,Preocupado por el futuro.,Masculino,45,59
+user_1,2025-08-03 00:35:25.140846,Alegría,Hoy fue un gran día.,Femenino,25,79
+user_5,2025-08-12 00:35:25.140846,Calma,Meditando en el parque.,Femenino,19,36
+user_4,2025-08-20 14:35:25.140846,Alegría,Todo salió bien en el examen.,Masculino,30,24
+user_5,2025-08-27 20:35:25.140846,Alegría,Todo salió bien en el examen.,Femenino,33,17
+user_3,2025-08-14 10:35:25.140846,Calma,Todo está en orden.,Masculino,19,24
+user_1,2025-08-09 06:35:25.140846,Ansiedad,No puedo dormir bien.,Masculino,33,6
+user_3,2025-08-11 03:35:25.140846,Ansiedad,Preocupado por el futuro.,Femenino,33,97
+user_3,2025-08-11 05:35:25.140846,Ansiedad,Tengo mucho trabajo acumulado.,No binario,19,13
+user_5,2025-08-31 12:35:25.140846,Ansiedad,Preocupado por el futuro.,Masculino,22,81
+user_3,2025-08-29 20:35:25.140846,Alegría,Me siento muy feliz por el logro de mi amigo.,Masculino,30,7
+user_1,2025-08-12 12:35:25.140846,Tristeza,Extraño a mi familia.,Masculino,22,67
+user_4,2025-08-26 05:35:25.140846,Ira,No puedo creer lo que sucedió.,Femenino,45,99
+user_4,2025-08-28 19:35:25.140846,Tristeza,Extraño a mi familia.,Masculino,19,81
+user_1,2025-08-12 14:35:25.140846,Ira,No puedo creer lo que sucedió.,Femenino,33,72
+user_2,2025-08-06 21:35:25.140846,Tristeza,No me sentí valorado hoy.,Femenino,45,27
+user_3,2025-08-15 19:35:25.140846,Ansiedad,Preocupado por el futuro.,Masculino,22,33
+user_3,2025-08-18 13:35:25.140846,Alegría,Hoy fue un gran día.,Femenino,22,53
+user_5,2025-08-30 05:35:25.140846,Ira,Una persona me faltó el respeto.,Femenino,33,70
+user_4,2025-08-10 13:35:25.140846,Ansiedad,No puedo dormir bien.,No binario,30,43
+user_2,2025-08-24 13:35:25.140846,Ira,Una persona me faltó el respeto.,No binario,45,46
+user_5,2025-08-24 06:35:25.140846,Alegría,Me siento muy feliz por el logro de mi amigo.,Masculino,30,28
+user_4,2025-08-23 20:35:25.140846,Tristeza,No me sentí valorado hoy.,Masculino,45,64
+user_3,2025-08-22 22:35:25.140846,Calma,El café de la mañana me da paz.,Femenino,30,99
+user_2,2025-08-17 14:35:25.140846,Tristeza,No me sentí valorado hoy.,Masculino,45,90
+user_2,2025-08-27 13:35:25.140846,Ansiedad,Preocupado por el futuro.,Femenino,25,99
+user_1,2025-08-07 01:35:25.140846,Alegría,Me siento muy feliz por el logro de mi amigo.,Masculino,30,83
+user_3,2025-08-30 03:35:25.140846,Alegría,Me siento muy feliz por el logro de mi amigo.,Masculino,30,99
+user_4,2025-08-15 07:35:25.140846,Calma,Todo está en orden.,Femenino,22,17
+user_3,2025-08-07 03:35:25.140846,Ansiedad,Preocupado por el futuro.,Femenino,33,100
+user_2,2025-08-17 10:35:25.140846,Tristeza,Extraño a mi familia.,Masculino,25,62
+user_3,2025-08-31 21:35:25.140846,Ira,No puedo creer lo que sucedió.,Masculino,33,2
+user_5,2025-08-30 22:35:25.140846,Calma,Todo está en orden.,Femenino,33,100
+user_5,2025-08-31 02:35:25.140846,Ira,Una persona me faltó el respeto.,Masculino,33,35
+user_1,2025-08-28 04:35:25.140846,Ira,Una persona me faltó el respeto.,Masculino,25,31
+user_2,2025-08-26 22:35:25.140846,Calma,Meditando en el parque.,Masculino,45,88
+user_5,2025-08-07 10:35:25.140846,Ira,No puedo creer lo que sucedió.,Masculino,22,49
+user_5,2025-08-03 11:35:25.140846,Tristeza,Extraño a mi familia.,Masculino,30,41
+user_1,2025-08-13 09:35:25.140846,Ansiedad,Tengo mucho trabajo acumulado.,No binario,22,71
+user_3,2025-08-29 10:35:25.140846,Ira,No puedo creer lo que sucedió.,No binario,19,31
+user_3,2025-08-21 14:35:25.140846,Felicidad,Una cena increíble con mi pareja.,Masculino,22,32
+user_4,2025-08-19 17:35:25.140846,Felicidad,La vida es bella.,Masculino,33,19
+user_5,2025-08-05 06:35:25.140846,Alegría,Todo salió bien en el examen.,No binario,30,21
+user_5,2025-08-07 20:35:25.140846,Felicidad,La vida es bella.,Femenino,19,47
+user_4,2025-08-24 07:35:25.140846,Calma,Meditando en el parque.,Femenino,25,56
+user_1,2025-08-19 07:35:25.140846,Calma,Meditando en el parque.,Masculino,33,22
+user_5,2025-08-03 19:35:25.140846,Tristeza,No me sentí valorado hoy.,No binario,33,12
+user_5,2025-08-22 13:35:25.140846,Tristeza,No me sentí valorado hoy.,Masculino,30,75
+user_2,2025-08-08 05:35:25.140846,Ira,No puedo creer lo que sucedió.,Masculino,33,19

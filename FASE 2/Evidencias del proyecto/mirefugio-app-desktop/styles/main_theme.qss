@@ -1,0 +1,215 @@
+/* ----------------------------------------------------
+   Estilos QSS para "Mi Refugio ERP"
+   ---------------------------------------------------- */
+
+/* Estilo Base de la Ventana */
+QMainWindow {
+    background-color: #F8F4F0; /* Color beige claro para el fondo principal */
+}
+
+/* -----------------------------------
+   1. Sidebar (Navegación Principal)
+   ----------------------------------- */
+#MainContainer {
+    background-color: #F8F4F0;
+}
+
+#SidebarUserCard {
+    background-color: rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+#SidebarRoleLabel {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+}
+
+#SidebarInfoLabel {
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 12px;
+}
+
+#SidebarDivider {
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
+    margin: 4px 20px 12px 20px;
+}
+
+#SidebarLogoutButton {
+    background-color: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px 20px;
+    margin: 0 20px;
+    border-radius: 10px;
+}
+
+#SidebarLogoutButton:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+#SidebarLogoutButton:pressed {
+    background-color: rgba(255, 255, 255, 0.28);
+}
+
+#LoginStatusLabel {
+    color: #d9534f;
+    min-height: 20px;
+}
+
+#SidebarWidget {
+    background-color: #A28FC9; /* Morado base */
+    border-right: 1px solid #7B68AD;
+}
+
+#SidebarWidget QPushButton {
+    background-color: transparent;
+    border: none;
+    font-size: 15px;
+    text-align: left;
+    padding: 14px 24px;
+    color: #ffffff;
+    border-radius: 10px;
+}
+
+#SidebarWidget QPushButton:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+#SidebarWidget QPushButton:checked {
+    background-color: rgba(0, 0, 0, 0.22);
+    font-weight: 600;
+}
+
+/* -----------------------------------
+   2. Sub-Pestañas de Vista (En UserManagementView, ContentView, etc.)
+   ----------------------------------- */
+/* Usamos el ObjectName "TabBarButton" para darle el aspecto de pestaña */
+QPushButton#TabBarButton {
+    font-size: 14px;
+    padding: 10px 15px;
+    border: 1px solid #E0E0E0;
+    border-bottom: none;
+    background-color: #F0F0F0;
+    color: #4A4A4A;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+}
+
+QPushButton#TabBarButton:checked {
+    background-color: #fff;
+    color: #333;
+    border-top: 2px solid #A28FC9; /* Resalta con el color principal */
+    font-weight: bold;
+    border-bottom: 1px solid white; /* Simula que se fusiona con el fondo de la vista */
+}
+
+/* -----------------------------------
+   3. Elementos Comunes y Formularios
+   ----------------------------------- */
+QDialog {
+    background-color: #ffffff;
+    border-radius: 12px;
+}
+
+QDialog QLabel {
+    color: #4A4A4A;
+}
+
+QDialog QPushButton {
+    background-color: #A28FC9;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 22px;
+    font-weight: 600;
+}
+
+QDialog QPushButton:hover {
+    background-color: #7B68AD;
+}
+
+QDialog QPushButton:pressed {
+    background-color: #5C4B82;
+}
+
+QGroupBox {
+    font-weight: bold;
+    margin-top: 10px;
+    padding-top: 20px;
+    border: 1px solid #E0E0E0;
+    border-radius: 6px;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0 5px;
+    color: #4A4A4A;
+}
+
+QLineEdit, QTextEdit, QComboBox {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #ffffff;
+}
+
+QLineEdit:focus, QTextEdit:focus, QComboBox:focus {
+    border: 1px solid #A28FC9;
+    outline: none;
+}
+
+/* -----------------------------------
+   4. Botones de Acción (CRUD y Exportación)
+   ----------------------------------- */
+QPushButton {
+    padding: 8px 15px;
+    border-radius: 4px;
+    border: none;
+    font-weight: 500;
+}
+
+/* Botón de Éxito (Agregar, Subir, Guardar) */
+#AddButton, #SuccessButton {
+    background-color: #5cb85c; 
+    color: white;
+}
+
+/* Botón de Advertencia (Eliminar, Restaurar) */
+#DeleteButton, #DangerButton {
+    background-color: #d9534f; 
+    color: white;
+}
+
+/* Botón de Acción Principal (Asignar Rol, Generar Reporte, Guardar Chatbot) */
+#PrimaryActionButton {
+    background-color: #A28FC9; 
+    color: white;
+    font-weight: bold;
+}
+
+/* Botón de Información/Exportación (Azul) */
+#InfoButton {
+    background-color: #5bc0de;
+    color: white;
+}
+
+/* -----------------------------------
+   5. Tablas y Listas
+   ----------------------------------- */
+QTableView {
+    selection-background-color: #D1C4E9; /* Morado claro para selección */
+    selection-color: black;
+    border: 1px solid #E0E0E0;
+    gridline-color: #F0F0F0;
+}
+
+QListWidget {
+    border: 1px solid #E0E0E0;
+    border-radius: 4px;
+}
