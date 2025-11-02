@@ -43,3 +43,29 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Flutter/Dart
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages
+**/pubspec.lock
+
+# Android
+**/android/.gradle/
+**/android/captures/
+**/android/local.properties
+**/android/.gradle/
+**/android/gradlew
+**/android/gradlew.bat
+
+# iOS
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+
+# Generated files
+**/*.g.dart
+**/*.freezed.dart
