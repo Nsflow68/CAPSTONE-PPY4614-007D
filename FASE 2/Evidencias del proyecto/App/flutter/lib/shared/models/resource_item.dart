@@ -1,4 +1,4 @@
-class ResourceItem {
+﻿class ResourceItem {
   const ResourceItem({
     required this.id,
     required this.title,

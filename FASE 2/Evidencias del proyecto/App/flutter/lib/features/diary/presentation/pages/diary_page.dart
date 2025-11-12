@@ -1,311 +1,718 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:mi_refugio_app/shared/constants/app_colors.dart';
-import 'package:mi_refugio_app/shared/models/diary_entry.dart';
 
-class DiaryPage extends StatefulWidget {
+import '../../../../shared/constants/app_colors.dart';
+import '../../application/diary_provider.dart';
+import '../../data/models/diary_entry_model.dart';
+
+class DiaryPage extends ConsumerStatefulWidget {
   const DiaryPage({super.key});
 
   @override
-  State<DiaryPage> createState() => _DiaryPageState();
+  ConsumerState<DiaryPage> createState() => _DiaryPageState();
 }
 
-class _DiaryPageState extends State<DiaryPage> {
-  final List<DiaryEntry> _entries = List.of(_seedEntries);
+class _DiaryPageState extends ConsumerState<DiaryPage> {
   String _selectedMood = 'Todos';
+  DateTimeRange? _selectedRange;
 
-  List<String> get _moodFilters => [
-    'Todos',
-    ...{for (final entry in _entries) entry.mood},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    scheduleMicrotask(() {
+      ref.read(diaryProvider.notifier).loadEntries();
+    });
+  }
 
-  List<DiaryEntry> get _visibleEntries => _selectedMood == 'Todos'
-      ? _entries
-      : _entries
-            .where(
-              (entry) =>
-                  entry.mood.toLowerCase() == _selectedMood.toLowerCase(),
-            )
-            .toList();
+  Future<void> _reload() {
+    return ref
+        .read(diaryProvider.notifier)
+        .loadEntries(from: _selectedRange?.start, to: _selectedRange?.end);
+  }
+
+  Future<void> _openRangePicker() async {
+    final now = DateTime.now();
+    final initialRange =
+        _selectedRange ??
+        DateTimeRange(
+          start: DateTime(
+            now.year,
+            now.month,
+            now.day,
+          ).subtract(const Duration(days: 6)),
+          end: DateTime(now.year, now.month, now.day),
+        );
+
+    final picked = await showDateRangePicker(
+      context: context,
+      initialDateRange: initialRange,
+      firstDate: DateTime(now.year - 5),
+      lastDate: DateTime(now.year + 1),
+      helpText: 'Selecciona el rango',
+      saveText: 'Aplicar',
+    );
+
+    if (picked != null) {
+      setState(() => _selectedRange = picked);
+      await _reload();
+    }
+  }
+
+  void _openCreateEntry() {
+    context.push('/diary/entry/new');
+  }
+
+  void _clearFilters() {
+    setState(() {
+      _selectedRange = null;
+      _selectedMood = 'Todos';
+    });
+    _reload();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final visibleEntries = _visibleEntries;
-    final moodCount = <String, int>{};
-    for (final entry in _entries) {
-      moodCount.update(entry.mood, (value) => value + 1, ifAbsent: () => 1);
-    }
-    final positive = (moodCount['Alegre'] ?? 0) + (moodCount['Feliz'] ?? 0);
-    final calm = moodCount['Calma'] ?? 0;
-    final supportNeeded =
-        (moodCount['Ansioso/a'] ?? 0) + (moodCount['Triste'] ?? 0);
+    final state = ref.watch(diaryProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Diario emocional')),
+      appBar: AppBar(
+        title: const Text('Diario emocional'),
+        actions: [
+          IconButton(
+            tooltip: 'Restablecer filtros',
+            onPressed: (_selectedRange != null || _selectedMood != 'Todos')
+                ? _clearFilters
+                : null,
+            icon: const Icon(Icons.filter_alt_off_outlined),
+          ),
+          IconButton(
+            tooltip: 'Filtrar por fecha',
+            onPressed: _openRangePicker,
+            icon: const Icon(Icons.calendar_today_outlined),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _addEntry,
+        onPressed: _openCreateEntry,
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Registrar'),
+        label: const Text('Nueva entrada'),
       ),
       body: SafeArea(
-        child: _entries.isEmpty
-            ? _DiaryEmptyState(onCreate: _addEntry)
-            : ListView(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-                children: [
-                  _SummaryCard(
-                    positive: positive,
-                    calm: calm,
-                    supportNeeded: supportNeeded,
-                    total: _entries.length,
-                  ),
-                  const SizedBox(height: 18),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: _moodFilters
-                        .map(
-                          (mood) => ChoiceChip(
-                            label: Text(mood),
-                            selected: _selectedMood == mood,
-                            onSelected: (_) =>
-                                setState(() => _selectedMood = mood),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                  const SizedBox(height: 20),
-                  for (final entry in visibleEntries) ...[
-                    _DiaryCard(
-                      entry: entry,
-                      formattedDate: _formatDate(entry.createdAt),
-                      color: _moodColor(entry.mood),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                ],
-              ),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          child: state.map(
+            initial: (_) => const _DiaryLoading(),
+            loading: (_) => const _DiaryLoading(),
+            loaded: (data) => _DiaryLoadedView(
+              key: ValueKey(data.entries.length + data.entries.hashCode),
+              entries: data.entries,
+              selectedMood: _selectedMood,
+              onMoodSelected: (value) => setState(() => _selectedMood = value),
+              onRefresh: _reload,
+              onCreate: _openCreateEntry,
+              onOpenRange: _openRangePicker,
+              range: _selectedRange,
+            ),
+            error: (failure) =>
+                _DiaryErrorView(message: failure.message, onRetry: _reload),
+          ),
+        ),
       ),
     );
   }
+}
 
-  Color _moodColor(String mood) {
-    switch (mood.toLowerCase()) {
-      case 'alegre':
-      case 'feliz':
-        return AppColors.moodJoy;
-      case 'calma':
-      case 'equilibrado':
-        return AppColors.moodCalm;
-      case 'triste':
-        return AppColors.moodSad;
-      case 'ansioso/a':
-      case 'ansioso':
-        return AppColors.moodAngry;
-      default:
-        return AppColors.moodNeutral;
-    }
-  }
+class _DiaryLoadedView extends StatelessWidget {
+  const _DiaryLoadedView({
+    super.key,
+    required this.entries,
+    required this.selectedMood,
+    required this.onMoodSelected,
+    required this.onRefresh,
+    required this.onCreate,
+    required this.onOpenRange,
+    required this.range,
+  });
 
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final time = DateFormat.Hm('es').format(date);
-    final dateOnly = DateTime(date.year, date.month, date.day);
-    final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(const Duration(days: 1));
+  final List<DiaryEntryModel> entries;
+  final String selectedMood;
+  final ValueChanged<String> onMoodSelected;
+  final Future<void> Function() onRefresh;
+  final VoidCallback onCreate;
+  final VoidCallback onOpenRange;
+  final DateTimeRange? range;
 
-    if (dateOnly == today) {
-      return 'Hoy · $time';
-    }
-    if (dateOnly == yesterday) {
-      return 'Ayer · $time';
-    }
-    if (date.year == now.year) {
-      final formatter = DateFormat('d MMM', 'es');
-      return '${formatter.format(date)} · $time';
-    }
-    final formatter = DateFormat('d MMM y', 'es');
-    return '${formatter.format(date)} · $time';
-  }
+  @override
+  Widget build(BuildContext context) {
+    final sorted = [...entries]..sort((a, b) => b.date.compareTo(a.date));
 
-  Future<void> _addEntry() async {
-    final entry = await context.push<DiaryEntry>('/diary/entry/new');
-    if (entry != null) {
-      setState(() => _entries.insert(0, entry));
-    }
+    final moodSet =
+        sorted
+            .map((entry) => entry.mood.trim())
+            .where((value) => value.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+    final filters = ['Todos', ...moodSet];
+    final effectiveMood = filters.contains(selectedMood)
+        ? selectedMood
+        : 'Todos';
+
+    final filtered = effectiveMood == 'Todos'
+        ? sorted
+        : sorted
+              .where(
+                (entry) =>
+                    entry.mood.toLowerCase() == effectiveMood.toLowerCase(),
+              )
+              .toList();
+
+    final summary = _DiarySummaryData.fromEntries(sorted);
+
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
+        children: [
+          _DiaryHeader(
+            summary: summary,
+            range: range,
+            onOpenRange: onOpenRange,
+          ),
+          const SizedBox(height: 24),
+          _MoodFilters(
+            filters: filters,
+            selected: effectiveMood,
+            onSelected: onMoodSelected,
+          ),
+          const SizedBox(height: 24),
+          if (filtered.isEmpty)
+            _DiaryEmptyState(onCreate: onCreate)
+          else
+            ...filtered.map(
+              (entry) => Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _DiaryEntryCard(entry: entry),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
 
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({
-    required this.positive,
-    required this.calm,
-    required this.supportNeeded,
+class _DiarySummaryData {
+  _DiarySummaryData({
     required this.total,
+    required this.weekCount,
+    required this.averageScore,
+    required this.topMood,
+    required this.topEmotions,
+    required this.recentEntry,
   });
 
-  final int positive;
-  final int calm;
-  final int supportNeeded;
   final int total;
+  final int weekCount;
+  final double? averageScore;
+  final String? topMood;
+  final List<String> topEmotions;
+  final DiaryEntryModel? recentEntry;
+
+  factory _DiarySummaryData.fromEntries(List<DiaryEntryModel> entries) {
+    if (entries.isEmpty) {
+      return _DiarySummaryData(
+        total: 0,
+        weekCount: 0,
+        averageScore: null,
+        topMood: null,
+        topEmotions: const [],
+        recentEntry: null,
+      );
+    }
+
+    final now = DateTime.now();
+    final weekStart = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(const Duration(days: 6));
+
+    final weekCount = entries
+        .where((entry) => entry.date.isAfter(weekStart))
+        .length;
+    final avg =
+        entries.fold<int>(0, (acc, entry) => acc + entry.score) /
+        entries.length;
+
+    final moodCounts = <String, int>{};
+    for (final entry in entries) {
+      final mood = entry.mood.trim();
+      if (mood.isEmpty) continue;
+      moodCounts.update(mood, (value) => value + 1, ifAbsent: () => 1);
+    }
+
+    final topMoodEntry = moodCounts.entries.isEmpty
+        ? null
+        : moodCounts.entries.reduce((a, b) => a.value >= b.value ? a : b);
+
+    final emotionCounts = <String, int>{};
+    for (final entry in entries) {
+      for (final emotion in entry.emotions) {
+        final value = emotion.trim();
+        if (value.isEmpty) continue;
+        emotionCounts.update(value, (count) => count + 1, ifAbsent: () => 1);
+      }
+    }
+
+    final topEmotions = emotionCounts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    return _DiarySummaryData(
+      total: entries.length,
+      weekCount: weekCount,
+      averageScore: avg,
+      topMood: topMoodEntry?.key,
+      topEmotions: topEmotions.take(3).map((item) => item.key).toList(),
+      recentEntry: entries.first,
+    );
+  }
+}
+
+class _DiaryHeader extends StatelessWidget {
+  const _DiaryHeader({
+    required this.summary,
+    required this.range,
+    required this.onOpenRange,
+  });
+
+  final _DiarySummaryData summary;
+  final DateTimeRange? range;
+  final VoidCallback onOpenRange;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final rangeLabel = range == null
+        ? 'Todo el historial'
+        : '${DateFormat('d MMM', 'es').format(range!.start)} - ${DateFormat('d MMM', 'es').format(range!.end)}';
+
+    final averageLabel = summary.averageScore == null
+        ? 'Sin datos'
+        : '${summary.averageScore!.toStringAsFixed(1)} / 10';
+
     return Container(
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: const [
+        gradient: LinearGradient(
+          colors: [
+            AppColors.primary.withValues(alpha: 0.16),
+            AppColors.tertiary.withValues(alpha: 0.10),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Resumen',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: onOpenRange,
+                icon: const Icon(Icons.date_range_outlined),
+                label: Text(rangeLabel),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final width = constraints.maxWidth;
+              final itemWidth = width < 480 ? width : (width - 16) / 2;
+              return Wrap(
+                spacing: 16,
+                runSpacing: 16,
+                children: [
+                  _SummaryStat(
+                    icon: Icons.auto_graph_rounded,
+                    label: 'Entradas totales',
+                    value: summary.total.toString(),
+                    width: itemWidth,
+                  ),
+                  _SummaryStat(
+                    icon: Icons.calendar_view_week_rounded,
+                    label: 'Ultimos 7 dias',
+                    value: summary.weekCount.toString(),
+                    width: itemWidth,
+                  ),
+                  _SummaryStat(
+                    icon: Icons.sentiment_satisfied_alt_rounded,
+                    label: 'Estado predominante',
+                    value: summary.topMood ?? 'Sin registros',
+                    width: itemWidth,
+                  ),
+                  _SummaryStat(
+                    icon: Icons.favorite_rounded,
+                    label: 'Promedio de bienestar',
+                    value: averageLabel,
+                    width: itemWidth,
+                  ),
+                ],
+              );
+            },
+          ),
+          if (summary.topEmotions.isNotEmpty) ...[
+            const SizedBox(height: 18),
+            Text(
+              'Emociones frecuentes',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: summary.topEmotions
+                  .map(
+                    (emotion) => Chip(
+                      label: Text(emotion),
+                      backgroundColor: AppColors.accent.withValues(alpha: 0.16),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
+          if (summary.recentEntry != null) ...[
+            const SizedBox(height: 18),
+            Text(
+              'Ultima entrada registrada',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _DiaryHighlight(entry: summary.recentEntry!),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryStat extends StatelessWidget {
+  const _SummaryStat({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.width,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme.primary;
+    return Container(
+      width: width,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x14352F44),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 16,
-            offset: Offset(0, 10),
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Resumen de la semana', style: theme.textTheme.titleMedium),
+          Icon(icon, color: color),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DiaryHighlight extends StatelessWidget {
+  const _DiaryHighlight({required this.entry});
+
+  final DiaryEntryModel entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final dateLabel = DateFormat('d MMM · HH:mm', 'es').format(entry.createdAt);
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            entry.title,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            entry.content,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+              height: 1.5,
+            ),
+          ),
           const SizedBox(height: 12),
           Row(
             children: [
-              _SummaryPill(
-                label: 'Emociones positivas',
-                value: positive,
-                color: AppColors.moodJoy,
+              Icon(
+                Icons.schedule_outlined,
+                size: 16,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
-              const SizedBox(width: 8),
-              _SummaryPill(
-                label: 'Momentos calmados',
-                value: calm,
-                color: AppColors.moodCalm,
+              const SizedBox(width: 6),
+              Text(
+                dateLabel,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
-              const SizedBox(width: 8),
-              _SummaryPill(
-                label: 'Necesitan apoyo',
-                value: supportNeeded,
-                color: AppColors.moodAngry,
+              const Spacer(),
+              Text(
+                entry.mood.isEmpty ? 'Sin estado' : entry.mood,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.primary,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Text(
-            'Has registrado $total emociones. Aumenta tus reflexiones para seguir identificando patrones.',
-            style: theme.textTheme.bodyMedium,
-          ),
         ],
       ),
     );
   }
 }
 
-class _SummaryPill extends StatelessWidget {
-  const _SummaryPill({
-    required this.label,
-    required this.value,
-    required this.color,
+class _MoodFilters extends StatelessWidget {
+  const _MoodFilters({
+    required this.filters,
+    required this.selected,
+    required this.onSelected,
   });
 
-  final String label;
-  final int value;
-  final Color color;
+  final List<String> filters;
+  final String selected;
+  final ValueChanged<String> onSelected;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.14),
-          borderRadius: BorderRadius.circular(18),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Filtra por estado emocional',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: filters
+              .map(
+                (mood) => ChoiceChip(
+                  label: Text(mood),
+                  selected: selected == mood,
+                  onSelected: (_) => onSelected(mood),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                ),
+              )
+              .toList(),
+        ),
+      ],
+    );
+  }
+}
+
+class _DiaryEntryCard extends StatelessWidget {
+  const _DiaryEntryCard({required this.entry});
+
+  final DiaryEntryModel entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final dateLabel = DateFormat('EEE d MMM yyyy', 'es').format(entry.date);
+    final timeLabel = DateFormat('HH:mm', 'es').format(entry.createdAt);
+    final color = _moodColor(entry.score);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 18,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    entry.mood.isEmpty ? 'Sin estado' : entry.mood,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: color,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '${entry.score}/10',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
             Text(
-              value.toString(),
+              entry.title,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: color,
               ),
             ),
-            const SizedBox(height: 4),
-            Text(label, style: theme.textTheme.bodySmall),
+            const SizedBox(height: 8),
+            Text(
+              entry.content,
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.78),
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (entry.emotions.isNotEmpty)
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: entry.emotions
+                    .take(4)
+                    .map(
+                      (emotion) => Chip(
+                        label: Text(emotion),
+                        visualDensity: VisualDensity.compact,
+                        backgroundColor: AppColors.accent.withValues(
+                          alpha: 0.16,
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Icon(
+                  Icons.schedule_rounded,
+                  size: 18,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '$dateLabel · $timeLabel',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  entry.moodText,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
-}
 
-class _DiaryCard extends StatelessWidget {
-  const _DiaryCard({
-    required this.entry,
-    required this.formattedDate,
-    required this.color,
-  });
-
-  final DiaryEntry entry;
-  final String formattedDate;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x14352F44),
-            blurRadius: 14,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 18,
-          vertical: 14,
-        ),
-        leading: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.18),
-            shape: BoxShape.circle,
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            entry.mood.isNotEmpty
-                ? entry.mood.substring(0, 1).toUpperCase()
-                : '?',
-            style: theme.textTheme.titleMedium?.copyWith(color: color),
-          ),
-        ),
-        title: Text(entry.title, style: theme.textTheme.titleMedium),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 6),
-            Text(entry.body, maxLines: 2, overflow: TextOverflow.ellipsis),
-            const SizedBox(height: 10),
-            Text(
-              '$formattedDate · ${entry.mood}',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  static Color _moodColor(int score) {
+    if (score <= 2) return AppColors.danger;
+    if (score <= 4) return AppColors.warning;
+    if (score <= 7) return AppColors.moodCalm;
+    if (score <= 8) return AppColors.moodJoy;
+    return AppColors.success;
   }
 }
 
@@ -317,34 +724,45 @@ class _DiaryEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * 0.45,
+      child: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.book_outlined,
-              size: 68,
-              color: AppColors.moodNeutral,
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.menu_book_rounded,
+                size: 44,
+                color: AppColors.primary,
+              ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 20),
             Text(
-              'Registra tu primera emoción',
-              style: theme.textTheme.titleMedium,
-              textAlign: TextAlign.center,
+              'Aun no hay registros',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Anotar cómo te sientes te ayuda a identificar patrones y encontrar herramientas de apoyo.',
-              style: theme.textTheme.bodyMedium,
+              'Escribe tu primera entrada para comenzar a seguir tus emociones y progresos.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
             FilledButton.icon(
               onPressed: onCreate,
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('Registrar emoción'),
+              icon: const Icon(Icons.add_circle_outline_rounded),
+              label: const Text('Registrar nueva entrada'),
             ),
           ],
         ),
@@ -353,21 +771,65 @@ class _DiaryEmptyState extends StatelessWidget {
   }
 }
 
-final _seedEntries = [
-  DiaryEntry(
-    id: '1',
-    title: 'Agradecimiento matinal',
-    mood: 'Alegre',
-    createdAt: DateTime.now().subtract(const Duration(hours: 6)),
-    body:
-        'Hoy me sentí agradecido por el apoyo de mis amigos. Practiqué respiraciones y comencé el día con calma.',
-  ),
-  DiaryEntry(
-    id: '2',
-    title: 'Momento desafiante',
-    mood: 'Ansioso/a',
-    createdAt: DateTime.now().subtract(const Duration(days: 1)),
-    body:
-        'Tuve una reunión compleja. Anoté mis sensaciones y me ayudó a ver que fue temporal.',
-  ),
-];
+class _DiaryLoading extends StatelessWidget {
+  const _DiaryLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.only(top: 120),
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
+}
+
+class _DiaryErrorView extends StatelessWidget {
+  const _DiaryErrorView({required this.message, required this.onRetry});
+
+  final String message;
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.error_outline_rounded,
+              size: 48,
+              color: AppColors.danger,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No pudimos cargar tu diario',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            FilledButton.tonalIcon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Reintentar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

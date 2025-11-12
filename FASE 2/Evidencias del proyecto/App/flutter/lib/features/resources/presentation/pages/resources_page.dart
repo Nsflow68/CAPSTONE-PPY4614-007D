@@ -1,3 +1,4 @@
+﻿// ignore_for_file: prefer_single_quotes
 import "package:flutter/material.dart";
 import "package:mi_refugio_app/shared/constants/app_colors.dart";
 import "package:mi_refugio_app/shared/constants/app_gradients.dart";
@@ -119,11 +120,9 @@ class _ResourcesPageState extends State<ResourcesPage> {
   List<ResourceItem> _applyFilters(List<ResourceItem> items) {
     final query = _searchCtrl.text.trim().toLowerCase();
     return items.where((resource) {
-      final matchesCategory =
-          _selectedCategory == "Todos" ||
+      final matchesCategory = _selectedCategory == "Todos" ||
           resource.category.toLowerCase() == _selectedCategory.toLowerCase();
-      final matchesQuery =
-          query.isEmpty ||
+      final matchesQuery = query.isEmpty ||
           resource.title.toLowerCase().contains(query) ||
           resource.description.toLowerCase().contains(query) ||
           resource.subtitle.toLowerCase().contains(query);
@@ -261,3 +260,4 @@ class _EmptyState extends StatelessWidget {
     );
   }
 }
+

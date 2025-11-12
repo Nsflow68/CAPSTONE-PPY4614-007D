@@ -1,3 +1,4 @@
+﻿// ignore_for_file: prefer_single_quotes
 import "package:flutter/material.dart";
 
 class NutritionPage extends StatelessWidget {
@@ -123,3 +124,4 @@ class _TipCard extends StatelessWidget {
     );
   }
 }
+

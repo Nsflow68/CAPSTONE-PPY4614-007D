@@ -1,4 +1,4 @@
-import 'package:mi_refugio_app/shared/models/resource_item.dart';
+﻿import 'package:mi_refugio_app/shared/models/resource_item.dart';
 
 const mentalHealthResources = <ResourceItem>[
   ResourceItem(

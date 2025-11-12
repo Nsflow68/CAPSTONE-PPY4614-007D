@@ -1,5 +1,5 @@
-import "package:flutter/material.dart";
-import "package:mi_refugio_app/shared/constants/app_colors.dart";
+import 'package:flutter/material.dart';
+import 'package:mi_refugio_app/shared/constants/app_colors.dart';
 
 class AppGradients {
   AppGradients._();
@@ -26,5 +26,11 @@ class AppGradients {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [Color(0xFFA6E4D3), Color(0xFFBEE9FF)],
+  );
+
+  static const LinearGradient primaryBubble = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [AppColors.primary, Color(0xFF9D8AF0)],
   );
 }
