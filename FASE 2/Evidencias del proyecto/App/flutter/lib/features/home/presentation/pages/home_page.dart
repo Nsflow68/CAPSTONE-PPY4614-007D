@@ -1,9 +1,10 @@
-import 'dart:math' as math;
+﻿import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:video_player/video_player.dart';
 
 import '../../../../shared/constants/app_colors.dart';
 import '../../../../shared/constants/app_gradients.dart';
@@ -11,6 +12,7 @@ import '../../../../shared/constants/emotion_palette.dart';
 import '../../../../shared/constants/app_shadows.dart';
 import '../../../../shared/data/hydration_guidelines.dart';
 import '../../../../shared/models/hydration_daily_intake.dart';
+import '../../../onboarding/presentation/widgets/user_journey_banner.dart';
 import '../../../rewards/application/reward_provider.dart';
 import '../../../rewards/application/reward_state.dart';
 import '../../../rewards/presentation/widgets/reward_tile.dart';
@@ -59,6 +61,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                 child: Column(
                   children: [
                     const SizedBox(height: 24),
+                    UserJourneyBanner(
+                      highlight:
+                          'Descubre cómo usar Inicio, Diario, Chatbot y Perfil con recomendaciones personalizadas.',
+                      onOpenGuide: () => context.go('/guide'),
+                    ),
+                    const SizedBox(height: 16),
                     _RewardSection(
                       state: rewardState,
                       onViewAll: () => context.go('/home/rewards'),
@@ -87,139 +95,255 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 }
 
-class _HomeHeader extends StatelessWidget {
+
+class _HomeHeader extends StatefulWidget {
   const _HomeHeader({required this.onGuideTap, required this.onRewardsTap});
 
   final VoidCallback onGuideTap;
   final VoidCallback onRewardsTap;
 
   @override
+  State<_HomeHeader> createState() => _HomeHeaderState();
+}
+
+class _HomeHeaderState extends State<_HomeHeader> with SingleTickerProviderStateMixin {
+  late final VideoPlayerController _videoController;
+  bool _videoReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _videoController = VideoPlayerController.asset('assets/videos/pantalla_carga.mp4')
+      ..setLooping(true)
+      ..setVolume(0)
+      ..initialize().then((_) {
+        if (!mounted) return;
+        setState(() => _videoReady = true);
+        _videoController.play();
+      });
+  }
+
+  @override
+  void dispose() {
+    _videoController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Stack(
-      children: [
-        Container(
-          height: 320,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF7F79F9), Color(0xFF8BE1D0)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-        Positioned(
-          right: -40,
-          top: 30,
-          child: Transform.rotate(
-            angle: -0.2,
-            child: Container(
-              width: 220,
-              height: 260,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.white.withValues(alpha: 0.16),
-                    Colors.white.withValues(alpha: 0.04),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(42),
+    return SizedBox(
+      height: 360,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: ClipRRect(
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(48),
+                bottomRight: Radius.circular(48),
+              ),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (_videoReady && _videoController.value.isInitialized)
+                    FittedBox(
+                      fit: BoxFit.cover,
+                      child: SizedBox(
+                        width: _videoController.value.size.width,
+                        height: _videoController.value.size.height,
+                        child: VideoPlayer(_videoController),
+                      ),
+                    )
+                  else
+                    const DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF7F79F9), Color(0xFF8BE1D0)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                    ),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.black.withValues(alpha: 0.15),
+                          Colors.black.withValues(alpha: 0.6),
+                        ],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Positioned(
+            right: 24,
+            top: 32,
+            child: AnimatedScale(
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeOutBack,
+              scale: _videoReady ? 1 : 0.92,
+              child: Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(32),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    width: 1.2,
+                  ),
+                ),
+                child: const Icon(Icons.slow_motion_video_rounded, color: Colors.white, size: 36),
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Column(
+                  SafeArea(
+                    bottom: false,
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Mi Refugio',
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Mi Refugio',
+                                style: theme.textTheme.headlineSmall?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Acompañamiento emocional + hábitos guiados con historias y video introductorio.',
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  height: 1.3,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Acompañamiento emocional y hábitos saludables.',
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.9),
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                        IconButton(
+                          onPressed: widget.onGuideTap,
+                          icon: const Icon(Icons.map_rounded, color: Colors.white),
+                          tooltip: 'Guía interactiva',
                         ),
                       ],
                     ),
                   ),
-                  IconButton(
-                    onPressed: onGuideTap,
-                    icon: const Icon(Icons.help_rounded, color: Colors.white),
-                    tooltip: 'Guía rápida',
+                  const SizedBox(height: 20),
+                  Text(
+                    'Plan de bienestar diario',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Activa recordatorios, revisa tus últimas emociones y continúa donde te quedaste.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.92),
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: const [
+                      _HeroChip(icon: Icons.self_improvement_rounded, label: 'Mindfulness'),
+                      _HeroChip(icon: Icons.water_drop_rounded, label: 'Hidratación'),
+                      _HeroChip(icon: Icons.menu_book_rounded, label: 'Diario'),
+                      _HeroChip(icon: Icons.forum_rounded, label: 'Refu Bot'),
+                    ],
+                  ),
+                  const Spacer(),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: widget.onRewardsTap,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: AppColors.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            textStyle: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          icon: const Icon(Icons.emoji_events_rounded),
+                          label: const Text('Ver logros'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton(
+                        onPressed: widget.onGuideTap,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.18),
+                          foregroundColor: Colors.white,
+                          shape: const CircleBorder(),
+                          padding: const EdgeInsets.all(16),
+                        ),
+                        child: const Icon(Icons.play_arrow_rounded),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(height: 30),
-              Container(
-                padding: const EdgeInsets.all(22),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(28),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x22000000),
-                      blurRadius: 18,
-                      offset: Offset(0, 16),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Sigue tu plan de cuidado',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Registra tus hábitos, revisa recursos y gana recompensas por cada avance.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.9),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    FilledButton.icon(
-                      onPressed: onRewardsTap,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AppColors.primary,
-                      ),
-                      icon: const Icon(Icons.emoji_events_rounded),
-                      label: const Text('Ver mis logros'),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
 
+class _HeroChip extends StatelessWidget {
+  const _HeroChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: const BoxDecoration(
+        color: Color(0x29FFFFFF),
+        borderRadius: BorderRadius.all(Radius.circular(32)),
+        border: Border.fromBorderSide(
+          BorderSide(color: Color(0x33FFFFFF)),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white, size: 18),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 class _EmotionCarousel extends StatefulWidget {
   const _EmotionCarousel();
 
@@ -948,3 +1072,4 @@ class _WellnessGuides extends StatelessWidget {
     );
   }
 }
+

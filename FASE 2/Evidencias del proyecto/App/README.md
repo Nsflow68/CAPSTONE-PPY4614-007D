@@ -1,8 +1,11 @@
-# Mi Refugio — Guía de Trabajo
+﻿# Mi Refugio — Guía de Trabajo
 
 Este directorio contiene todo el material solicitado para la app **Mi Refugio** en la fase de evidencias. La idea es que cualquier colaborador pueda ponerse al día en minutos, ejecutar la app Flutter, levantar el backend (FastAPI o el nuevo NestJS) y seguir el plan de las próximas semanas.
 
 ---
+
+## Documentos clave
+- [GUIA_USUARIO.md](./GUIA_USUARIO.md): guía de usuario con recorrido, tareas diarias y plan bimensual.
 
 ## Estructura actual
 
@@ -83,3 +86,5 @@ Más detalle operativo y checklist en `flutter/backend/MODERNIZATION_PROGRESS.md
 4. **QA & despliegue dual**: mantener FastAPI operativo hasta que Nest logre paridad, luego activar feature flag en Flutter.
 
 Mantén este README actualizado al cierre de cada semana para que el siguiente responsable tenga el contexto completo. ¡Vamos a por la última fase! 💪
+
+

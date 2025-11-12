@@ -1,0 +1,35 @@
+﻿# General
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.iml
+
+# Flutter / Dart
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages
+**/.metadata
+
+# Android / iOS configs
+**/android/local.properties
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Runner/GeneratedPluginRegistrant.*
+**/macos/Flutter/GeneratedPluginRegistrant.*
+**/linux/flutter/generated_plugin_registrant.*
+**/windows/flutter/generated_plugin_registrant.*
+
+# Backend envs
+**/.env
+**/.env.*
+
+# Virtual envs
+.venv/
+**/.venv/
+
+# Windows reserved names
+nul
+**/nul
