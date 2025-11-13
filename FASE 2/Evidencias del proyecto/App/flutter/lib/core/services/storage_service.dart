@@ -12,6 +12,12 @@ abstract final class StorageKeys {
   static const onboardingCompleted = '${prefix}onboarding_completed';
   static const lastUserId = '${prefix}last_user_id';
   static const userCreatedAt = '${prefix}user_created_at';
+  static const rewardSummary = '${prefix}reward_summary';
+  static const profileAvatar = '${prefix}profile_avatar';
+  static const profilePhone = '${prefix}profile_phone';
+  static const profileNotifications = '${prefix}profile_notifications';
+  static const profileName = '${prefix}profile_name';
+  static const profileEmail = '${prefix}profile_email';
 }
 
 /// Provider de servicio (singleton)

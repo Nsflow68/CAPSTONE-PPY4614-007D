@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../../../shared/constants/app_colors.dart';
@@ -17,6 +18,7 @@ import '../../../rewards/application/reward_provider.dart';
 import '../../../rewards/application/reward_state.dart';
 import '../../../rewards/presentation/widgets/reward_tile.dart';
 import '../../../wellness/application/hydration_providers.dart';
+import '../../../diary/application/diary_highlights_provider.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -344,14 +346,14 @@ class _HeroChip extends StatelessWidget {
     );
   }
 }
-class _EmotionCarousel extends StatefulWidget {
+class _EmotionCarousel extends ConsumerStatefulWidget {
   const _EmotionCarousel();
 
   @override
-  State<_EmotionCarousel> createState() => _EmotionCarouselState();
+  ConsumerState<_EmotionCarousel> createState() => _EmotionCarouselState();
 }
 
-class _EmotionCarouselState extends State<_EmotionCarousel> {
+class _EmotionCarouselState extends ConsumerState<_EmotionCarousel> {
   final _controller = PageController(viewportFraction: 0.78);
   int _current = 0;
 
@@ -374,7 +376,10 @@ class _EmotionCarouselState extends State<_EmotionCarousel> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final diaryHighlights = ref.watch(diaryHighlightsProvider);
+    final hasHighlights = diaryHighlights.isNotEmpty;
+    final totalItems =
+        hasHighlights ? diaryHighlights.length : EmotionPalette.cards.length;
     return SizedBox(
       height: 240,
       child: Column(
@@ -384,9 +389,8 @@ class _EmotionCarouselState extends State<_EmotionCarousel> {
             child: PageView.builder(
               controller: _controller,
               physics: const BouncingScrollPhysics(),
-              itemCount: EmotionPalette.cards.length,
+              itemCount: totalItems,
               itemBuilder: (context, index) {
-                final card = EmotionPalette.cards[index];
                 final isActive = index == _current;
                 return AnimatedScale(
                   duration: const Duration(milliseconds: 350),
@@ -396,54 +400,15 @@ class _EmotionCarouselState extends State<_EmotionCarousel> {
                     opacity: isActive ? 1 : 0.7,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: card.gradient,
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(32),
-                          boxShadow: AppShadows.soft,
-                        ),
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${card.emoji}  ${card.title}',
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                              ),
+                      child: hasHighlights
+                          ? _DiaryHighlightCard(
+                              highlight: diaryHighlights[index],
+                              onOpenDiary: () => context.go('/diary'),
+                            )
+                          : _EmotionPaletteCard(
+                              entry: EmotionPalette.cards[index],
+                              onExplore: () => context.go('/home/mindfulness'),
                             ),
-                            const SizedBox(height: 8),
-                            Expanded(
-                              child: AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 300),
-                                child: Text(
-                                  card.subtitle,
-                                  key: ValueKey(card.subtitle),
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.9),
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            FilledButton(
-                              onPressed: () {},
-                              style: FilledButton.styleFrom(
-                                backgroundColor: Colors.white.withValues(
-                                  alpha: 0.2,
-                                ),
-                                foregroundColor: Colors.white,
-                              ),
-                              child: const Text('Explorar ejercicios'),
-                            ),
-                          ],
-                        ),
-                      ),
                     ),
                   ),
                 );
@@ -454,7 +419,7 @@ class _EmotionCarouselState extends State<_EmotionCarousel> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(
-              EmotionPalette.cards.length,
+              totalItems,
               (index) => AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 width: index == _current ? 28 : 10,
@@ -473,6 +438,262 @@ class _EmotionCarouselState extends State<_EmotionCarousel> {
       ),
     );
   }
+}
+
+class _EmotionPaletteCard extends StatelessWidget {
+  const _EmotionPaletteCard({required this.entry, required this.onExplore});
+
+  final EmotionPaletteEntry entry;
+  final VoidCallback onExplore;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: entry.gradient,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: AppShadows.soft,
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${entry.emoji}  ${entry.title}',
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: Text(
+                entry.subtitle,
+                key: ValueKey(entry.subtitle),
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ),
+          FilledButton(
+            onPressed: onExplore,
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.white.withValues(alpha: 0.2),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Explorar ejercicios'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DiaryHighlightCard extends StatelessWidget {
+  const _DiaryHighlightCard({
+    required this.highlight,
+    required this.onOpenDiary,
+  });
+
+  final DiaryHighlight highlight;
+  final VoidCallback onOpenDiary;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final baseColor = _moodColorForScore(highlight.score);
+    final gradient = _highlightGradient(baseColor);
+    final dateLabel = DateFormat('EEE d MMM', 'es').format(highlight.date);
+    final emotions = highlight.emotions.take(3).toList();
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: gradient,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: AppShadows.soft,
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            dateLabel,
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: Colors.white.withValues(alpha: 0.9),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            highlight.mood,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: Text(
+              highlight.description,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: Colors.white.withValues(alpha: 0.92),
+                height: 1.4,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _MoodScorePill(
+                score: highlight.score,
+                delta: highlight.scoreDelta,
+              ),
+              const Spacer(),
+              FilledButton(
+                onPressed: onOpenDiary,
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.white.withValues(alpha: 0.18),
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Ver diario'),
+              ),
+            ],
+          ),
+          if (emotions.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: emotions
+                  .map((emotion) => _EmotionChip(label: emotion))
+                  .toList(),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _MoodScorePill extends StatelessWidget {
+  const _MoodScorePill({required this.score, required this.delta});
+
+  final int score;
+  final int delta;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final deltaColor = _trendColor(delta);
+    final deltaIcon = delta == 0
+        ? Icons.horizontal_rule_rounded
+        : delta > 0
+            ? Icons.trending_up_rounded
+            : Icons.trending_down_rounded;
+    final deltaLabel =
+        delta == 0 ? 'Sin cambio' : '${delta > 0 ? '+' : ''}$delta pts';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.favorite_rounded, color: Colors.white.withValues(alpha: 0.9)),
+          const SizedBox(width: 6),
+          Text(
+            '$score / 10',
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Icon(deltaIcon, color: deltaColor, size: 18),
+          const SizedBox(width: 4),
+          Text(
+            deltaLabel,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: deltaColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmotionChip extends StatelessWidget {
+  const _EmotionChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+Color _moodColorForScore(int score) {
+  if (score <= 2) return AppColors.danger;
+  if (score <= 4) return AppColors.warning;
+  if (score <= 7) return AppColors.moodCalm;
+  if (score <= 8) return AppColors.moodJoy;
+  return AppColors.success;
+}
+
+List<Color> _highlightGradient(Color base) {
+  final hsl = HSLColor.fromColor(base);
+  final start = hsl
+      .withLightness((hsl.lightness + 0.15).clamp(0.0, 1.0))
+      .toColor()
+      .withValues(alpha: 0.95);
+  final end = hsl
+      .withLightness((hsl.lightness - 0.05).clamp(0.0, 1.0))
+      .toColor()
+      .withValues(alpha: 0.85);
+  return [start, end];
+}
+
+Color _trendColor(int delta) {
+  if (delta > 0) {
+    return Colors.greenAccent.shade100;
+  }
+  if (delta < 0) {
+    return Colors.redAccent.shade100;
+  }
+  return Colors.white.withValues(alpha: 0.9);
 }
 
 class _RewardSection extends StatelessWidget {

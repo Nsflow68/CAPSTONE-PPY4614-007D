@@ -7,6 +7,11 @@ Este directorio contiene todo el material solicitado para la app **Mi Refugio** 
 ## Documentos clave
 - [GUIA_USUARIO.md](./GUIA_USUARIO.md): guía de usuario con recorrido, tareas diarias y plan bimensual.
 
+## Actualizaciones recientes
+- **Recompensas persistentes:** el `rewardProvider` guarda/busca el balance y las insignias en `FlutterSecureStorage`, habilitando sincronización y reinicio desde la pantalla de Perfil.
+- **Perfil → insignias:** se añadió un snapshot de badges con contador, balance y botones para sincronizar o restablecer recompensas.
+- **Chatbot Refu:** página renovada con hero, prompts rápidos, prácticas sugeridas y motor mock que simula Llama cuando el backend no está disponible.
+
 ## Estructura actual
 
 ```

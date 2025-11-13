@@ -15,6 +15,42 @@ class Reward extends Equatable {
   final int points;
   final bool active;
 
+  Reward copyWith({
+    String? id,
+    String? title,
+    String? description,
+    int? points,
+    bool? active,
+  }) {
+    return Reward(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      points: points ?? this.points,
+      active: active ?? this.active,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'points': points,
+      'active': active,
+    };
+  }
+
+  factory Reward.fromJson(Map<String, dynamic> json) {
+    return Reward(
+      id: json['id'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      points: json['points'] as int? ?? 0,
+      active: json['active'] as bool? ?? false,
+    );
+  }
+
   @override
   List<Object?> get props => [id, title, description, points, active];
 }
@@ -29,6 +65,23 @@ class RewardSummary extends Equatable {
     return RewardSummary(
       items: items ?? this.items,
       balance: balance ?? this.balance,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'balance': balance,
+      'items': items.map((r) => r.toJson()).toList(),
+    };
+  }
+
+  factory RewardSummary.fromJson(Map<String, dynamic> json) {
+    final rawItems = json['items'] as List<dynamic>? ?? const [];
+    return RewardSummary(
+      items: rawItems
+          .map((item) => Reward.fromJson(item as Map<String, dynamic>))
+          .toList(),
+      balance: json['balance'] as int? ?? 0,
     );
   }
 

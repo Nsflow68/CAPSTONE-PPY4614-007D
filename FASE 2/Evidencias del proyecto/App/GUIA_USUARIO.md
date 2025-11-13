@@ -15,11 +15,20 @@ Esta guía resume el nuevo recorrido visual (80 % más completo respecto a la ve
 - Tarjetas de momentos clave responsivas + animaciones suaves.
 - Componentes consistentes con AppColors/AppGradients y sombras suaves.
 - Guía en pantalla con pasos, timeline y sección de soporte contextual.
+- Chatbot Refu con hero, prompts rápidos, burbujas animadas y prácticas sugeridas que funcionan aun sin backend gracias al servicio mock.
+- Perfil con mosaico de insignias, contador de badges desbloqueados y botones para sincronizar/restablecer recompensas persistidas.
 
 ## Servicios de datos y ETL
 - El directorio de salud y contenido educativo se normaliza mediante scripts en `backend/etl`.
 - La app consume los JSON generados por Nest/FastAPI; al cambiar de backend solo se ajusta el feature flag `USE_NEST_BACKEND`.
 - Para pruebas offline, los providers mockeados (hidratación, recompensas, diario) usan los mismos modelos que la API expone.
+
+## Recompensas & Perfil
+- El `rewardProvider` guarda el balance y las insignias en `FlutterSecureStorage`, de modo que los puntos y badges persisten entre sesiones.
+- Desde **Perfil → Mis insignias** puedes:
+  - Pulsar **Sincronizar** para recargar recompensas (vuelve a consultar storage y aplica las reglas actuales).
+  - Pulsar **Restablecer** para reiniciar el balance a los objetivos predefinidos.
+- Los campos de nombre, correo, teléfono, avatar y notificaciones también se almacenan en las llaves `mr:profile_*`, lo que permite reanudar la sesión sin depender de backend.
 
 ## Plan operativo (2 semanas, mínimo 2 h/día)
 | Día | Objetivo | Resultado esperado |

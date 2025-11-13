@@ -2,10 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../../../../core/services/storage_service.dart';
 import '../../../../shared/constants/app_gradients.dart';
 import '../../../../shared/constants/app_shadows.dart';
 import '../../../../shared/constants/app_colors.dart';
 import '../../../auth/application/auth_provider.dart';
+import '../../../rewards/application/reward_provider.dart';
+import '../../../rewards/application/reward_state.dart';
+
+const _profileNameKey = StorageKeys.profileName;
+const _profileEmailKey = StorageKeys.profileEmail;
+const _profilePhoneKey = StorageKeys.profilePhone;
+const _profileAvatarKey = StorageKeys.profileAvatar;
+const _profileNotificationsKey = StorageKeys.profileNotifications;
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -51,12 +60,21 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         },
       );
 
-      final storedPhone = await _storage.read(key: 'phone');
-      final storedAvatar = await _storage.read(key: 'avatar');
-      final storedNotifications = await _storage.read(key: 'notifications');
+      final storedName = await _storage.read(key: _profileNameKey);
+      final storedEmail = await _storage.read(key: _profileEmailKey);
+      final storedPhone = await _storage.read(key: _profilePhoneKey);
+      final storedAvatar = await _storage.read(key: _profileAvatarKey);
+      final storedNotifications =
+          await _storage.read(key: _profileNotificationsKey);
 
       if (!mounted) return;
       setState(() {
+        if ((storedName ?? '').isNotEmpty) {
+          _nameController.text = storedName!;
+        }
+        if ((storedEmail ?? '').isNotEmpty) {
+          _emailController.text = storedEmail!;
+        }
         if ((storedPhone ?? '').isNotEmpty) {
           _phoneController.text = storedPhone!;
         }
@@ -157,12 +175,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     setState(() => _loading = true);
 
     try {
-      await _storage.write(key: 'name', value: _nameController.text);
-      await _storage.write(key: 'email', value: _emailController.text);
-      await _storage.write(key: 'phone', value: _phoneController.text);
-      await _storage.write(key: 'avatar', value: _selectedAvatar);
+      await _storage.write(key: _profileNameKey, value: _nameController.text);
+      await _storage.write(key: _profileEmailKey, value: _emailController.text);
+      await _storage.write(key: _profilePhoneKey, value: _phoneController.text);
+      await _storage.write(key: _profileAvatarKey, value: _selectedAvatar);
       await _storage.write(
-        key: 'notifications',
+        key: _profileNotificationsKey,
         value: _notifications.toString(),
       );
 
@@ -213,6 +231,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final authState = ref.watch(authProvider);
+    final rewardState = ref.watch(rewardProvider);
 
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -388,6 +407,34 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 ),
               ),
             ],
+            const SizedBox(height: 32),
+            _RewardsSnapshot(state: rewardState),
+            if (rewardState is! RewardInitial) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: rewardState is RewardLoading
+                          ? null
+                          : _refreshRewards,
+                      icon: const Icon(Icons.sync_rounded),
+                      label: const Text('Sincronizar'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextButton.icon(
+                      onPressed: rewardState is RewardLoading
+                          ? null
+                          : _resetRewards,
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: const Text('Restablecer'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 24),
             TextButton.icon(
               onPressed: _confirmLogout,
@@ -416,6 +463,184 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       'diciembre',
     ];
     return '${date.day} de ${months[date.month - 1]} de ${date.year}';
+  }
+
+  Future<void> _refreshRewards() async {
+    final notifier = ref.read(rewardProvider.notifier);
+    await notifier.loadRewards();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Actualizamos tus recompensas.')),
+    );
+  }
+
+  Future<void> _resetRewards() async {
+    final notifier = ref.read(rewardProvider.notifier);
+    await notifier.resetRewards();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Reestablecimos tus recompensas.')),
+    );
+  }
+}
+
+class _RewardsSnapshot extends StatelessWidget {
+  const _RewardsSnapshot({required this.state});
+
+  final RewardState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return state.when(
+      initial: () => const SizedBox.shrink(),
+      loading: () => const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 12),
+          child: CircularProgressIndicator(),
+        ),
+      ),
+      error: (message) => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.danger.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.error_outline_rounded, color: AppColors.danger),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.danger,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      loaded: (summary) {
+        if (summary.items.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        final unlocked = summary.items.where((r) => r.active).length;
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: AppShadows.soft,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Mis insignias',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$unlocked / ${summary.items.length} desbloqueadas',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Chip(
+                    avatar: const Icon(Icons.token_rounded, size: 18),
+                    label: Text('${summary.balance} pts'),
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                    shape: StadiumBorder(
+                      side: BorderSide(
+                        color: AppColors.primary.withValues(alpha: 0.4),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: summary.items
+                    .map((reward) => _BadgeChip(reward: reward))
+                    .toList(),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _BadgeChip extends StatelessWidget {
+  const _BadgeChip({required this.reward});
+
+  final Reward reward;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final unlocked = reward.active;
+    final color =
+        unlocked ? AppColors.primary : AppColors.textSecondary.withValues(alpha: 0.5);
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 250),
+      opacity: unlocked ? 1 : 0.5,
+      child: Container(
+        width: 160,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: unlocked
+              ? const LinearGradient(
+                  colors: [Color(0xFF7F79F9), Color(0xFF8BE1D0)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: unlocked ? null : Colors.white,
+          boxShadow: AppShadows.soft,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              unlocked ? Icons.emoji_events_rounded : Icons.star_border_rounded,
+              color: unlocked ? Colors.white : color,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              reward.title,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: unlocked ? Colors.white : AppColors.textPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${reward.points} pts',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: unlocked ? Colors.white.withValues(alpha: 0.9) : color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
