@@ -1,5 +1,5 @@
 name: mi_refugio_app
-description: Aplicación Flutter Mi Refugio (fase 2) con nueva línea visual y chatbot Llama.
+description: Aplicaci�n Flutter Mi Refugio (fase 2) con nueva l�nea visual y chatbot Llama.
 publish_to: "none"
 
 version: 1.0.0+1
@@ -19,6 +19,7 @@ dependencies:
   google_fonts: ^6.2.1
   flutter_svg: ^2.0.10+1
   video_player: ^2.9.2
+  audioplayers: ^6.1.0
   shared_preferences: ^2.3.2
   flutter_secure_storage: ^9.2.2
   http: ^1.2.2
@@ -27,6 +28,7 @@ dependencies:
   url_launcher: ^6.3.0
   equatable: ^2.0.5
   uuid: ^4.5.1
+  flutter_tts: ^4.2.3
 
 dev_dependencies:
   flutter_test:
@@ -42,3 +44,5 @@ flutter:
     - assets/images/mascot/
     - assets/images/mental_health/
     - assets/videos/
+    - assets/audio/
+

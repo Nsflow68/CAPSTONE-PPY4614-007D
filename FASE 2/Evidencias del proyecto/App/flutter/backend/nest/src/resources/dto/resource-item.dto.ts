@@ -3,7 +3,10 @@ export class ResourceItemDto {
   name!: string;
   category!: string;
   description!: string;
-  contact?: string;
+  coverage?: string;
+  contactPhone?: string;
+  contactEmail?: string;
   website?: string;
-  availability!: string;
+  region?: string;
+  tags?: string[];
 }

@@ -258,17 +258,19 @@ class _GuideHero extends StatelessWidget {
                 height: 1.5,
               ),
             ),
-            const SizedBox(height: 20),
-            FilledButton.icon(
+            const SizedBox(height: 28),
+            TextButton(
               onPressed: onStart,
-              icon: const Icon(Icons.play_arrow_rounded),
-              label: const Text('Comenzar recorrido'),
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.zero,
+                textStyle: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  decoration: TextDecoration.underline,
+                ),
               ),
-            ),
+              child: const Text('Explorar guía Mi Refugio'),
+            )
           ],
         ),
       ),

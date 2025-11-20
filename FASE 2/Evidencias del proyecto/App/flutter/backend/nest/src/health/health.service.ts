@@ -6,7 +6,7 @@ import { ConfigService } from '@nestjs/config';
 export class HealthService {
   constructor(
     private readonly httpService: HttpService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
   ) {}
 
   async check() {
@@ -15,7 +15,7 @@ export class HealthService {
 
     try {
       const response = await this.httpService.axiosRef.get(`${fastApiUrl}/health`, {
-        timeout: 2000
+        timeout: 2000,
       });
       fastapiAvailable = response.status < 400;
     } catch {
@@ -27,8 +27,8 @@ export class HealthService {
       env: this.configService.get<string>('env'),
       timestamp: new Date().toISOString(),
       dependencies: {
-        fastapi: fastapiAvailable
-      }
+        fastapi: fastapiAvailable,
+      },
     };
   }
 }

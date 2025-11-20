@@ -10,6 +10,7 @@ import 'package:mi_refugio_app/l10n/app_localizations.dart';
 import 'package:mi_refugio_app/shared/constants/app_colors.dart';
 import 'package:mi_refugio_app/shared/constants/app_shadows.dart';
 import 'package:mi_refugio_app/shared/constants/emotion_palette.dart';
+import 'package:mi_refugio_app/shared/utils/responsive_layout.dart';
 
 import '../../application/auth_provider.dart';
 import '../../application/auth_state.dart';
@@ -110,6 +111,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final strings = AppLocalizations.of(context)!;
     final themeMode = ref.watch(themeModeProvider);
     final isDarkMode = themeMode == ThemeMode.dark;
+    final layout = ResponsiveLayout.of(context);
 
     ref.listen<AuthState>(authProvider, (previous, next) {
       next.maybeWhen(
@@ -140,60 +142,69 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         children: [
           const _LoginAtmosphere(),
           SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final isWide = constraints.maxWidth >= 960;
-                return Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1200),
-                    child: Flex(
-                      direction: isWide ? Axis.horizontal : Axis.vertical,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Expanded(
-                          flex: isWide ? 3 : 0,
-                          child: _HeroPanel(
-                            quote: _quotes[_quoteIndex],
-                            onGuideTap: () => context.go('/guide'),
-                          ),
-                        ),
-                        SizedBox(
-                          width: isWide ? 40 : 0,
-                          height: isWide ? 0 : 32,
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: Align(
-                            alignment: Alignment.center,
-                            child: _LoginCard(
-                              strings: strings,
-                              theme: theme,
-                              isDarkMode: isDarkMode,
-                              onToggleTheme: () =>
-                                  ref.read(themeModeProvider.notifier).toggle(),
-                              formKey: _formKey,
-                              emailController: _email,
-                              passwordController: _password,
-                              obscurePassword: _obscurePassword,
-                              onTogglePassword: () => setState(
-                                () => _obscurePassword = !_obscurePassword,
-                              ),
-                              isLoading: isLoading,
-                              isGoogleLoading: _isGoogleLoading,
-                              onCredentialsLogin: _handleCredentialsLogin,
-                              onForgotPassword: _goToForgotPassword,
-                              onSignUp: _goToSignUp,
-                              onGoogleLogin: _handleGoogleLogin,
-                              onGuestLogin: _handleGuest,
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: layout.horizontalPadding,
+                vertical: layout.isCompact ? 12 : 24,
+              ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWide = constraints.maxWidth >= 960;
+                  return Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: layout.maxContentWidth,
+                      ),
+                      child: Flex(
+                        direction: isWide ? Axis.horizontal : Axis.vertical,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            flex: isWide ? 3 : 0,
+                            child: _HeroPanel(
+                              quote: _quotes[_quoteIndex],
+                              onGuideTap: () => context.go('/guide'),
                             ),
                           ),
-                        ),
-                      ],
+                          SizedBox(
+                            width: isWide ? 40 : 0,
+                            height: isWide ? 0 : 32,
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Align(
+                              alignment: Alignment.center,
+                              child: _LoginCard(
+                                strings: strings,
+                                theme: theme,
+                                isDarkMode: isDarkMode,
+                                onToggleTheme: () =>
+                                    ref.read(themeModeProvider.notifier).toggle(),
+                                formKey: _formKey,
+                                emailController: _email,
+                                passwordController: _password,
+                                obscurePassword: _obscurePassword,
+                                onTogglePassword: () => setState(
+                                  () => _obscurePassword = !_obscurePassword,
+                                ),
+                                isLoading: isLoading,
+                                isGoogleLoading: _isGoogleLoading,
+                                onCredentialsLogin: _handleCredentialsLogin,
+                                onForgotPassword: _goToForgotPassword,
+                                onSignUp: _goToSignUp,
+                                onGoogleLogin: _handleGoogleLogin,
+                                onGuestLogin: _handleGuest,
+                                isCompact: layout.isCompact,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
         ],
@@ -220,6 +231,7 @@ class _LoginCard extends StatelessWidget {
     required this.onSignUp,
     required this.onGoogleLogin,
     required this.onGuestLogin,
+    required this.isCompact,
   });
 
   final AppLocalizations strings;
@@ -238,6 +250,7 @@ class _LoginCard extends StatelessWidget {
   final VoidCallback onSignUp;
   final VoidCallback onGoogleLogin;
   final VoidCallback onGuestLogin;
+  final bool isCompact;
 
   bool get _isBusy => isLoading || isGoogleLoading;
 
@@ -257,10 +270,12 @@ class _LoginCard extends StatelessWidget {
       );
     }
 
+    final cardPadding = EdgeInsets.all(isCompact ? 20 : 28);
+    final titleSpacing = isCompact ? 12.0 : 20.0;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 450),
       curve: Curves.easeOutCubic,
-      padding: const EdgeInsets.all(28),
+      padding: cardPadding,
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(28),
@@ -272,6 +287,36 @@ class _LoginCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              children: [
+                Container(
+                  height: 54,
+                  width: 54,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    color: AppColors.primary.withValues(alpha: 0.12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Image.asset(
+                      'assets/images/branding/logo_primary.png',
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Image.asset(
+                      'assets/images/mascot/pose1.png',
+                      height: 64,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: titleSpacing),
             Text(
               strings.loginWelcomeTitle,
               style: theme.textTheme.headlineMedium?.copyWith(
@@ -279,7 +324,7 @@ class _LoginCard extends StatelessWidget {
                 color: theme.colorScheme.onSurface,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: isCompact ? 6 : 8),
             Text(
               strings.loginWelcomeSubtitle,
               style: theme.textTheme.bodyLarge?.copyWith(
@@ -455,7 +500,7 @@ class _HeroPanel extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 24),
           Wrap(
             spacing: 12,
             runSpacing: 12,
@@ -470,7 +515,7 @@ class _HeroPanel extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
           FilledButton.icon(
             onPressed: onGuideTap,
             style: FilledButton.styleFrom(

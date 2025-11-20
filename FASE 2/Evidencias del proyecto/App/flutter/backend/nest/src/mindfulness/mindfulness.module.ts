@@ -4,6 +4,6 @@ import { MindfulnessController } from './mindfulness.controller';
 
 @Module({
   controllers: [MindfulnessController],
-  providers: [MindfulnessService]
+  providers: [MindfulnessService],
 })
 export class MindfulnessModule {}

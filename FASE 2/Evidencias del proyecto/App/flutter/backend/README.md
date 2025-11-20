@@ -1,36 +1,36 @@
 # Mi Refugio API
 
-Servicio backend que alimenta la app Flutter. Actualmente corre sobre **FastAPI + MySQL**, pero se encuentra en transiciÃ³n hacia **NestJS + PostgreSQL** para unificar el stack del equipo y mejorar la observabilidad. Este documento resume el estado actual y el plan de migraciÃ³n (2â€‘3 semanas), ademÃ¡s de describir cÃ³mo se integra el chatbot basado en modelos Llama.
+Servicio backend que alimenta la app Flutter. Actualmente corre sobre **FastAPI + MySQL**, pero se encuentra en transici????n hacia **NestJS + PostgreSQL** para unificar el stack del equipo y mejorar la observabilidad. Este documento resume el estado actual y el plan de migraci????n (2????????3 semanas), adem????s de describir c????mo se integra el chatbot basado en modelos Llama.
 
 ---
 
-## Estado tecnolÃ³gico
+## Estado tecnol????gico
 
-| Capa | Actual | PrÃ³ximo (NestJS) |
+| Capa | Actual | Pr????ximo (NestJS) |
 |------|--------|------------------|
 | Runtime | Python 3.11 | Node.js 20 |
 | Framework | FastAPI + Uvicorn | NestJS 10 |
 | ORM | SQLAlchemy 2 | Prisma |
 | Base de datos | MySQL 8 (AWS RDS) | PostgreSQL 15 (RDS o Supabase) |
 | Auth | JWT (HS256) | JWT + Guards + Passport |
-| Chatbot | Ollama (Llama 3.2) vÃ­a HTTP | MÃ³dulo Nest que proxea a Ollama y expone mÃ©tricas |
+| Chatbot | Ollama (Llama 3.2) v????a HTTP | M????dulo Nest que proxea a Ollama y expone m????tricas |
 
-> Hasta completar la migraciÃ³n, FastAPI sigue siendo la fuente de verdad para la app Flutter. El feature flag `USE_NEST_BACKEND` controlarÃ¡ el cambio de endpoints cuando la paridad estÃ© asegurada.
+> Hasta completar la migraci????n, FastAPI sigue siendo la fuente de verdad para la app Flutter. El feature flag `USE_NEST_BACKEND` controlar???? el cambio de endpoints cuando la paridad est???? asegurada.
 
 ---
 
-## Roadmap FastAPI â†’ NestJS (2â€‘3 semanas)
+## Roadmap FastAPI ???????? NestJS (2????????3 semanas)
 
 | Semana | Actividades |
 |--------|-------------|
-| 1 | `nest new api`, configuraciÃ³n de ESLint/Prettier, mÃ³dulos `health`, `auth`, `users`. Configurar Prisma con PostgreSQL y replicar esquema actual. |
-| 2 | Portar casos de uso de mindfulness, hidrataciÃ³n, diario y recursos. AÃ±adir pruebas con Jest/Supertest, exponer Swagger y consolidar DTOs compartidos. |
-| 3 | Implementar mÃ³dulo `chatbot` que proxee a Ollama, habilitar logging estructurado, preparar pipelines de CI/CD y ejecutar pruebas endâ€‘toâ€‘end con Flutter antes del switch definitivo. |
+| 1 | `nest new api`, configuraci????n de ESLint/Prettier, m????dulos `health`, `auth`, `users`. Configurar Prisma con PostgreSQL y replicar esquema actual. |
+| 2 | Portar casos de uso de mindfulness, hidrataci????n, diario y recursos. A????adir pruebas con Jest/Supertest, exponer Swagger y consolidar DTOs compartidos. |
+| 3 | Implementar m????dulo `chatbot` que proxee a Ollama, habilitar logging estructurado, preparar pipelines de CI/CD y ejecutar pruebas end????????to????????end con Flutter antes del switch definitivo. |
 
 Durante todo el proceso:
 
 - Cada endpoint portado debe documentarse en `MODERNIZATION_PROGRESS.md`.
-- Se mantendrÃ¡ compatibilidad con FastAPI para no bloquear QA ni las entregas semanales.
+- Se mantendr???? compatibilidad con FastAPI para no bloquear QA ni las entregas semanales.
 
 ---
 
@@ -38,29 +38,29 @@ Durante todo el proceso:
 
 ```
 backend/
-+-- app/                      # FastAPI (producción/staging)
-¦   +-- main.py
-¦   +-- config.py
-¦   +-- database.py
-¦   +-- models.py
-¦   +-- routers/
-¦       +-- auth.py
-¦       +-- diary.py
-¦       +-- hydration.py
-¦       +-- mindfulness.py
-¦       +-- resources.py
++-- app/                      # FastAPI (producci??n/staging)
+??   +-- main.py
+??   +-- config.py
+??   +-- database.py
+??   +-- models.py
+??   +-- routers/
+??       +-- auth.py
+??       +-- diary.py
+??       +-- hydration.py
+??       +-- mindfulness.py
+??       +-- resources.py
 +-- nest/                     # Nuevo stack NestJS
-¦   +-- package.json
-¦   +-- tsconfig*.json
-¦   +-- src/
-¦   ¦   +-- app.module.ts
-¦   ¦   +-- health/
-¦   ¦   +-- auth/
-¦   ¦   +-- mindfulness/
-¦   +-- .env.example
+??   +-- package.json
+??   +-- tsconfig*.json
+??   +-- src/
+??   ??   +-- app.module.ts
+??   ??   +-- health/
+??   ??   +-- auth/
+??   ??   +-- mindfulness/
+??   +-- .env.example
 +-- sql/schema.sql
 +-- tests/
-¦   +-- test_auth.py
+??   +-- test_auth.py
 +-- requirements.txt
 +-- .env.example
 +-- OLLAMA_SETUP.md
@@ -79,7 +79,7 @@ cp .env.example .env              # Ajustar credenciales AWS RDS y JWT
 uvicorn app.main:app --reload --port 8000
 ```
 
-- DocumentaciÃ³n interactiva: `http://localhost:8000/docs`
+- Documentaci????n interactiva: `http://localhost:8000/docs`
 - Pruebas: `pytest`
 - Semillas de datos: `mysql -h <host> -u <user> -p < sql/schema.sql`
 
@@ -94,17 +94,27 @@ cp .env.example .env
 npm run start:dev
 ```
 
+- Configurar Prisma/PostgreSQL:
+  1. Define `DATABASE_URL`, `DEMO_USER_EMAIL`, `JWT_SECRET` y `JWT_EXPIRES_IN` en el `.env`.
+  2. Ejecuta `npm run prisma:generate` para generar el cliente.
+  3. Crea el esquema inicial con `npm run prisma:migrate`.
+  4. Pobla datos base (usuario demo + recursos) con `npm run prisma:seed`.
+- Los m??????dulos `auth`, `diary`, `hydration` y `resources` usan Prisma cuando la conexi??????n est?????? disponible y vuelven a los mocks en memoria si la base de datos no responde.
+
 - API disponible en `http://localhost:4000/api`.
 - Endpoints listos:
   - `GET /api/health`
   - `POST /api/auth/login`
   - `POST /api/auth/signup`
+  - `GET /api/auth/me` (necesita `Authorization: Bearer <token>`)
   - `GET /api/mindfulness/sessions`
   - `GET /api/mindfulness/highlights`
   - `GET /api/hydration/weekly`
   - `POST /api/hydration/register`
   - `GET /api/diary/entries`
   - `POST /api/diary/entries`
+  - `GET /api/chatbot/health`
+  - `POST /api/chatbot/message`
 - Ejecutar pruebas: `npm run test`.
 
 ---
@@ -114,8 +124,8 @@ npm run start:dev
 - **Endpoints FastAPI:**
   - `POST /chatbot/message`
   - `GET /chatbot/health`
-- **MigraciÃ³n:** NestJS aÃ±adirÃ¡ un mÃ³dulo `chatbot` que reutiliza el prompt y fallback actual. Internamente usarÃ¡ `axios` para llamar a Ollama y expondrÃ¡ mÃ©tricas (latencia, estado) para dashboards.
-- **Compatibilidad:** Flutter seguirÃ¡ usando las mismas rutas; el switch serÃ¡ transparente gracias al feature flag mencionado.
+- **Migraci????n:** NestJS a????adir???? un m????dulo `chatbot` que reutiliza el prompt y fallback actual. Internamente usar???? `axios` para llamar a Ollama y expondr???? m????tricas (latencia, estado) para dashboards.
+- **Compatibilidad:** Flutter seguir???? usando las mismas rutas; el switch ser???? transparente gracias al feature flag mencionado.
 
 ---
 
@@ -130,8 +140,8 @@ MYSQL_USER=mirefugio_owner
 MYSQL_PASSWORD=<secreto>
 MYSQL_SSL_CA=./certs/rds-combined-ca-bundle.pem
 
-# AutenticaciÃ³n
-JWT_SECRET=<cÃ¡mbialo>
+# Autenticaci????n
+JWT_SECRET=<c????mbialo>
 JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRES_MIN=60
 
@@ -140,7 +150,7 @@ OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=llama3.2:3b-instruct-q4_K_M
 ```
 
-Al migrar a NestJS se aÃ±adirÃ¡ un archivo `.env.sample` equivalente con variables `POSTGRES_*` y `REDIS_URL` (para rate limiting).
+Al migrar a NestJS se a????adir???? un archivo `.env.sample` equivalente con variables `POSTGRES_*` y `REDIS_URL` (para rate limiting).
 
 ---
 
@@ -152,21 +162,30 @@ Al migrar a NestJS se aÃ±adirÃ¡ un archivo `.env.sample` equivalente con var
 4. Configurar GitHub Actions:
    - Lint + pruebas.
    - Build/push a ECR.
-   - Deploy a ECS Fargate o Lambda (para NestJS se evaluarÃ¡ serverless).
+   - Deploy a ECS Fargate o Lambda (para NestJS se evaluar???? serverless).
 
 ---
 
 ## Tareas pendientes
 
-- [ ] Crear rama `feature/nest-migration` y subir scaffold NestJS.
-- [ ] Documentar estrategia de migraciÃ³n de datos MySQL â†’ PostgreSQL (dump + import).
-- [ ] Replicar endpoints `/mindfulness`, `/hydration`, `/diary`, `/resources` en NestJS.
-- [ ] AÃ±adir mÃ©tricas y alertas para el mÃ³dulo de chatbot (tanto en FastAPI como en NestJS).
-- [ ] DiseÃ±ar prueba endâ€‘toâ€‘end (Flutter Driver o integration_test) que valide autenticaciÃ³n + flujo de chatbot contra NestJS antes del switch final.
+- [x] Crear rama `feature/nest-migration` y subir scaffold NestJS.
+- [x] Documentar estrategia de migracion de datos MySQL -> PostgreSQL (dump + import).
+- [x] Replicar endpoints `/mindfulness`, `/hydration`, `/diary`, `/resources`, `/chatbot` en NestJS (ahora expuestos con Prisma/Ollama y fallback).
+- [ ] Anadir metricas y alertas adicionales para el modulo de chatbot (tanto en FastAPI como en NestJS).
+- [ ] Disenar prueba end-to-end (Flutter Driver o integration_test) que valide autenticacion + flujo de chatbot contra NestJS antes del switch final.
 
 ---
 
-**Ãšltima actualizaciÃ³n:** 2025â€‘11â€‘11  
-**Responsables:** Equipo Backend Mi Refugio (Grupo 6, secciÃ³n 007D).
-\n### ETL y datasets\n- Scripts en \etl/\ generan JSON normalizados (p.ej. recursos profesionales).\n- Ejecuta \python resources_etl.py\ para actualizar \output/resources.json\ y luego sincroniza con \
-est/src/resources/resources.data.json\.
+
+
+**Ultima actualizacion:** 2025-11-19  
+**Responsables:** Equipo Backend Mi Refugio (Grupo 6, seccion 007D).
+
+### ETL y datasets
+- Scripts en `etl/` generan JSON normalizados (por ejemplo recursos profesionales).
+- Ejecuta `python resources_etl.py` para actualizar `output/resources.json` y sincronizarlo con `src/resources/resources.data.json`.
+- Ejecuta `node hydration_etl.js` para producir `output/hydration_reference.json` y copiarlo a `src/hydration/hydration.reference.json` (fallback utilizado por `HydrationService`).
+- Ejecuta `node diary_etl.js` para generar `output/diary_reference.json` y sincronizarlo con `src/diary/diary.reference.json`.
+- Ejecuta `node mindfulness_etl.js` para generar `output/mindfulness_sessions.json` y sincronizarlo con `src/mindfulness/mindfulness.reference.json`.
+
+

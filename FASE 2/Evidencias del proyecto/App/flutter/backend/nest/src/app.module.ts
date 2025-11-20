@@ -7,19 +7,25 @@ import { MindfulnessModule } from './mindfulness/mindfulness.module';
 import { HydrationModule } from './hydration/hydration.module';
 import { DiaryModule } from './diary/diary.module';
 import { ResourcesModule } from './resources/resources.module';
+import { PrismaModule } from './database/prisma.module';
+import { CommonModule } from './common/common.module';
+import { ChatbotModule } from './chatbot/chatbot.module';
 
 @Module({
   imports: [
+    CommonModule,
+    PrismaModule,
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig]
+      load: [appConfig],
     }),
     HealthModule,
     AuthModule,
     MindfulnessModule,
     HydrationModule,
     DiaryModule,
-    ResourcesModule
-  ]
+    ResourcesModule,
+    ChatbotModule,
+  ],
 })
 export class AppModule {}

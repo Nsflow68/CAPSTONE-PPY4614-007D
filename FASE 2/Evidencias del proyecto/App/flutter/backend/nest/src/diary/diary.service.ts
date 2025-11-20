@@ -1,54 +1,55 @@
-import { Injectable } from '@nestjs/common';
+﻿import { Injectable } from '@nestjs/common';
+import { DiaryEntry as DiaryEntryModel, Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
+import { DemoUserService } from '../common/demo-user.service';
+import { PrismaService } from '../database/prisma.service';
 import { DiaryEntryDto } from './dto/diary-entry.dto';
 import { DiaryFilterDto } from './dto/diary-filter.dto';
 import { CreateDiaryEntryDto } from './dto/create-diary-entry.dto';
+import diaryReference from './diary.reference.json';
 
 @Injectable()
 export class DiaryService {
-  private entries: DiaryEntryDto[] = [
-    {
-      id: '1',
-      title: 'Amanecer agradecido',
-      content:
-        'Inicié el día con respiraciones suaves y escribí tres cosas que valoro.',
-      mood: 'Calma',
-      score: 7,
-      moodText: 'Te sentiste en calma y con gratitud.',
-      date: this.dateOnly(-0),
-      createdAt: new Date().toISOString(),
-      emotions: ['Gratitud', 'Calma', 'Esperanza'],
-      tags: ['gratitud', 'rutina']
-    },
-    {
-      id: '2',
-      title: 'Pequeños logros',
-      content:
-        'Cerré pendientes de la universidad y me premié con una caminata corta.',
-      mood: 'Motivado',
-      score: 8,
-      moodText: 'Reconociste avances concretos.',
-      date: this.dateOnly(-1),
-      createdAt: this.isoHoursAgo(18),
-      emotions: ['Orgullo', 'Motivación'],
-      tags: ['estudios', 'logros']
-    },
-    {
-      id: '3',
-      title: 'Tarde desafiante',
-      content:
-        'Sentí ansiedad en una reunión difícil, pero pedí una pausa y hablé con sinceridad.',
-      mood: 'Ansiedad',
-      score: 4,
-      moodText: 'Hubo tensión pero encontraste alivio.',
-      date: this.dateOnly(-2),
-      createdAt: this.isoHoursAgo(36),
-      emotions: ['Ansiedad', 'Alivio'],
-      tags: ['trabajo', 'autocuidado']
-    }
-  ];
+  private readonly dataset = diaryReference as { items: DiaryEntryDto[] };
+  private entries: DiaryEntryDto[] = this.dataset.items.map((entry) => ({ ...entry }));
 
-  listEntries(filters: DiaryFilterDto) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly demoUser: DemoUserService,
+  ) {}
+
+  async listEntries(filters: DiaryFilterDto) {
+    if (this.prisma.isHealthy) {
+      const userId = await this.demoUser.getUserId();
+      const conditions: Prisma.DiaryEntryWhereInput[] = [{ userId }];
+
+      if (filters.from) {
+        conditions.push({ date: { gte: new Date(filters.from) } });
+      }
+      if (filters.to) {
+        conditions.push({ date: { lte: new Date(filters.to) } });
+      }
+      if (filters.mood) {
+        conditions.push({
+          mood: { equals: filters.mood, mode: 'insensitive' },
+        });
+      }
+
+      const where: Prisma.DiaryEntryWhereInput = { AND: conditions };
+      const [items, total] = await this.prisma.$transaction([
+        this.prisma.diaryEntry.findMany({
+          where,
+          orderBy: { date: 'desc' },
+        }),
+        this.prisma.diaryEntry.count({ where }),
+      ]);
+
+      return {
+        total,
+        items: items.map((entry) => this.mapFromModel(entry)),
+      };
+    }
+
     let items = [...this.entries];
     if (filters.from) {
       items = items.filter((entry) => entry.date >= filters.from!);
@@ -57,20 +58,34 @@ export class DiaryService {
       items = items.filter((entry) => entry.date <= filters.to!);
     }
     if (filters.mood) {
-      items = items.filter(
-        (entry) => entry.mood.toLowerCase() === filters.mood!.toLowerCase()
-      );
+      items = items.filter((entry) => entry.mood.toLowerCase() === filters.mood!.toLowerCase());
     }
 
-    return {
-      total: items.length,
-      items
-    };
+    return { total: items.length, items };
   }
 
-  createEntry(dto: CreateDiaryEntryDto) {
+  async createEntry(dto: CreateDiaryEntryDto) {
+    if (this.prisma.isHealthy) {
+      const userId = await this.demoUser.getUserId();
+      const entry = await this.prisma.diaryEntry.create({
+        data: {
+          userId,
+          title: dto.title,
+          content: dto.content,
+          mood: dto.mood,
+          score: dto.score,
+          moodText: dto.moodText,
+          date: new Date(dto.date),
+          emotions: dto.emotions,
+          tags: dto.tags,
+        },
+      });
+
+      return this.mapFromModel(entry);
+    }
+
     const entry: DiaryEntryDto = {
-      id: randomUUID(),
+      id: this.randomId(),
       title: dto.title,
       content: dto.content,
       mood: dto.mood,
@@ -79,22 +94,29 @@ export class DiaryService {
       date: dto.date,
       createdAt: new Date().toISOString(),
       emotions: dto.emotions,
-      tags: dto.tags
+      tags: dto.tags,
     };
 
     this.entries = [entry, ...this.entries];
     return entry;
   }
 
-  private dateOnly(daysAgo: number) {
-    const date = new Date();
-    date.setDate(date.getDate() - daysAgo);
-    return date.toISOString().substring(0, 10);
+  private mapFromModel(entry: DiaryEntryModel): DiaryEntryDto {
+    return {
+      id: entry.id,
+      title: entry.title,
+      content: entry.content,
+      mood: entry.mood,
+      score: entry.score,
+      moodText: entry.moodText ?? '',
+      date: entry.date.toISOString().substring(0, 10),
+      createdAt: entry.createdAt.toISOString(),
+      emotions: entry.emotions,
+      tags: entry.tags,
+    };
   }
 
-  private isoHoursAgo(hours: number) {
-    const date = new Date();
-    date.setHours(date.getHours() - hours);
-    return date.toISOString();
+  private randomId() {
+    return randomUUID();
   }
 }

@@ -22,7 +22,7 @@ class MainShell extends StatelessWidget {
     final items = [
       const _NavItem(icon: Icons.home_rounded, label: 'Inicio'),
       const _NavItem(icon: Icons.menu_book_rounded, label: 'Diario'),
-      const _NavItem(icon: Icons.emoji_events_rounded, label: 'Logros'),
+      const _NavItem(icon: Icons.smart_toy_rounded, label: 'ChatBot'),
       const _NavItem(icon: Icons.person_rounded, label: 'Perfil'),
     ];
     final theme = Theme.of(context);

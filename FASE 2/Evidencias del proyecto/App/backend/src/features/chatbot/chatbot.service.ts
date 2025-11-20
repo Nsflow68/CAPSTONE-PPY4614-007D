@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+ï»¿import { Injectable } from '@nestjs/common';
 
-interface ChatMessage {
+export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
@@ -13,7 +13,7 @@ export class ChatbotService {
     {
       id: '1',
       role: 'assistant',
-      content: 'Hola, soy tu compañero emocional. ¿Cómo te sientes hoy?',
+      content: 'Hola, soy tu compaÃ±ero emocional. Â¿CÃ³mo te sientes hoy?',
       createdAt: new Date().toISOString(),
     },
   ];
@@ -44,11 +44,12 @@ export class ChatbotService {
   private generateResponse(message: string): string {
     const text = message.toLowerCase();
     if (text.includes('ansiedad')) {
-      return 'Respira conmigo: inhala cuatro tiempos, mantén cuatro y exhala en seis. Puedes revisar la sección de Mindfulness para más ejercicios.';
+      return 'Respira conmigo: inhala cuatro tiempos, mantÃ©n cuatro y exhala en seis. Puedes revisar la secciÃ³n de Mindfulness para mÃ¡s ejercicios.';
     }
-    if (text.includes('estres') || text.includes('estrés')) {
-      return 'Te sugiero una pausa consciente. Escribe en tu diario qué detonó la sensación y prueba con la rutina de respiración 4-7-8.';
+    if (text.includes('estres') || text.includes('estrÃ©s')) {
+      return 'Te sugiero una pausa consciente. Escribe en tu diario quÃ© detonÃ³ la sensaciÃ³n y prueba con la rutina de respiraciÃ³n 4-7-8.';
     }
-    return 'Gracias por compartirlo. Estoy aquí para escucharte y darte recursos profesionales cuando lo necesites.';
+    return 'Gracias por compartirlo. Estoy aquÃ­ para escucharte y darte recursos profesionales cuando lo necesites.';
   }
 }
+

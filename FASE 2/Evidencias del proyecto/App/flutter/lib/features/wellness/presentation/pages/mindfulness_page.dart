@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../shared/constants/app_gradients.dart';
 import '../../../../shared/constants/app_shadows.dart';
+import '../../../../shared/data/mindfulness_audio_resources.dart';
 import '../../../../shared/models/mindfulness_session.dart';
 import '../../../../shared/models/mindfulness_summary.dart';
 import '../../application/mindfulness_providers.dart';
@@ -129,6 +131,10 @@ class _MindfulnessContent extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
       children: [
         _MindfulnessHeader(summary: summary),
+        const SizedBox(height: 24),
+        _MindfulnessAudioSection(
+          onOpenResource: (url) => _launchExternal(context, url),
+        ),
         const SizedBox(height: 24),
         for (final session in sessions)
           _SessionCard(
@@ -308,6 +314,136 @@ class _MindfulnessHeader extends StatelessWidget {
                 subtitle: focusSubtitle,
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MindfulnessAudioSection extends StatelessWidget {
+  const _MindfulnessAudioSection({required this.onOpenResource});
+
+  final Future<void> Function(String url) onOpenResource;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Audios guiados verificados',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 12),
+        for (final resource in mindfulnessAudioResources)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _AudioResourceCard(
+              resource: resource,
+              onOpenResource: onOpenResource,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _AudioResourceCard extends StatefulWidget {
+  const _AudioResourceCard({required this.resource, required this.onOpenResource});
+
+  final MindfulnessAudioResource resource;
+  final Future<void> Function(String url) onOpenResource;
+
+  @override
+  State<_AudioResourceCard> createState() => _AudioResourceCardState();
+}
+
+class _AudioResourceCardState extends State<_AudioResourceCard> {
+  late final AudioPlayer _player;
+  bool _isPlaying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _player = AudioPlayer()..setReleaseMode(ReleaseMode.stop);
+    _player.onPlayerComplete.listen((_) {
+      if (mounted) {
+        setState(() => _isPlaying = false);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _player.dispose();
+    super.dispose();
+  }
+
+  Future<void> _togglePlay() async {
+    if (_isPlaying) {
+      await _player.stop();
+      if (mounted) setState(() => _isPlaying = false);
+      return;
+    }
+    await _player.play(AssetSource(widget.resource.assetPath));
+    if (mounted) setState(() => _isPlaying = true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: AppShadows.soft,
+      ),
+      child: Row(
+        children: [
+          IconButton.filled(
+            onPressed: _togglePlay,
+            icon: Icon(_isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.resource.title,
+                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  widget.resource.subtitle,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.textTheme.bodySmall?.color,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  widget.resource.duration,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () => widget.onOpenResource(widget.resource.sourceUrl),
+                  icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                  label: Text(widget.resource.sourceLabel),
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(0, 32),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

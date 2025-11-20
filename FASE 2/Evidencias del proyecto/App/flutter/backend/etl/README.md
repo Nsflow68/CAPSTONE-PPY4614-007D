@@ -23,12 +23,25 @@ python resources_etl.py
 - El script elimina duplicados, normaliza categorías y genera un hash `id`.
 - Una vez validado, copia el JSON a `backend/nest/src/resources/resources.data.json` o súbelo a un bucket/CDN si se automatiza.
 
+## Pipeline de hidratación (MINSAL)
+
+Genera un dataset semanal promedio en mililitros que funciona como fallback para el backend NestJS cuando Prisma no está disponible.
+
+```bash
+cd "FASE 2/Evidencias del proyecto/App/flutter/backend/etl"
+node hydration_etl.js
+```
+
+- Entrada: `data/raw/hydration_sample.csv` (fecha, grupo, género, ingesta y meta en ml).
+- Salida: `output/hydration_reference.json`.
+- El script copia automáticamente el resultado a `../nest/src/hydration/hydration.reference.json`, usado por `HydrationService`.
+
 ## Próximas pipelines
 
 | Dataset | Script | Estado |
 |---------|--------|--------|
-| Hidratación (MINSAL) | `hydration_etl.py` | Pendiente |
-| Diario (anonimizado) | `diary_etl.py` | Pendiente |
-| Estadísticas mindfulness OPS | `mindfulness_etl.py` | En diseño |
+| Hidratación (MINSAL) | `hydration_etl.js` | ✅ Genera dataset semanal + copia al backend |
+| Diario (anonimizado) | `diary_etl.js` | ✅ Genera `diary.reference.json` (fallback Nest) |
+| Estadísticas mindfulness OPS | `mindfulness_etl.js` | ✅ Genera `mindfulness.reference.json` (fallback Nest) |
 
 Mantén este folder versionado (sin datos sensibles). Los archivos confidenciales deben subirse encriptados o almacenarse en Secrets Manager.

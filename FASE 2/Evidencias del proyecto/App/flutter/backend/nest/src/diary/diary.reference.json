@@ -1,0 +1,96 @@
+{
+  "generatedAt": "2025-11-19T19:23:12.840Z",
+  "items": [
+    {
+      "id": "entry-1",
+      "title": "Mañana agradecida",
+      "content": "\"Empecé el día escribiendo tres cosas buenas y respirando profundo.\"",
+      "mood": "Calma",
+      "score": 7,
+      "moodText": "Respiraste con calma y gratitud.",
+      "date": "2025-11-18",
+      "createdAt": "2025-11-18T08:00:00.000Z",
+      "emotions": [
+        "gratitud",
+        "calma",
+        "esperanza"
+      ],
+      "tags": [
+        "gratitud",
+        "rutina"
+      ]
+    },
+    {
+      "id": "entry-2",
+      "title": "Estudio con foco",
+      "content": "\"Cerré un informe y luego caminé para despejar la mente.\"",
+      "mood": "Motivado",
+      "score": 8,
+      "moodText": "Notaste avances claros.",
+      "date": "2025-11-17",
+      "createdAt": "2025-11-17T08:00:00.000Z",
+      "emotions": [
+        "orgullo",
+        "motivación"
+      ],
+      "tags": [
+        "estudios",
+        "logros"
+      ]
+    },
+    {
+      "id": "entry-3",
+      "title": "Tarde desafiante",
+      "content": "\"Me sentí ansioso en una reunión difícil pero pedí una pausa.\"",
+      "mood": "Ansiedad",
+      "score": 4,
+      "moodText": "Pudiste reconocer la tensión y buscar apoyo.",
+      "date": "2025-11-16",
+      "createdAt": "2025-11-16T08:00:00.000Z",
+      "emotions": [
+        "ansiedad",
+        "alivio"
+      ],
+      "tags": [
+        "trabajo",
+        "autocuidado"
+      ]
+    },
+    {
+      "id": "entry-4",
+      "title": "Conversación honesta",
+      "content": "\"Hablé con mi familia sobre cómo me siento y fue liberador.\"",
+      "mood": "Alivio",
+      "score": 6,
+      "moodText": "Compartiste tus emociones con confianza.",
+      "date": "2025-11-15",
+      "createdAt": "2025-11-15T08:00:00.000Z",
+      "emotions": [
+        "alivio",
+        "confianza"
+      ],
+      "tags": [
+        "familia",
+        "apoyo"
+      ]
+    },
+    {
+      "id": "entry-5",
+      "title": "Micro logro",
+      "content": "\"Organicé mi espacio de estudio y me sentí más ligero.\"",
+      "mood": "Satisfecho",
+      "score": 7,
+      "moodText": "Orden mental para seguir.",
+      "date": "2025-11-14",
+      "createdAt": "2025-11-14T08:00:00.000Z",
+      "emotions": [
+        "satisfacción",
+        "calma"
+      ],
+      "tags": [
+        "orden",
+        "estudios"
+      ]
+    }
+  ]
+}

@@ -5,6 +5,6 @@ import { HydrationService } from './hydration.service';
 @Module({
   controllers: [HydrationController],
   providers: [HydrationService],
-  exports: [HydrationService]
+  exports: [HydrationService],
 })
 export class HydrationModule {}

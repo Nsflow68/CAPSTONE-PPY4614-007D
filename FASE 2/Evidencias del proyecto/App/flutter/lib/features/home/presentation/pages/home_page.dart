@@ -1,11 +1,7 @@
-﻿import 'dart:math' as math;
-
-import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:video_player/video_player.dart';
 
 import '../../../../shared/constants/app_colors.dart';
 import '../../../../shared/constants/app_gradients.dart';
@@ -13,12 +9,14 @@ import '../../../../shared/constants/emotion_palette.dart';
 import '../../../../shared/constants/app_shadows.dart';
 import '../../../../shared/data/hydration_guidelines.dart';
 import '../../../../shared/models/hydration_daily_intake.dart';
+import '../../../../shared/utils/responsive_layout.dart';
 import '../../../onboarding/presentation/widgets/user_journey_banner.dart';
 import '../../../rewards/application/reward_provider.dart';
 import '../../../rewards/application/reward_state.dart';
 import '../../../rewards/presentation/widgets/reward_tile.dart';
 import '../../../wellness/application/hydration_providers.dart';
 import '../../../diary/application/diary_highlights_provider.dart';
+import '../../application/home_mood_provider.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -38,272 +36,217 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final rewardState = ref.watch(rewardProvider);
     final hydrationSummary = ref.watch(hydrationSummaryProvider);
+    final layout = ResponsiveLayout.of(context);
+    final moodHighlight = ref.watch(homeMoodProvider);
 
     return Scaffold(
       body: DecoratedBox(
         decoration: const BoxDecoration(gradient: AppGradients.softBackground),
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(
-              child: _HomeHeader(
-                onGuideTap: () => context.go('/guide'),
-                onRewardsTap: () => context.go('/home/rewards'),
-              ),
-            ),
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.only(top: 12, bottom: 8),
-                child: _EmotionCarousel(),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 24),
-                    UserJourneyBanner(
-                      highlight:
-                          'Descubre cómo usar Inicio, Diario, Chatbot y Perfil con recomendaciones personalizadas.',
-                      onOpenGuide: () => context.go('/guide'),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: layout.maxContentWidth),
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: layout.horizontalPadding,
                     ),
-                    const SizedBox(height: 16),
-                    _RewardSection(
-                      state: rewardState,
-                      onViewAll: () => context.go('/home/rewards'),
+                    child: _HomeHeader(
+                      highlight: moodHighlight,
+                      onGuideTap: () => context.go('/guide'),
+                      onDiaryTap: () => context.go('/diary'),
+                      onRewardsTap: () => context.go('/home/rewards'),
                     ),
-                    const SizedBox(height: 20),
-                    _QuickActions(
-                      onHydration: () => context.go('/home/hydration'),
-                      onMindfulness: () => context.go('/home/mindfulness'),
-                      onResources: () => context.go('/home/resources'),
-                      onDiary: () => context.go('/diary'),
-                      onChatbot: () => context.go('/chatbot'),
-                    ),
-                    const SizedBox(height: 24),
-                    _HydrationSection(hydrationSummary: hydrationSummary),
-                    const SizedBox(height: 24),
-                    const _WellnessGuides(),
-                    const SizedBox(height: 36),
-                  ],
+                  ),
                 ),
-              ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      top: 12,
+                      bottom: 8,
+                      left: layout.horizontalPadding,
+                      right: layout.horizontalPadding,
+                    ),
+                    child: const _EmotionCarousel(),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: layout.horizontalPadding,
+                    ),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 24),
+                        UserJourneyBanner(
+                          highlight:
+                              'Descubre cómo usar Inicio, Diario, Chatbot y Perfil con recomendaciones personalizadas.',
+                          onOpenGuide: () => context.go('/guide'),
+                        ),
+                        const SizedBox(height: 16),
+                        _DailyEmotionCard(
+                          highlight: moodHighlight,
+                          onRegister: () => context.go('/diary/entry/new'),
+                          onViewHistory: () => context.go('/diary'),
+                        ),
+                        const SizedBox(height: 16),
+                        _RewardSection(
+                          state: rewardState,
+                          onViewAll: () => context.go('/home/rewards'),
+                        ),
+                        const SizedBox(height: 20),
+                        _QuickActions(
+                          onHydration: () => context.go('/home/hydration'),
+                          onMindfulness: () => context.go('/home/mindfulness'),
+                          onResources: () => context.go('/home/resources'),
+                          onDiary: () => context.go('/diary'),
+                          onChatbot: () => context.go('/chatbot'),
+                        ),
+                        const SizedBox(height: 24),
+                        _HydrationSection(
+                          hydrationSummary: hydrationSummary,
+                          onViewDetails: () => context.go('/home/hydration'),
+                          onRefresh: () => ref.invalidate(hydrationSummaryProvider),
+                        ),
+                        const SizedBox(height: 24),
+                        const _WellnessGuides(),
+                        const SizedBox(height: 36),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
+
+
 }
 
 
-class _HomeHeader extends StatefulWidget {
-  const _HomeHeader({required this.onGuideTap, required this.onRewardsTap});
+class _HomeHeader extends StatelessWidget {
+  const _HomeHeader({
+    required this.highlight,
+    required this.onGuideTap,
+    required this.onDiaryTap,
+    required this.onRewardsTap,
+  });
 
+  final HomeMoodHighlight highlight;
   final VoidCallback onGuideTap;
+  final VoidCallback onDiaryTap;
   final VoidCallback onRewardsTap;
-
-  @override
-  State<_HomeHeader> createState() => _HomeHeaderState();
-}
-
-class _HomeHeaderState extends State<_HomeHeader> with SingleTickerProviderStateMixin {
-  late final VideoPlayerController _videoController;
-  bool _videoReady = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _videoController = VideoPlayerController.asset('assets/videos/pantalla_carga.mp4')
-      ..setLooping(true)
-      ..setVolume(0)
-      ..initialize().then((_) {
-        if (!mounted) return;
-        setState(() => _videoReady = true);
-        _videoController.play();
-      });
-  }
-
-  @override
-  void dispose() {
-    _videoController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return SizedBox(
-      height: 360,
-      child: Stack(
+    return Container(
+      height: 340,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: highlight.gradient,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(48),
+          bottomRight: Radius.circular(48),
+        ),
+        boxShadow: AppShadows.soft,
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 48, 24, 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Positioned.fill(
-            child: ClipRRect(
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(48),
-                bottomRight: Radius.circular(48),
-              ),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (_videoReady && _videoController.value.isInitialized)
-                    FittedBox(
-                      fit: BoxFit.cover,
-                      child: SizedBox(
-                        width: _videoController.value.size.width,
-                        height: _videoController.value.size.height,
-                        child: VideoPlayer(_videoController),
-                      ),
-                    )
-                  else
-                    const DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFF7F79F9), Color(0xFF8BE1D0)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+          SafeArea(
+            bottom: false,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        highlight.title,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                    ),
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.black.withValues(alpha: 0.15),
-                          Colors.black.withValues(alpha: 0.6),
-                        ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
+                      const SizedBox(height: 6),
+                      Text(
+                        highlight.subtitle,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          height: 1.4,
+                        ),
                       ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            right: 24,
-            top: 32,
-            child: AnimatedScale(
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeOutBack,
-              scale: _videoReady ? 1 : 0.92,
-              child: Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(32),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    width: 1.2,
+                    ],
                   ),
                 ),
-                child: const Icon(Icons.slow_motion_video_rounded, color: Colors.white, size: 36),
-              ),
+                IconButton(
+                  onPressed: onGuideTap,
+                  icon: const Icon(Icons.auto_stories_rounded, color: Colors.white),
+                  tooltip: 'Guía interactiva',
+                ),
+              ],
             ),
           ),
-          Positioned.fill(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SafeArea(
-                    bottom: false,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Mi Refugio',
-                                style: theme.textTheme.headlineSmall?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                'Acompañamiento emocional + hábitos guiados con historias y video introductorio.',
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  height: 1.3,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: widget.onGuideTap,
-                          icon: const Icon(Icons.map_rounded, color: Colors.white),
-                          tooltip: 'Guía interactiva',
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Plan de bienestar diario',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Activa recordatorios, revisa tus últimas emociones y continúa donde te quedaste.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.92),
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: const [
-                      _HeroChip(icon: Icons.self_improvement_rounded, label: 'Mindfulness'),
-                      _HeroChip(icon: Icons.water_drop_rounded, label: 'Hidratación'),
-                      _HeroChip(icon: Icons.menu_book_rounded, label: 'Diario'),
-                      _HeroChip(icon: Icons.forum_rounded, label: 'Refu Bot'),
-                    ],
-                  ),
-                  const Spacer(),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: FilledButton.icon(
-                          onPressed: widget.onRewardsTap,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: AppColors.primary,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            textStyle: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-                          ),
-                          icon: const Icon(Icons.emoji_events_rounded),
-                          label: const Text('Ver logros'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton(
-                        onPressed: widget.onGuideTap,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white.withValues(alpha: 0.18),
-                          foregroundColor: Colors.white,
-                          shape: const CircleBorder(),
-                          padding: const EdgeInsets.all(16),
-                        ),
-                        child: const Icon(Icons.play_arrow_rounded),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+          const SizedBox(height: 16),
+          Text(
+            'Plan de bienestar diario',
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
             ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Activa recordatorios, revisa emociones recientes y continúa tu rutina.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: Colors.white.withValues(alpha: 0.9),
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              _StatChip(label: highlight.scoreLabel, icon: Icons.favorite_rounded),
+              _StatChip(label: highlight.dateLabel, icon: Icons.calendar_month_rounded),
+            ],
+          ),
+          const Spacer(),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: onDiaryTap,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  icon: const Icon(Icons.edit_note_rounded),
+                  label: Text(highlight.hasEntry ? 'Registrar otra' : 'Registrar emoción'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton.tonalIcon(
+                  onPressed: onRewardsTap,
+                  icon: const Icon(Icons.emoji_events_rounded),
+                  label: const Text('Ver logros'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -311,23 +254,20 @@ class _HomeHeaderState extends State<_HomeHeader> with SingleTickerProviderState
   }
 }
 
-class _HeroChip extends StatelessWidget {
-  const _HeroChip({required this.icon, required this.label});
+class _StatChip extends StatelessWidget {
+  const _StatChip({required this.label, required this.icon});
 
-  final IconData icon;
   final String label;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: const BoxDecoration(
-        color: Color(0x29FFFFFF),
-        borderRadius: BorderRadius.all(Radius.circular(32)),
-        border: Border.fromBorderSide(
-          BorderSide(color: Color(0x33FFFFFF)),
-        ),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -336,10 +276,127 @@ class _HeroChip extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             label,
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DailyEmotionCard extends StatelessWidget {
+  const _DailyEmotionCard({
+    required this.highlight,
+    required this.onRegister,
+    required this.onViewHistory,
+  });
+
+  final HomeMoodHighlight highlight;
+  final VoidCallback onRegister;
+  final VoidCallback onViewHistory;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            highlight.gradient.first.withValues(alpha: 0.12),
+            highlight.gradient.last.withValues(alpha: 0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: highlight.gradient.last.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: Colors.white,
+                child: Text(
+                  highlight.emoji,
+                  style: const TextStyle(fontSize: 22),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      highlight.hasEntry
+                          ? 'Última emoción registrada'
+                          : 'Registra tu emoción de hoy',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      highlight.scoreLabel,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (highlight.emotions.isNotEmpty)
+            Wrap(
+              spacing: 10,
+              runSpacing: 8,
+              children: highlight.emotions
+                  .take(4)
+                  .map(
+                    (emotion) => Chip(
+                      label: Text(emotion),
+                      backgroundColor: Colors.white,
+                      labelStyle: theme.textTheme.labelLarge?.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  )
+                  .toList(),
+            )
+          else
+            Text(
+              'Comienza con una nota breve para ver tus logros diarios.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.textSecondary,
+              ),
             ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton(
+                  onPressed: onRegister,
+                  child: Text(highlight.hasEntry ? 'Registrar otra' : 'Registrar emoción'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              TextButton(
+                onPressed: onViewHistory,
+                child: const Text('Ver historial'),
+              ),
+            ],
           ),
         ],
       ),
@@ -831,6 +888,390 @@ class _RewardError extends StatelessWidget {
   }
 }
 
+class _HydrationSection extends StatelessWidget {
+  const _HydrationSection({
+    required this.hydrationSummary,
+    required this.onViewDetails,
+    required this.onRefresh,
+  });
+
+  final AsyncValue<List<HydrationDailyIntake>> hydrationSummary;
+  final VoidCallback onViewDetails;
+  final VoidCallback onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    return hydrationSummary.when(
+      data: (entries) => _HydrationContent(
+        entries: entries,
+        onViewDetails: onViewDetails,
+      ),
+      loading: () => const _HydrationPlaceholder(isLoading: true),
+      error: (error, __) => _HydrationPlaceholder(
+        message: 'No pudimos sincronizar tus datos, intenta nuevamente.',
+        onRetry: onRefresh,
+      ),
+    );
+  }
+}
+
+class _HydrationContent extends StatelessWidget {
+  const _HydrationContent({
+    required this.entries,
+    required this.onViewDetails,
+  });
+
+  final List<HydrationDailyIntake> entries;
+  final VoidCallback onViewDetails;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final layout = ResponsiveLayout.of(context);
+    final today = DateUtils.dateOnly(DateTime.now());
+    final todayEntry = entries.firstWhere(
+      (entry) => DateUtils.isSameDay(entry.date, today),
+      orElse: () => HydrationDailyIntake(
+        date: today,
+        goalMl: 2000,
+      ),
+    );
+    final goalMl = todayEntry.goalMl ?? 2000;
+    final consumedMl = todayEntry.totalMl;
+    final goalLiters = goalMl / 1000;
+    final consumedLiters = (consumedMl / 1000).clamp(0.0, 99.0);
+    final remainingMl = goalMl - consumedMl;
+    final remainingLiters = remainingMl <= 0 ? 0 : remainingMl / 1000;
+    final completedDays =
+        entries.where((entry) => entry.goalMl != null && entry.progress >= 1).length;
+    final progress = goalMl == 0 ? 0.0 : (consumedMl / goalMl).clamp(0.0, 1.2);
+    final hasEntries = entries.isNotEmpty;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(layout.isExpanded ? 28 : 20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFCDEBFF), Color(0xFFE7E0FF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: AppShadows.soft,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Hidratación semanal',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Hoy llevas ${consumedLiters.toStringAsFixed(1)} L de ${goalLiters.toStringAsFixed(1)} L.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 18),
+              Container(
+                height: layout.isCompact ? 82 : 96,
+                width: layout.isCompact ? 82 : 96,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(26),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Image.asset(
+                    'assets/images/mascot/pose4.png',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: LinearProgressIndicator(
+              value: progress.clamp(0.0, 1.0),
+              minHeight: 10,
+              backgroundColor: Colors.white.withValues(alpha: 0.35),
+              valueColor: const AlwaysStoppedAnimation(AppColors.primary),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            '${(progress * 100).clamp(0, 120).toStringAsFixed(0)}% del objetivo diario cubierto',
+            style: theme.textTheme.labelMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _HydrationMetricChip(
+                icon: Icons.flag_rounded,
+                label: 'Meta ${goalLiters.toStringAsFixed(1)} L',
+              ),
+              _HydrationMetricChip(
+                icon: Icons.water_drop_rounded,
+                label: remainingLiters <= 0
+                    ? 'Meta cumplida ?'
+                    : 'Faltan ${remainingLiters.toStringAsFixed(1)} L',
+              ),
+              _HydrationMetricChip(
+                icon: Icons.star_rounded,
+                label: '$completedDays/7 días al día',
+              ),
+            ],
+          ),
+          if (hasEntries) ...[
+            const SizedBox(height: 22),
+            _HydrationBar(entries: entries),
+          ] else ...[
+            const SizedBox(height: 18),
+            Text(
+              'Aún no registras ingestas esta semana. Ve al módulo para comenzar.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+          const SizedBox(height: 20),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: onViewDetails,
+              label: const Text('Abrir registro de hidratación'),
+              icon: const Icon(Icons.open_in_new_rounded, size: 18),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HydrationBar extends StatelessWidget {
+  const _HydrationBar({required this.entries});
+
+  final List<HydrationDailyIntake> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    if (entries.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final ordered = List<HydrationDailyIntake>.from(entries)
+      ..sort((a, b) => a.date.compareTo(b.date));
+    var maxGoal = 0.0;
+    for (final entry in ordered) {
+      final goal = entry.goalMl ?? 0;
+      if (goal > maxGoal) {
+        maxGoal = goal;
+      }
+      if (entry.totalMl > maxGoal) {
+        maxGoal = entry.totalMl;
+      }
+    }
+    maxGoal = maxGoal == 0 ? 2000 : maxGoal;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        for (final entry in ordered)
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    height: 88,
+                    alignment: Alignment.bottomCenter,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 400),
+                        curve: Curves.easeOutCubic,
+                        width: 16,
+                        height: (entry.totalMl / maxGoal).clamp(0.0, 1.0) * 88,
+                        decoration: const BoxDecoration(
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(12),
+                            topRight: Radius.circular(12),
+                          ),
+                          gradient: LinearGradient(
+                            colors: [Color(0xFF6F8BFF), Color(0xFF50E3FF)],
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    _shortLabel(entry.dateLabel),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.4,
+                      color: AppColors.textPrimary.withValues(alpha: 0.75),
+                    ),
+                  ),
+                  Text(
+                    '${(entry.totalMl / 1000).toStringAsFixed(1)} L',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: AppColors.textSecondary.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  static String _shortLabel(String label) {
+    if (label.length <= 2) {
+      return label.toUpperCase();
+    }
+    return label.substring(0, 2).toUpperCase();
+  }
+}
+
+class _HydrationPlaceholder extends StatelessWidget {
+  const _HydrationPlaceholder({this.isLoading = false, this.message, this.onRetry});
+
+  final bool isLoading;
+  final String? message;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: AppShadows.soft,
+      ),
+      child: Row(
+        children: [
+          Container(
+            height: 56,
+            width: 56,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Center(
+              child: isLoading
+                  ? const SizedBox(
+                      height: 28,
+                      width: 28,
+                      child: CircularProgressIndicator(strokeWidth: 3),
+                    )
+                  : const Icon(
+                      Icons.water_drop_rounded,
+                      color: AppColors.primary,
+                    ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isLoading
+                      ? 'Sincronizando tu rutina de agua...'
+                      : (message ?? 'Consulta tu progreso de hidratación aquí.'),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  isLoading
+                      ? 'Ajustando recomendaciones según tu actividad.'
+                      : 'Valida tu conexión y vuelve a intentar si el problema persiste.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (!isLoading && onRetry != null)
+            TextButton(onPressed: onRetry, child: const Text('Reintentar')),
+        ],
+      ),
+    );
+  }
+}
+
+class _HydrationMetricChip extends StatelessWidget {
+  const _HydrationMetricChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: AppColors.primary),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _QuickActions extends StatelessWidget {
   const _QuickActions({
     required this.onHydration,
@@ -849,361 +1290,230 @@ class _QuickActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final layout = ResponsiveLayout.of(context);
+    final cards = [
+      _HabitCardData(
+        title: 'Mindfulness',
+        subtitle: 'Respira, medita y mu?vete consciente.',
+        gradient: const [Color(0xFF9478FF), Color(0xFFB59BFF)],
+        asset: 'assets/images/mascot/pose2.png',
+        onTap: onMindfulness,
+      ),
+      _HabitCardData(
+        title: 'Alimentaci?n',
+        subtitle: 'Monitorea macros y descubre recetas.',
+        gradient: const [Color(0xFFFFD3E3), Color(0xFFF9E7CE)],
+        asset: 'assets/images/mascot/pose3.png',
+        onTap: onResources,
+      ),
+      _HabitCardData(
+        title: 'Hidrataci?n',
+        subtitle: 'Mantente al d?a con tu ingesta de agua.',
+        gradient: const [Color(0xFFC6F4FF), Color(0xFFE2F1FF)],
+        asset: 'assets/images/mascot/pose4.png',
+        onTap: onHydration,
+        fullWidth: true,
+      ),
+      _HabitCardData(
+        title: 'ChatBot Refu',
+        subtitle: 'Acompa?amiento emocional en cualquier momento.',
+        gradient: const [Color(0xFFE1DBFF), Color(0xFFECD6FF)],
+        asset: 'assets/images/mascot/pose1.png',
+        onTap: onChatbot,
+      ),
+      _HabitCardData(
+        title: 'Diario emocional',
+        subtitle: 'Registra tus emociones y acompa?a tu progreso.',
+        gradient: const [Color(0xFFEFF3FF), Color(0xFFFDECF4)],
+        asset: 'assets/images/branding/logo_primary.png',
+        onTap: onDiary,
+      ),
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Tus módulos',
+          'H?bitos clave',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
           ),
         ),
         const SizedBox(height: 16),
-        Wrap(
-          spacing: 16,
-          runSpacing: 16,
-          children: [
-            _ModuleCard(
-              title: 'Hidratación',
-              subtitle: 'Registra tu consumo diario y recibe alertas.',
-              gradient: const LinearGradient(
-                colors: [Color(0xFFDEF6FA), Color(0xFFE6E3FF)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              icon: Icons.water_drop_rounded,
-              onTap: onHydration,
-            ),
-            _ModuleCard(
-              title: 'Mindfulness',
-              subtitle: 'Sesiones guiadas y favoritos personalizados.',
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFDE9F5), Color(0xFFE2F4FB)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              icon: Icons.self_improvement_rounded,
-              onTap: onMindfulness,
-            ),
-            _ModuleCard(
-              title: 'Recursos',
-              subtitle: 'Centros de apoyo y material validado.',
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFEEFD7), Color(0xFFEAF6E9)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              icon: Icons.handshake_rounded,
-              onTap: onResources,
-            ),
-            _ModuleCard(
-              title: 'Diario emocional',
-              subtitle: 'Registra cómo te sientes y detecta patrones.',
-              gradient: const LinearGradient(
-                colors: [Color(0xFFEFF3FF), Color(0xFFF7EBFA)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              icon: Icons.menu_book_rounded,
-              onTap: onDiary,
-            ),
-            _ModuleCard(
-              title: 'Habla con Refu',
-              subtitle: 'Tu compañero de bienestar emocional.',
-              gradient: const LinearGradient(
-                colors: [Color(0xFFE8F5E9), Color(0xFFFFF9C4)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              icon: Icons.chat_bubble_rounded,
-              onTap: onChatbot,
-            ),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final maxWidth = constraints.maxWidth;
+            final halfWidth = layout.isCompact ? maxWidth : (maxWidth - 16) / 2;
+            return Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              children: [
+                for (final card in cards)
+                  SizedBox(
+                    width: card.fullWidth ? maxWidth : halfWidth,
+                    child: _HabitCard(data: card),
+                  ),
+              ],
+            );
+          },
         ),
+        const SizedBox(height: 24),
+        _MentalHealthCard(onTap: onResources),
       ],
     );
   }
 }
 
-class _ModuleCard extends StatelessWidget {
-  const _ModuleCard({
+class _HabitCardData {
+  _HabitCardData({
     required this.title,
     required this.subtitle,
     required this.gradient,
-    required this.icon,
+    required this.asset,
     required this.onTap,
+    this.fullWidth = false,
   });
 
   final String title;
   final String subtitle;
-  final Gradient gradient;
-  final IconData icon;
+  final List<Color> gradient;
+  final String asset;
   final VoidCallback onTap;
+  final bool fullWidth;
+}
+
+class _HabitCard extends StatelessWidget {
+  const _HabitCard({required this.data});
+
+  final _HabitCardData data;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final size = MediaQuery.sizeOf(context);
-    final width = size.width > 720
-        ? (size.width - 56) / 3
-        : (size.width - 60) / 2;
-
     return GestureDetector(
-      onTap: onTap,
+      onTap: data.onTap,
       child: Container(
-        width: width.clamp(0, size.width),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          gradient: gradient,
-          borderRadius: BorderRadius.circular(24),
+          gradient: LinearGradient(
+            colors: data.gradient,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(28),
           boxShadow: AppShadows.soft,
         ),
-        child: Column(
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Icon(icon, color: AppColors.primary, size: 28),
-            ),
-            const SizedBox(height: 18),
-            Text(
-              title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              subtitle,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary.withValues(alpha: 0.85),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _HydrationSection extends StatelessWidget {
-  const _HydrationSection({required this.hydrationSummary});
-
-  final AsyncValue<List<HydrationDailyIntake>> hydrationSummary;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Visión rápida de hidratación',
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: 16),
-        hydrationSummary.when(
-          data: (items) => _HydrationChart(items: items),
-          loading: () => Container(
-            height: 220,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: AppShadows.soft,
-            ),
-            child: const Center(child: CircularProgressIndicator()),
-          ),
-          error: (error, _) => const _HydrationError(
-            message: 'No pudimos cargar tu resumen de hidratación',
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _HydrationChart extends StatelessWidget {
-  const _HydrationChart({required this.items});
-
-  final List<HydrationDailyIntake> items;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    if (items.isEmpty) {
-      return const _HydrationError(
-        message: 'Registra tu primera ingesta y verás tu progreso aquí.',
-      );
-    }
-
-    final spots = items
-        .asMap()
-        .entries
-        .map(
-          (entry) =>
-              FlSpot(entry.key.toDouble(), entry.value.totalMl.toDouble()),
-        )
-        .toList();
-
-    final minY = spots.map((spot) => spot.y).reduce(math.min);
-    final maxY = spots.map((spot) => spot.y).reduce(math.max);
-    final goal = items.first.goalMl ?? 2000;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: AppShadows.soft,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Ãšltimos 7 días',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  'Meta diaria: ${goal.toInt()} ml',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          SizedBox(
-            height: 180,
-            child: LineChart(
-              LineChartData(
-                minY: math.max(0, minY - 200),
-                maxY: maxY + 200,
-                titlesData: FlTitlesData(
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      reservedSize: 44,
-                      showTitles: true,
-                      getTitlesWidget: (value, _) => Text(
-                        value.toInt().toString(),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary.withValues(alpha: 0.7),
-                        ),
-                      ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    data.title,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, _) {
-                        final index = value.toInt();
-                        if (index >= 0 && index < items.length) {
-                          final date = items[index].date;
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Text(
-                              '${date.day}/${date.month}',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: AppColors.textSecondary.withValues(
-                                  alpha: 0.7,
-                                ),
-                              ),
-                            ),
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      },
-                    ),
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                gridData: FlGridData(
-                  drawHorizontalLine: true,
-                  horizontalInterval: 250,
-                  getDrawingHorizontalLine: (_) => FlLine(
-                    color: AppColors.textSecondary.withValues(alpha: 0.08),
-                    strokeWidth: 1,
-                  ),
-                ),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: spots,
-                    isCurved: true,
-                    color: AppColors.primary,
-                    barWidth: 4,
-                    dotData: const FlDotData(show: false),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.primary.withValues(alpha: 0.25),
-                          AppColors.primary.withValues(alpha: 0.05),
-                        ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
+                  const SizedBox(height: 6),
+                  Text(
+                    data.subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textPrimary.withValues(alpha: 0.7),
+                      height: 1.4,
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Image.asset(
+                data.asset,
+                width: 64,
+                height: 64,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _HydrationError extends StatelessWidget {
-  const _HydrationError({required this.message});
+class _MentalHealthCard extends StatelessWidget {
+  const _MentalHealthCard({required this.onTap});
 
-  final String message;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: AppShadows.soft,
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.info_outline_rounded, color: AppColors.primary),
-          const SizedBox(width: 12),
-          Expanded(child: Text(message, style: theme.textTheme.bodyMedium)),
-        ],
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: AppShadows.soft,
+        ),
+        child: Row(
+          children: [
+            Container(
+              height: 60,
+              width: 60,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                color: AppColors.primary.withValues(alpha: 0.08),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Image.asset(
+                  'assets/images/government/gobierno_chile.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Gobierno de Chile',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Directorio actualizado de l?neas de ayuda y profesionales acreditados.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              height: 36,
+              width: 36,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: AppColors.primary.withValues(alpha: 0.1),
+              ),
+              child: const Icon(Icons.open_in_new_rounded, color: AppColors.primary),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1293,4 +1603,13 @@ class _WellnessGuides extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
+
+
+
+
 
