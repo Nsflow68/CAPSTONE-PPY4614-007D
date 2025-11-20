@@ -1,4 +1,4 @@
-﻿# Mi Refugio — Guía de Trabajo
+﻿# Mi Refugio - Guía de Trabajo
 
 Este directorio contiene todo el material solicitado para la app **Mi Refugio** en la fase de evidencias. La idea es que cualquier colaborador pueda ponerse al día en minutos, ejecutar la app Flutter, levantar el backend (FastAPI o el nuevo NestJS) y seguir el plan de las próximas semanas.
 
@@ -6,23 +6,32 @@ Este directorio contiene todo el material solicitado para la app **Mi Refugio** 
 
 ## Documentos clave
 - [GUIA_USUARIO.md](./GUIA_USUARIO.md): guía de usuario con recorrido, tareas diarias y plan bimensual.
+- `flutter/README.md`: referencia técnica para desarrolladores (estructura, scripts y enlaces a backend/ETL).
+- `flutter/backend/README.md`: pasos para ejecutar FastAPI y la migración a NestJS.
 
 ## Actualizaciones recientes
-- **Recompensas persistentes:** el `rewardProvider` guarda/busca el balance y las insignias en `FlutterSecureStorage`, habilitando sincronización y reinicio desde la pantalla de Perfil.
-- **Perfil → insignias:** se añadió un snapshot de badges con contador, balance y botones para sincronizar o restablecer recompensas.
-- **Chatbot Refu:** página renovada con hero, prompts rápidos, prácticas sugeridas y motor mock que simula Llama cuando el backend no está disponible.
+- **Home dinámico**
+  - El header refleja la última emoción registrada en el diario (emoji, colores y textos cambian automáticamente).
+  - Se añadió la tarjeta "Registro rápido" para abrir el formulario del diario y consultar el historial en un toque.
+- **Mindfulness con audios verificados**
+  - Sección con audios oficiales (10, 16 y 26 minutos) tomados de guías del MINSAL y Hospital Digital con enlaces a la fuente original.
+- **Recompensas persistentes**
+  - El `rewardProvider` guarda/busca balance e insignias en `FlutterSecureStorage`. La pantalla de Perfil permite sincronizar o restablecer el progreso.
+- **Chatbot Refu (mock)**
+  - Hero con indicadores de calma, prompts rápidos y prácticas sugeridas; si el backend no responde, usa el motor mock.
 
 ## Estructura actual
 
 ```
 FASE 2/Evidencias del proyecto/App
-├── README.md              # Este documento
-├── flutter/               # App Flutter + backend en transición
-│   ├── lib/               # Código de la app (Riverpod + GoRouter)
-│   ├── backend/           # fastapi/ (legacy) y nest/ (nuevo stack)
-│   └── test/              # smoke tests de Flutter
-├── App/mi_refugio         # Versión histórica (sólo referencia, no tocar)
-└── .venv / herramientas   # Entornos auxiliares
++-- README.md              # Este documento
++-- GUIA_USUARIO.md        # Recorrido funcional + cronograma
++-- flutter/               # App Flutter + backend en transición
+|   +-- lib/               # Código de la app (Riverpod + GoRouter)
+|   +-- backend/           # fastapi/ (legacy) y nest/ (nuevo stack)
+|   +-- docs/              # Implementación, prompts, setup de IA
++-- App/mi_refugio         # Versión histórica (sólo referencia)
++-- .venv / herramientas   # Entornos auxiliares
 ```
 
 - **Frontend:** `flutter/` (usa Dart 3.5, Flutter 3.24).
@@ -45,51 +54,69 @@ flutter run -d emulator-5554 --profile  # versión móvil (Android emu)
 
 ---
 
+## Flujos clave para QA
+
+- **Diario emocional**: desde Home registra una emoción, verifica el carrusel y revisa "Momentos clave".
+- **Chatbot Refu**: ingresa a `/chatbot`, usa prompts rápidos y confirma que aparezcan prácticas sugeridas incluso sin backend.
+- **Recompensas / Perfil**: edita nombre, correo, teléfono y avatar; usa "Sincronizar" y "Restablecer" en *Mis insignias* y reinicia la app para verificar persistencia.
+
+---
+
 ## Backend y servicios de datos
 
-- **FastAPI (legacy):** `flutter/backend` — ver `README.md` para levantar entorno, endpoints vigentes y seeds.
+- **FastAPI (legacy):** `flutter/backend` - ver `README.md` para levantar entorno, endpoints vigentes y seeds.
 - **NestJS (migración):** `flutter/backend/nest`
   - `npm install`
   - `cp .env.example .env`
   - `npm run start:dev` (expone `http://localhost:4000/api`)
-- **ETL:** `flutter/backend/etl` — contiene scripts (`resources_etl.py`) y datasets publicados en `output/` que luego se copian a los módulos Nest.
+- **ETL:** `flutter/backend/etl` - scripts (`resources_etl.py`) y datasets publicados en `output/` que luego se copian a los módulos Nest.
 - Endpoints listos en Nest: `health`, `auth`, `mindfulness`, `hydration`, `diary`, `resources`.
-- **ETL / Data services:** el plan es consumir fuentes públicas (MINSAL, OPS, bibliotecas de mindfulness) y normalizarlas a colecciones JSON consumibles por Flutter. Los scripts de extracción vivirán en `flutter/backend/etl/` (pendiente en esta fase) y publicarán datasets a S3 o supabase storage.
 
 Más detalle operativo y checklist en `flutter/backend/MODERNIZATION_PROGRESS.md`.
 
 ---
 
-## Plan de dos semanas (mínimo 2 h diarias)
+## Plan de dos semanas (mínimo 2 h/día)
 
-| Día | Objetivo (mínimo 2 h) | Entregable |
-|-----|-----------------------|------------|
-| 1 | Cerrar lint/tests, documentar estructura | Este README + smoke tests |
-| 2 | Modernizar Nest: módulos Hydration & Diary | Endpoints `/hydration`, `/diary` |
-| 3 | Diseñar ETL (schemas, fuentes, cron) | Documento ETL + scripts base |
-| 4 | Portar recursos/guías a Nest + mocks Llama | `/resources` + prompt base |
-| 5 | Integrar feature flag Flutter (FastAPI↔Nest) | Toggle en `app_config.dart` |
-| 6 | Pruebas e2e (login + chatbot) contra ambos backends | Informe QA |
-| 7 | Implementar almacenamiento local seguro (Flutter) | Persistencia Riverpod |
-| 8 | Migrar autenticación Nest (JWT + guards) | `/auth` paridad completa |
-| 9 | Crear pipeline ETL (ingesta → limpieza → publish) | Script + README |
-| 10 | Integrar endpoints ETL en Flutter (recursos dinámicos) | UI consumiendo datasets |
-| 11 | Afinar UX (animaciones/video inicial) | Splash + home actualizados |
-| 12 | Validar dos builds móviles + Chrome con Nest | Registro en hoja de pruebas |
-| 13 | Preparar documentación final (manual técnico + usuario) | Carpeta Evidencias actualizada |
-| 14 | Buffer de riesgos / demo interna | Checklist de release |
+| Día | Objetivo | Resultado esperado |
+| --- | --- | --- |
+| 1 | Pulir UI Inicio + Guía | Hero en video, chips y recorrido documentado |
+| 2 | Hidratación y Mindfulness | Gráficas FLChart y tarjetas responsivas |
+| 3 | Diario y Emociones | Modelos completos + animaciones en carrusel |
+| 4 | Chatbot Refu | Integración con Llama vía backend FastAPI/Nest bridge |
+| 5 | Recompensas y perfil | Estado guardado en secure storage + badges |
+| 6 | Recursos/ETL | Validar pipelines y cache local |
+| 7 | QA móvil (build 1) | `flutter test`, `flutter run -d chrome` |
+| 8 | Backend Nest etapa 1 | Autenticación y seed inicial |
+| 9 | Backend Nest etapa 2 | Recursos y chatbot streaming |
+|10 | Backend Nest etapa 3 | Observabilidad + pruebas e2e |
+|11 | QA móvil (build 2) | Smoke test en dos dispositivos/emuladores |
+|12 | Documentación | Actualizar README, grabar video demo |
+|13 | Retroalimentación | Ajustes visuales finos, accesibilidad |
+|14 | Publicación interna | Tag en GitHub, checklist de pruebas |
 
-> Si un día no se logra cubrir el objetivo, se recupera en la siguiente sesión manteniendo el mínimo de 2 h.
+> Si un día no se logra cubrir el objetivo, se recupera en la siguiente sesión manteniendo el mínimo de 2 h.
 
 ---
 
+## Cómo colaborar
+
+1. Levanta frontend/backend siguiendo las instrucciones anteriores.
+2. Documenta todo cambio funcional en este README y en `GUIA_USUARIO.md`.
+3. Adjunta capturas/logs cuando modifiques home, chatbot, recompensas, NestJS o ETL.
+4. Antes de `git push` ejecuta:
+   ```bash
+   flutter format .
+   flutter analyze
+   flutter test
+   ```
+5. Mantén sincronizados los scripts/datasets del directorio `backend/etl`.
+
 ## Próximos hitos
 
-1. **Consolidar backend NestJS** (semanas 1‑2): endpoints de hidratación, diario y recursos con datos mockeados + conexión a PostgreSQL.
+1. **Consolidar backend NestJS** (semanas 1-2): endpoints de hidratación, diario y recursos con datos mockeados + conexión a PostgreSQL.
 2. **ETL + servicios de datos**: definir pipelines (CSV → clean → JSON) y exponerlos vía CDN o API interna.
 3. **Integrar modelo Llama (Ollama)**: crear módulo Nest `chatbot` que proxee a Ollama, con métricas y fallback seguro.
 4. **QA & despliegue dual**: mantener FastAPI operativo hasta que Nest logre paridad, luego activar feature flag en Flutter.
 
-Mantén este README actualizado al cierre de cada semana para que el siguiente responsable tenga el contexto completo. ¡Vamos a por la última fase! 💪
-
-
+Mantén este README actualizado al cierre de cada semana para que el siguiente responsable tenga el contexto completo. ¡Vamos a por la última fase!

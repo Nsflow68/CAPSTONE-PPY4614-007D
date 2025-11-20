@@ -1,4 +1,4 @@
-﻿# Guía de usuario – Mi Refugio
+﻿# Guía de usuario - Mi Refugio
 
 Esta guía resume el nuevo recorrido visual (80 % más completo respecto a la versión anterior), describe cómo probar cada módulo y documenta el plan operativo para las próximas dos semanas.
 
@@ -15,7 +15,7 @@ Esta guía resume el nuevo recorrido visual (80 % más completo respecto a la ve
 - Tarjetas de momentos clave responsivas + animaciones suaves.
 - Componentes consistentes con AppColors/AppGradients y sombras suaves.
 - Guía en pantalla con pasos, timeline y sección de soporte contextual.
-- Chatbot Refu con hero, prompts rápidos, burbujas animadas y prácticas sugeridas que funcionan aun sin backend gracias al servicio mock.
+- Chatbot Refu con hero, prompts rápidos, burbujas animadas y prácticas sugeridas.
 - Perfil con mosaico de insignias, contador de badges desbloqueados y botones para sincronizar/restablecer recompensas persistidas.
 
 ## Servicios de datos y ETL
@@ -54,3 +54,8 @@ Esta guía resume el nuevo recorrido visual (80 % más completo respecto a la ve
 - Afinar el chatbot con prompts específicos para Llama y registrar la configuración en `backend/README.md`.
 - Integrar calendario (Google Calendar) con el cronograma anterior mediante la API de Calendar o un bot en ChatGPT usando el prompt solicitado.
 
+## Documentación y seguimiento
+- Actualiza este archivo y `README.md` cada vez que avances un día del plan.
+- Registra evidencias (capturas, logs o videos) en `flutter/docs/` para cada hito.
+- Cuando migres un módulo a NestJS, documenta el cambio en `backend/MODERNIZATION_PROGRESS.md` indicando fecha y responsable.
+- Usa el tablero interno para marcar días cumplidos y enlazar el commit correspondiente.
