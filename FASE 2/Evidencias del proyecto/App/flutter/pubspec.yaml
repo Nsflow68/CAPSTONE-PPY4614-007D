@@ -34,6 +34,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.1
 
 flutter:
   uses-material-design: true
@@ -42,7 +43,16 @@ flutter:
     - assets/images/branding/
     - assets/images/government/
     - assets/images/mascot/
+    - assets/images/icons/
     - assets/images/mental_health/
     - assets/videos/
     - assets/audio/
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: assets/images/branding/logo_primary.png
+  adaptive_icon_background: "#F7F0E7"
+  adaptive_icon_foreground: assets/images/branding/logo_primary.png
+
 

@@ -1,42 +1,70 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
-class SplashPage extends StatefulWidget {
+import '../../application/auth_provider.dart';
+import '../../application/auth_state.dart';
+import 'package:mi_refugio_app/shared/constants/app_colors.dart';
+
+/// Pantalla de splash que muestra un video de carga y verifica
+/// el estado de autenticación para decidir el flujo inicial.
+class SplashPage extends ConsumerStatefulWidget {
   const SplashPage({super.key});
 
   @override
-  State<SplashPage> createState() => _SplashPageState();
+  ConsumerState<SplashPage> createState() => _SplashPageState();
 }
 
-class _SplashPageState extends State<SplashPage> {
+class _SplashPageState extends ConsumerState<SplashPage> {
   late final VideoPlayerController _videoController;
   bool _navigated = false;
+  bool _authChecked = false;
 
   @override
   void initState() {
     super.initState();
-    _videoController =
-        VideoPlayerController.asset(
-            'assets/videos/pantalla_carga.mp4',
-            videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
-          )
-          ..initialize().then((_) {
-            if (!mounted) return;
-            setState(() {});
-            _videoController.play();
-          });
+    _videoController = VideoPlayerController.asset(
+      'assets/videos/pantalla_carga.mp4',
+      videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+    )
+      ..initialize().then((_) {
+        if (!mounted) return;
+        setState(() {});
+        _videoController.play();
+      });
     _videoController.setLooping(false);
     _videoController.addListener(_handleVideoState);
 
     // Failsafe por si el video no se reproduce
     Timer(const Duration(seconds: 6), () {
       if (!_navigated && mounted) {
-        _goToLogin();
+        _navigateToNextScreen();
       }
     });
+
+    // Verificar estado de autenticación de inmediato
+    _checkAuthenticationStatus();
+  }
+
+  /// Verifica el estado de autenticación usando el repository
+  /// para determinar si hay una sesión válida.
+  Future<void> _checkAuthenticationStatus() async {
+    if (_authChecked) return;
+    _authChecked = true;
+
+    // Dar un pequeño delay para que el video comience a reproducirse
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    final repository = ref.read(authRepositoryProvider);
+    final isAuthenticated = await repository.isAuthenticated();
+
+    // Si hay sesión válida, simplemente continuamos al siguiente flujo (router guard).
+    if (isAuthenticated && mounted) {
+      await repository.getCurrentUser();
+    }
   }
 
   void _handleVideoState() {
@@ -48,14 +76,25 @@ class _SplashPageState extends State<SplashPage> {
 
     final position = value.position;
     if (position >= duration - const Duration(milliseconds: 150)) {
-      _goToLogin();
+      _navigateToNextScreen();
     }
   }
 
-  void _goToLogin() {
+  /// Navega a /home si está autenticado, o a /login si no lo está.
+  /// El router guard se encargará de redirigir correctamente.
+  void _navigateToNextScreen() {
     if (_navigated) return;
     _navigated = true;
-    context.go('/login');
+
+    final authState = ref.read(authProvider);
+    final isAuthenticated = authState is AuthAuthenticated;
+
+    // Navegar según estado de autenticación
+    if (isAuthenticated) {
+      context.go('/home');
+    } else {
+      context.go('/login');
+    }
   }
 
   @override
@@ -68,7 +107,7 @@ class _SplashPageState extends State<SplashPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.background,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -85,7 +124,7 @@ class _SplashPageState extends State<SplashPage> {
             Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF7C6CF8), Color(0xFFF1C6FF)],
+                  colors: [AppColors.primary, AppColors.tertiary],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -99,8 +138,8 @@ class _SplashPageState extends State<SplashPage> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Colors.black.withValues(alpha: 0.15),
-                    Colors.black.withValues(alpha: 0.55),
+                    Colors.black.withValues(alpha: 0.12),
+                    Colors.black.withValues(alpha: 0.48),
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,

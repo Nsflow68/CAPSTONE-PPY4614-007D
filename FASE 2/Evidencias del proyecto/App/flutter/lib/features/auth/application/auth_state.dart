@@ -45,7 +45,7 @@ sealed class AuthState {
     if (state is AuthLoading) return loading();
     if (state is AuthAuthenticated) return authenticated(state.user);
     if (state is AuthError) return error(state.message);
-    throw StateError('Estado de autenticaci\u00f3n no soportado: $runtimeType');
+    throw StateError('Estado de autenticación no soportado: $runtimeType');
   }
 
   T maybeWhen<T>({

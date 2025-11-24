@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:mi_refugio_app/features/chatbot/application/chatbot_provider.dart';
@@ -18,95 +18,102 @@ class ChatbotPage extends ConsumerStatefulWidget {
 class _ChatbotPageState extends ConsumerState<ChatbotPage> {
   final _inputController = TextEditingController();
   final _scrollController = ScrollController();
-  ProviderSubscription<ChatSessionState>? _subscription;
-
-  @override
-  void initState() {
-    super.initState();
-    _subscription = ref.listenManual<ChatSessionState>(
-      chatSessionProvider,
-      (previous, next) {
-        if (previous == null ||
-            previous.messages.length != next.messages.length ||
-            previous.isLoading != next.isLoading) {
-          Future.microtask(_scrollToBottom);
-        }
-      },
-    );
-  }
 
   @override
   void dispose() {
-    _subscription?.close();
     _inputController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
   void _send([String? preset]) {
-    final text = preset ?? _inputController.text;
-    ref.read(chatSessionProvider.notifier).sendMessage(text);
-    if (preset == null) {
-      _inputController.clear();
-    }
+    final text = (preset ?? _inputController.text).trim();
+    if (text.isEmpty) return;
+    ref.read(chatbotProvider.notifier).sendMessage(text);
+    if (preset == null) _inputController.clear();
+    _scrollToBottom();
   }
 
   void _scrollToBottom() {
     if (!_scrollController.hasClients) return;
-    _scrollController.animateTo(
-      _scrollController.position.maxScrollExtent + 120,
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeOutCubic,
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent + 120,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeOutCubic,
+        );
+      }
+    });
+  }
+
+  List<ChatMessageModel> _messages(ChatbotState state) {
+    return state.maybeMap(
+      initial: (_) => [ChatbotInitial.welcomeMessage],
+      loading: (s) => s.messages,
+      loaded: (s) => s.messages,
+      error: (s) => s.messages,
+      orElse: () => const [],
     );
   }
 
+  bool _isLoading(ChatbotState state) => state is ChatbotLoading;
+
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(chatSessionProvider);
+    final state = ref.watch(chatbotProvider);
+    final messages = _messages(state);
+
+    // Scroll al final cuando cambien los mensajes
+    _scrollToBottom();
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Refu • Acompañamiento'),
+        title: const Text('Refu · Acompañamiento'),
         actions: [
           IconButton(
             tooltip: 'Reiniciar sesión',
-            onPressed: ref.read(chatSessionProvider.notifier).resetSession,
+            onPressed: ref.read(chatbotProvider.notifier).resetSession,
             icon: const Icon(Icons.restart_alt_rounded),
           ),
         ],
       ),
-      body: DecoratedBox(
-        decoration: const BoxDecoration(gradient: AppGradients.softBackground),
-        child: Column(
-          children: [
-            _ChatHero(state: state),
-            if (state.errorMessage != null)
+      body: SafeArea(
+        child: DecoratedBox(
+          decoration: const BoxDecoration(gradient: AppGradients.softBackground),
+          child: Column(
+            children: [
+              const _ChatHero(),
+              if (state is ChatbotError)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _ErrorBanner(message: state.failure.readableMessage()),
+                ),
+              if (messages.isNotEmpty &&
+                  messages.last.suggestions.isNotEmpty)
+                _QuickPromptList(
+                  prompts: messages.last.suggestions,
+                  onSelected: _send,
+                ),
+              Expanded(
+                child: _MessagesList(
+                  controller: _scrollController,
+                  messages: messages,
+                  isLoading: _isLoading(state),
+                ),
+              ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _ErrorBanner(message: state.errorMessage!),
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewPadding.bottom + 8,
+                ),
+                child: _ComposerBar(
+                  controller: _inputController,
+                  onSend: _send,
+                  isLoading: _isLoading(state),
+                ),
               ),
-            if (state.quickPrompts.isNotEmpty)
-              _QuickPromptList(
-                prompts: state.quickPrompts,
-                onSelected: _send,
-              ),
-            if (state.practice != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _PracticeCard(text: state.practice!),
-              ),
-            Expanded(
-              child: _MessagesList(
-                controller: _scrollController,
-                state: state,
-              ),
-            ),
-            _ComposerBar(
-              controller: _inputController,
-              onSend: _send,
-              isLoading: state.isLoading,
-            ),
-            const SizedBox(height: 12),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -114,14 +121,11 @@ class _ChatbotPageState extends ConsumerState<ChatbotPage> {
 }
 
 class _ChatHero extends StatelessWidget {
-  const _ChatHero({required this.state});
-
-  final ChatSessionState state;
+  const _ChatHero();
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final calmPercent = (state.calmScore * 100).clamp(0, 100).round();
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
       child: Container(
@@ -129,7 +133,7 @@ class _ChatHero extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [Color(0xFF5F5CFE), Color(0xFF8DE0D1)],
-          begin: Alignment.topLeft,
+            begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(32),
@@ -152,24 +156,6 @@ class _ChatHero extends StatelessWidget {
                 color: Colors.white.withValues(alpha: 0.9),
               ),
             ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                _StatChip(
-                  title: 'Índice de calma',
-                  value: '$calmPercent%',
-                  icon: Icons.favorite_rounded,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _StatChip(
-                    title: 'Foco sugerido',
-                    value: state.focus,
-                    icon: Icons.self_improvement_rounded,
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
       ),
@@ -177,61 +163,8 @@ class _ChatHero extends StatelessWidget {
   }
 }
 
-class _StatChip extends StatelessWidget {
-  const _StatChip({
-    required this.title,
-    required this.value,
-    required this.icon,
-  });
-
-  final String title;
-  final String value;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: Colors.white),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.8),
-                ),
-              ),
-              Text(
-                value,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _QuickPromptList extends StatelessWidget {
-  const _QuickPromptList({
-    required this.prompts,
-    required this.onSelected,
-  });
+  const _QuickPromptList({required this.prompts, required this.onSelected});
 
   final List<String> prompts;
   final ValueChanged<String> onSelected;
@@ -250,11 +183,13 @@ class _QuickPromptList extends StatelessWidget {
           return ActionChip(
             label: Text(prompts[index]),
             onPressed: () => onSelected(prompts[index]),
-            backgroundColor: Colors.white,
-            elevation: 2,
+            backgroundColor: AppColors.surface,
+            elevation: 0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-              side: const BorderSide(color: AppColors.primary),
+              borderRadius: BorderRadius.circular(18),
+              side: BorderSide(
+                color: AppColors.primary.withValues(alpha: 0.25),
+              ),
             ),
           );
         },
@@ -263,65 +198,20 @@ class _QuickPromptList extends StatelessWidget {
   }
 }
 
-class _PracticeCard extends StatelessWidget {
-  const _PracticeCard({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: AppShadows.soft,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.self_improvement_rounded, color: AppColors.primary),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Práctica recomendada',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  text,
-                  style: theme.textTheme.bodyMedium,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _MessagesList extends StatelessWidget {
   const _MessagesList({
     required this.controller,
-    required this.state,
+    required this.messages,
+    required this.isLoading,
   });
 
   final ScrollController controller;
-  final ChatSessionState state;
+  final List<ChatMessageModel> messages;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
-    final messages = state.messages;
-    final totalItems = state.isLoading ? messages.length + 1 : messages.length;
+    final totalItems = isLoading ? messages.length + 1 : messages.length;
     return ListView.builder(
       controller: controller,
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
@@ -350,7 +240,7 @@ class _MessageBubble extends StatelessWidget {
     final isUser = message.isUser;
     final alignment = isUser ? Alignment.centerRight : Alignment.centerLeft;
     final colors = isUser
-        ? [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)]
+        ? AppGradients.primaryBubble.colors
         : [Colors.white, Colors.white];
     final textColor = isUser ? Colors.white : AppColors.textPrimary;
     final timeLabel = DateFormat('HH:mm').format(message.timestamp);
@@ -359,7 +249,7 @@ class _MessageBubble extends StatelessWidget {
       alignment: alignment,
       child: Container(
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.78,
+          maxWidth: MediaQuery.of(context).size.width * 0.82,
         ),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -371,22 +261,47 @@ class _MessageBubble extends StatelessWidget {
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(24),
             topRight: const Radius.circular(24),
-            bottomLeft: Radius.circular(isUser ? 24 : 6),
-            bottomRight: Radius.circular(isUser ? 6 : 24),
+            bottomLeft: Radius.circular(isUser ? 24 : 8),
+            bottomRight: Radius.circular(isUser ? 8 : 24),
           ),
-          boxShadow: isUser ? AppShadows.soft : null,
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 4,
+              offset: Offset(0, 1),
+            ),
+          ],
+          border: isUser
+              ? null
+              : Border.all(
+                  color: AppColors.textSecondary.withValues(alpha: 0.08),
+                ),
         ),
         child: Column(
           crossAxisAlignment:
               isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
+            if (!isUser) ...[
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.psychology_alt_outlined,
+                      size: 18, color: AppColors.primary),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Refu',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: textColor.withValues(alpha: 0.8),
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+            ],
             Text(
               message.content,
-              style: TextStyle(
-                color: textColor,
-                fontSize: 15,
-                height: 1.4,
-              ),
+              style: TextStyle(color: textColor, fontSize: 15, height: 1.4),
             ),
             const SizedBox(height: 6),
             Text(
@@ -417,9 +332,9 @@ class _TypingBubble extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           boxShadow: AppShadows.soft,
         ),
-        child: Row(
+        child: const Row(
           mainAxisSize: MainAxisSize.min,
-          children: const [
+          children: [
             _Dot(),
             SizedBox(width: 4),
             _Dot(delay: 120),
@@ -465,17 +380,10 @@ class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
       opacity: Tween<double>(begin: 0.2, end: 1).animate(
         CurvedAnimation(
           parent: _controller,
-          curve: Interval(
-            widget.delay / 300,
-            1,
-            curve: Curves.easeInOut,
-          ),
+          curve: Interval(widget.delay / 300, 1, curve: Curves.easeInOut),
         ),
       ),
-      child: const CircleAvatar(
-        radius: 4,
-        backgroundColor: AppColors.primary,
-      ),
+      child: const CircleAvatar(radius: 4, backgroundColor: AppColors.primary),
     );
   }
 }
@@ -499,21 +407,38 @@ class _ComposerBar extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: TextField(
-              controller: controller,
-              minLines: 1,
-              maxLines: 4,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: InputDecoration(
-                hintText: 'Escribe cómo te sientes...',
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide.none,
-                ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 4,
+                    offset: Offset(0, 1),
+                  ),
+                ],
               ),
-              onSubmitted: (_) => onSend(null),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                children: [
+                  const Icon(Icons.mic_none_rounded, color: AppColors.textSecondary),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: TextField(
+                      controller: controller,
+                      minLines: 1,
+                      maxLines: 4,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: const InputDecoration(
+                        hintText: 'Escribe cómo te sientes o pide un ejercicio',
+                        border: InputBorder.none,
+                      ),
+                      onSubmitted: (_) => onSend(null),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(width: 12),

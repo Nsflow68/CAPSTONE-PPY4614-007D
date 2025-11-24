@@ -6,8 +6,11 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../shared/constants/app_colors.dart';
+import '../../../../shared/widgets/empty_state.dart';
+import '../../../../shared/widgets/loading_indicator.dart';
 import '../../application/diary_provider.dart';
 import '../../data/models/diary_entry_model.dart';
+import 'widgets/diary_empty_view.dart';
 
 class DiaryPage extends ConsumerStatefulWidget {
   const DiaryPage({super.key});
@@ -117,8 +120,11 @@ class _DiaryPageState extends ConsumerState<DiaryPage> {
               onOpenRange: _openRangePicker,
               range: _selectedRange,
             ),
-            error: (failure) =>
-                _DiaryErrorView(message: failure.message, onRetry: _reload),
+            empty: (_) => DiaryEmptyView(onCreate: _openCreateEntry),
+            error: (failure) => DiaryErrorView(
+              message: failure.failure.readableMessage(),
+              onRetry: _reload,
+            ),
           ),
         ),
       ),
@@ -391,7 +397,7 @@ class _DiaryHeader extends StatelessWidget {
                   .map(
                     (emotion) => Chip(
                       label: Text(emotion),
-                      backgroundColor: AppColors.accent.withValues(alpha: 0.16),
+                      backgroundColor: AppColors.surfaceAlt,
                       visualDensity: VisualDensity.compact,
                     ),
                   )
@@ -669,9 +675,7 @@ class _DiaryEntryCard extends StatelessWidget {
                       (emotion) => Chip(
                         label: Text(emotion),
                         visualDensity: VisualDensity.compact,
-                        backgroundColor: AppColors.accent.withValues(
-                          alpha: 0.16,
-                        ),
+                        backgroundColor: AppColors.surfaceAlt,
                       ),
                     )
                     .toList(),
@@ -776,59 +780,32 @@ class _DiaryLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Padding(
-        padding: EdgeInsets.only(top: 120),
-        child: CircularProgressIndicator(),
-      ),
+    return const LoadingIndicator(
+      message: 'Cargando entradas...',
     );
   }
 }
 
-class _DiaryErrorView extends StatelessWidget {
-  const _DiaryErrorView({required this.message, required this.onRetry});
+class DiaryErrorView extends StatelessWidget {
+  const DiaryErrorView({
+    super.key,
+    required this.message,
+    required this.onRetry,
+  });
 
   final String message;
   final Future<void> Function() onRetry;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.error_outline_rounded,
-              size: 48,
-              color: AppColors.danger,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No pudimos cargar tu diario',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            FilledButton.tonalIcon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Reintentar'),
-            ),
-          ],
-        ),
+    return EmptyState(
+      icon: Icons.error_outline_rounded,
+      title: 'Error al cargar entradas',
+      message: message,
+      action: ElevatedButton.icon(
+        onPressed: onRetry,
+        icon: const Icon(Icons.refresh_rounded),
+        label: const Text('Reintentar'),
       ),
     );
   }

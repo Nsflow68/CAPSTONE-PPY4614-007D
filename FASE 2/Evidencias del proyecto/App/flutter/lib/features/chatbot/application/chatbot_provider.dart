@@ -1,27 +1,58 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mi_refugio_app/features/chatbot/application/chatbot_state.dart';
+import 'package:mi_refugio_app/features/chatbot/data/chatbot_repository.dart';
 import 'package:mi_refugio_app/features/chatbot/data/models/chat_message_model.dart';
-import 'package:mi_refugio_app/features/chatbot/services/refu_bot_service.dart';
 
-final refuBotServiceProvider = Provider<RefuBotService>((ref) {
-  return RefuBotService();
+final chatbotProvider =
+    StateNotifierProvider<ChatbotNotifier, ChatbotState>((ref) {
+  return ChatbotNotifier(ChatbotRepository());
 });
 
-final chatSessionProvider =
-    StateNotifierProvider<ChatSessionNotifier, ChatSessionState>((ref) {
-  return ChatSessionNotifier(ref.read(refuBotServiceProvider));
-});
+class ChatbotNotifier extends StateNotifier<ChatbotState> {
+  ChatbotNotifier(this._repository) : super(const ChatbotInitial()) {
+    _initializeChat();
+  }
 
-class ChatSessionNotifier extends StateNotifier<ChatSessionState> {
-  ChatSessionNotifier(this._service) : super(ChatSessionState.initial());
+  final ChatbotRepository _repository;
+  final List<ChatMessageModel> _messages = [];
 
-  final RefuBotService _service;
+  /// Inicializa el chat cargando el historial o mostrando el mensaje de bienvenida.
+  void _initializeChat() {
+    final welcome = ChatbotInitial.welcomeMessage;
+    _messages.add(welcome);
+    state = ChatbotLoaded([welcome]);
+  }
 
+  /// Carga el historial de mensajes desde el backend.
+  Future<void> loadHistory() async {
+    state = ChatbotLoading(_messages);
+
+    final result = await _repository.loadHistory();
+    result.when(
+      success: (messages) {
+        _messages.clear();
+        _messages.addAll(messages);
+
+        // Si no hay mensajes, agregar el de bienvenida
+        if (_messages.isEmpty) {
+          final welcome = ChatbotInitial.welcomeMessage;
+          _messages.add(welcome);
+        }
+
+        state = ChatbotLoaded(List.from(_messages));
+      },
+      failure: (failure) {
+        state = ChatbotError(failure, List.from(_messages));
+      },
+    );
+  }
+
+  /// Envía un mensaje al chatbot y espera la respuesta.
   Future<void> sendMessage(String content) async {
     final trimmed = content.trim();
-    if (trimmed.isEmpty || state.isLoading) return;
+    if (trimmed.isEmpty) return;
 
+    // Agregar mensaje del usuario
     final userMessage = ChatMessageModel(
       id: 'user-${DateTime.now().microsecondsSinceEpoch}',
       role: ChatRole.user,
@@ -29,50 +60,26 @@ class ChatSessionNotifier extends StateNotifier<ChatSessionState> {
       timestamp: DateTime.now(),
     );
 
-    final history = [...state.messages, userMessage];
-    state = state.copyWith(
-      messages: history,
-      isLoading: true,
-      errorMessage: null,
+    _messages.add(userMessage);
+    state = ChatbotLoading(List.from(_messages));
+
+    // Enviar al backend
+    final result = await _repository.sendMessage(trimmed);
+    result.when(
+      success: (botMessage) {
+        _messages.add(botMessage);
+        state = ChatbotLoaded(List.from(_messages));
+      },
+      failure: (failure) {
+        state = ChatbotError(failure, List.from(_messages));
+      },
     );
-
-    try {
-      final reply = await _service.sendMessage(
-        prompt: trimmed,
-        history: history,
-      );
-
-      final botMessage = ChatMessageModel(
-        id: 'assistant-${DateTime.now().microsecondsSinceEpoch}',
-        role: ChatRole.assistant,
-        content: reply.response,
-        timestamp: DateTime.now(),
-        suggestions: reply.followUps,
-      );
-
-      state = state.copyWith(
-        messages: [...history, botMessage],
-        isLoading: false,
-        quickPrompts: reply.followUps.isNotEmpty ? reply.followUps : state.quickPrompts,
-        calmScore: reply.calmScore,
-        focus: reply.focus,
-        practice: reply.practice,
-        errorMessage: null,
-      );
-    } catch (error, stacktrace) {
-      debugPrint('RefuBot error: $error\n$stacktrace');
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: 'No pudimos contactar a Refu. Inténtalo de nuevo.',
-      );
-    }
   }
 
-  void usePrompt(String prompt) {
-    sendMessage(prompt);
-  }
-
+  /// Reinicia la sesión del chat.
   void resetSession() {
-    state = ChatSessionState.initial();
+    _messages.clear();
+    state = const ChatbotInitial();
+    _initializeChat();
   }
 }

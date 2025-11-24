@@ -1,8 +1,10 @@
 // lib/core/router/router.dart
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/application/auth_provider.dart';
+import '../../features/auth/application/auth_state.dart';
 import '../../features/auth/presentation/pages/splash_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/signup_page.dart';
@@ -22,25 +24,55 @@ import '../../features/wellness/presentation/pages/hydration_page.dart';
 import '../../features/wellness/presentation/pages/mindfulness_page.dart';
 import '../../features/wellness/presentation/pages/nutrition_page.dart';
 
+/// Provider del router principal de la aplicación.
+///
+/// Utiliza GoRouter con un guard de autenticación que escucha el estado
+/// de Auth para proteger rutas privadas y gestionar el flujo de navegación.
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authRepository = ref.watch(authRepositoryProvider);
+  // Escuchar el estado de autenticación para hacer el router reactivo
+  final authState = ref.watch(authProvider);
 
   return GoRouter(
-    // Arranca en login; Splash sÃ³lo si lo navegas explÃ­citamente
-    initialLocation: '/login',
+    // Arranca en splash para decidir el flujo inicial
+    initialLocation: '/splash',
+
+    // Refresh listener: hace que el router reaccione a cambios en authState
+    refreshListenable: _AuthChangeNotifier(ref),
 
     routes: [
-      // PÃºblicas
-      GoRoute(path: '/splash', builder: (_, __) => const SplashPage()),
-      GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
-      GoRoute(path: '/signup', builder: (_, __) => const SignUpPage()),
+      // ═══════════════════════════════════════════════════════════════
+      // RUTAS PÚBLICAS
+      // ═══════════════════════════════════════════════════════════════
+
+      GoRoute(
+        path: '/splash',
+        builder: (_, __) => const SplashPage(),
+      ),
+
+      GoRoute(
+        path: '/login',
+        builder: (_, __) => const LoginPage(),
+      ),
+
+      GoRoute(
+        path: '/signup',
+        builder: (_, __) => const SignUpPage(),
+      ),
+
       GoRoute(
         path: '/forgot-password',
         builder: (_, __) => const ForgotPasswordPage(),
       ),
-      GoRoute(path: '/guide', builder: (_, __) => const GuidePage()),
 
-      // Shell con bottom-navigation
+      GoRoute(
+        path: '/guide',
+        builder: (_, __) => const GuidePage(),
+      ),
+
+      // ═══════════════════════════════════════════════════════════════
+      // RUTAS PRIVADAS (Shell con bottom navigation)
+      // ═══════════════════════════════════════════════════════════════
+
       StatefulShellRoute.indexedStack(
         builder: (context, state, nav) => MainShell(navigationShell: nav),
         branches: [
@@ -79,6 +111,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
+
           // DIARIO
           StatefulShellBranch(
             routes: [
@@ -94,6 +127,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
+
           // CHATBOT (tab directo)
           StatefulShellBranch(
             routes: [
@@ -103,6 +137,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
+
           // PERFIL
           StatefulShellBranch(
             routes: [
@@ -116,21 +151,70 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
     ],
 
-    // Guard de autenticaciÃ³n
-    redirect: (context, state) async {
-      final loc = state.uri.toString();
-      const publicRoutes = [
+    // ═══════════════════════════════════════════════════════════════
+    // GUARD DE AUTENTICACIÓN
+    // ═══════════════════════════════════════════════════════════════
+    redirect: (context, state) {
+      final location = state.uri.toString();
+
+      // Lista de rutas públicas que no requieren autenticación
+      const publicRoutes = {
         '/splash',
         '/login',
         '/signup',
         '/forgot-password',
         '/guide',
-      ];
+      };
 
-      if (publicRoutes.contains(loc)) return null;
+      // Determinar si el usuario está autenticado basado en AuthState
+      final isAuthenticated = authState is AuthAuthenticated;
 
-      final isAuthenticated = await authRepository.isAuthenticated();
-      return isAuthenticated ? null : '/login';
+      // Si estamos en splash, dejar pasar (Splash decidirá el flujo)
+      if (location == '/splash') {
+        return null;
+      }
+
+      // Si el usuario NO está autenticado
+      if (!isAuthenticated) {
+        // Si intenta acceder a una ruta privada, redirigir a login
+        if (!publicRoutes.contains(location)) {
+          return '/login';
+        }
+        // Si está en una ruta pública, permitir acceso
+        return null;
+      }
+
+      // Si el usuario SÍ está autenticado
+      if (isAuthenticated) {
+        // Si intenta acceder a login o signup, redirigir a home
+        // (evita que usuario autenticado vuelva a login con back button)
+        if (location == '/login' || location == '/signup') {
+          return '/home';
+        }
+        // Para otras rutas (públicas o privadas), permitir acceso
+        return null;
+      }
+
+      return null;
     },
   );
 });
+
+/// Notifier personalizado para hacer que GoRouter reaccione a cambios en AuthState.
+///
+/// GoRouter escucha este ChangeNotifier y vuelve a evaluar el redirect
+/// cada vez que el estado de autenticación cambia.
+class _AuthChangeNotifier extends ChangeNotifier {
+  _AuthChangeNotifier(this._ref) {
+    // Escuchar cambios en authProvider
+    _ref.listen<AuthState>(
+      authProvider,
+      (previous, next) {
+        // Notificar a GoRouter que el estado cambió para re-evaluar redirect
+        notifyListeners();
+      },
+    );
+  }
+
+  final Ref _ref;
+}

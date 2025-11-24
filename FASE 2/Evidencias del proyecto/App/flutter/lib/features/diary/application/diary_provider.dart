@@ -1,46 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mi_refugio_app/features/diary/application/diary_state.dart';
+import 'package:mi_refugio_app/features/diary/data/diary_repository.dart';
 import 'package:mi_refugio_app/features/diary/data/models/diary_entry_model.dart';
-import 'package:mi_refugio_app/shared/data/mock_diary_entries.dart';
 
 final diaryProvider = StateNotifierProvider<DiaryNotifier, DiaryState>((ref) {
-  return DiaryNotifier()..loadEntries();
+  return DiaryNotifier(DiaryRepository())..loadEntries();
 });
 
 class DiaryNotifier extends StateNotifier<DiaryState> {
-  DiaryNotifier() : super(const DiaryInitial()) {
-    _entries = mockDiaryEntries.map(DiaryEntryModel.fromEntity).toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-  }
+  DiaryNotifier(this._repository) : super(const DiaryInitial());
 
-  late final List<DiaryEntryModel> _entries;
+  final DiaryRepository _repository;
   DateTime? _lastFrom;
   DateTime? _lastTo;
-
-  static const _loadDelay = Duration(milliseconds: 350);
-  static const _mutationDelay = Duration(milliseconds: 220);
 
   Future<void> loadEntries({DateTime? from, DateTime? to}) async {
     _lastFrom = from;
     _lastTo = to;
     state = const DiaryLoading();
-    try {
-      await Future<void>.delayed(_loadDelay);
-      final items = _filteredEntries(from, to);
-      state = DiaryLoaded(items);
-    } catch (error) {
-      state = DiaryError('No pudimos cargar tus registros: $error');
-    }
+
+    final result = await _repository.getEntries();
+    result.when(
+      success: (items) {
+        final filtered = _filterEntries(items, from, to);
+        state = filtered.isEmpty ? const DiaryEmpty() : DiaryLoaded(filtered);
+      },
+      failure: (failure) => state = DiaryError(failure),
+    );
   }
 
   Future<void> createEntry(DiaryEntryCreateRequest request) async {
-    await Future<void>.delayed(_mutationDelay);
+    state = const DiaryLoading();
+
     final normalizedDate = DateUtils.dateOnly(request.date);
     final now = DateTime.now();
     final normalizedScore = request.score.clamp(1, 10).toInt();
+
     final entry = DiaryEntryModel(
-      id: now.microsecondsSinceEpoch.toString(),
+      id: '', // El backend asignará el ID
       title: request.title,
       content: request.content,
       mood: request.mood,
@@ -53,12 +51,22 @@ class DiaryNotifier extends StateNotifier<DiaryState> {
       tags: List<String>.unmodifiable(request.tags),
     );
 
-    _entries.insert(0, entry);
-    state = DiaryLoaded(_filteredEntries(_lastFrom, _lastTo));
+    final result = await _repository.createEntry(entry);
+    result.when(
+      success: (_) {
+        // Recarga las entradas para mostrar la nueva entrada
+        loadEntries(from: _lastFrom, to: _lastTo);
+      },
+      failure: (failure) => state = DiaryError(failure),
+    );
   }
 
-  List<DiaryEntryModel> _filteredEntries(DateTime? from, DateTime? to) {
-    Iterable<DiaryEntryModel> current = _entries;
+  List<DiaryEntryModel> _filterEntries(
+    List<DiaryEntryModel> entries,
+    DateTime? from,
+    DateTime? to,
+  ) {
+    Iterable<DiaryEntryModel> current = entries;
 
     if (from != null) {
       final start = DateUtils.dateOnly(from);
@@ -76,15 +84,14 @@ class DiaryNotifier extends StateNotifier<DiaryState> {
   }
 
   String _describeMood(String mood, int score) {
-    final normalized = mood.trim().isEmpty
-        ? 'tu estado actual'
-        : mood.toLowerCase();
+    final normalized =
+        mood.trim().isEmpty ? 'tu estado actual' : mood.toLowerCase();
     if (score >= 8) {
-      return 'Viviste $normalized con mucha energ\u00eda positiva.';
+      return 'Viviste $normalized con mucha energía positiva.';
     } else if (score >= 5) {
       return 'Percibiste $normalized de forma equilibrada y consciente.';
     } else {
-      return 'Sentiste $normalized con baja energ\u00eda, recuerda darte espacio para cuidarte.';
+      return 'Sentiste $normalized con baja energía, recuerda darte espacio para cuidarte.';
     }
   }
 }

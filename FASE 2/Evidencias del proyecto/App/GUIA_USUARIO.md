@@ -1,61 +1,49 @@
-﻿# Guía de usuario - Mi Refugio
+# Guia de usuario - Mi Refugio
 
-Esta guía resume el nuevo recorrido visual (80 % más completo respecto a la versión anterior), describe cómo probar cada módulo y documenta el plan operativo para las próximas dos semanas.
+Recorrido actualizado y checklist de prueba rapida.
 
 ## Recorrido sugerido
-1. **Inicio:** mira el hero en video, revisa tu pulso emocional y usa los accesos rápidos a hábitos.
-2. **Diario:** registra emociones, contexto y etiquetas. Obtén insights semanales y métricas de constancia.
-3. **Chatbot Refu (Llama):** conversa para ejercicios de respiración, grounding o relajación guiada.
-4. **Recursos y Mindfulness:** accede a meditaciones, hidratación inteligente y directorio profesional procesado vía ETL.
-5. **Perfil y Recompensas:** ajusta notificaciones, activa modo oscuro y consulta logros acumulados.
+1. **Inicio:** hero (video/splash nativo), accesos rapidos a habitos y registro rapido.
+2. **Diario:** registra emociones, contexto y etiquetas; revisa estados Loaded/Empty/Error.
+3. **Chatbot Refu (Llama):** prompts rapidos y practicas sugeridas; fallback si el backend no responde.
+4. **Recursos y Mindfulness:** meditaciones, hidratacion y directorio profesional procesado via ETL.
+5. **Perfil y Recompensas:** notificaciones, modo oscuro y logros persistentes.
 
-## Nuevas mejoras visuales
-- Hero con video incrustado (`assets/videos/pantalla_carga.mp4`) y chips interactivos.
-- Banner de recorrido reutilizable con CTA hacia la guía interactiva.
-- Tarjetas de momentos clave responsivas + animaciones suaves.
-- Componentes consistentes con AppColors/AppGradients y sombras suaves.
-- Guía en pantalla con pasos, timeline y sección de soporte contextual.
-- Chatbot Refu con hero, prompts rápidos, burbujas animadas y prácticas sugeridas.
-- Perfil con mosaico de insignias, contador de badges desbloqueados y botones para sincronizar/restablecer recompensas persistidas.
+## Nuevas pantallas de Auth
+- **Login** con hero simplificado y CTA a la guia.
+- **Crear cuenta**: nombre, correo, contrasena y confirmacion con validaciones locales.
+- **Recuperar contrasena**: formulario de correo y SnackBar informativo (flujo real pendiente de backend).
+
+## Mejoras visuales recientes
+- Splash nativo y launcher icon personalizados con la paleta crema/lavanda.
+- Componentes y tarjetas usando AppColors/AppGradients + sombras suaves.
+- Chatbot Refu redisenado: prompts rapidos, burbujas claras y banner de error.
+- Perfil con insignias, contador de badges y botones de sincronizar/restablecer.
 
 ## Servicios de datos y ETL
-- El directorio de salud y contenido educativo se normaliza mediante scripts en `backend/etl`.
-- La app consume los JSON generados por Nest/FastAPI; al cambiar de backend solo se ajusta el feature flag `USE_NEST_BACKEND`.
-- Para pruebas offline, los providers mockeados (hidratación, recompensas, diario) usan los mismos modelos que la API expone.
+- Directorio de salud y contenido educativo normalizado en `flutter/backend/etl`.
+- La app puede consumir FastAPI o Nest mediante el flag `USE_NEST_BACKEND`.
+- Providers mock (hidratacion, recompensas, diario) siguen disponibles para pruebas offline.
 
-## Recompensas & Perfil
-- El `rewardProvider` guarda el balance y las insignias en `FlutterSecureStorage`, de modo que los puntos y badges persisten entre sesiones.
-- Desde **Perfil → Mis insignias** puedes:
-  - Pulsar **Sincronizar** para recargar recompensas (vuelve a consultar storage y aplica las reglas actuales).
-  - Pulsar **Restablecer** para reiniciar el balance a los objetivos predefinidos.
-- Los campos de nombre, correo, teléfono, avatar y notificaciones también se almacenan en las llaves `mr:profile_*`, lo que permite reanudar la sesión sin depender de backend.
-
-## Plan operativo (2 semanas, mínimo 2 h/día)
-| Día | Objetivo | Resultado esperado |
+## Plan operativo (2 semanas, minimo 2 h/dia)
+| Dia | Objetivo | Resultado esperado |
 | --- | --- | --- |
-| 1 | Pulir UI Inicio + Guía | Hero en video, chips y recorrido documentado |
-| 2 | Hidratación y Mindfulness | Gráficas FLChart y tarjetas responsivas |
-| 3 | Diario y Emociones | Modelos completos + animaciones en carrusel |
-| 4 | Chatbot Refu | Integración con Llama vía backend FastAPI/Nest bridge |
-| 5 | Recompensas y perfil | Estado guardado en secure storage + badges |
+| 1 | Pulir UI Inicio + Guia | Hero en video/splash, CTA guia documentada |
+| 2 | Hidratacion y Mindfulness | Graficas y tarjetas responsivas |
+| 3 | Diario y Emociones | Modelos completos + animaciones |
+| 4 | Chatbot Refu | Integracion Llama via FastAPI/Nest |
+| 5 | Recompensas y perfil | Estado en secure storage + badges |
 | 6 | Recursos/ETL | Validar pipelines y cache local |
-| 7 | QA móvil (build 1) | `flutter test`, `flutter run -d chrome` |
-| 8 | Backend Nest etapa 1 | Autenticación y seed inicial |
+| 7 | QA movil (build 1) | `flutter test`, `flutter run -d chrome` |
+| 8 | Backend Nest etapa 1 | Autenticacion y seed inicial |
 | 9 | Backend Nest etapa 2 | Recursos y chatbot streaming |
 |10 | Backend Nest etapa 3 | Observabilidad + pruebas e2e |
-|11 | QA móvil (build 2) | Smoke test en dos dispositivos/emuladores |
-|12 | Documentación | Actualizar README, grabar video demo |
-|13 | Retroalimentación | Ajustes visuales finos, accesibilidad |
-|14 | Publicación interna | Tag en GitHub, checklist de pruebas |
+|11 | QA movil (build 2) | Smoke test en dos dispositivos |
+|12 | Documentacion | Actualizar README, grabar demo |
+|13 | Retroalimentacion | Ajustes visuales finos, accesibilidad |
+|14 | Publicacion interna | Tag, checklist de pruebas |
 
-## Próximos hitos
-- Ejecutar dos builds móviles (prod y beta) conectados a internet. Usa `flutter build apk --release` y `flutter build appbundle` tras validar QA.
-- Migrar backend a NestJS en 2-3 semanas manteniendo compatibilidad con FastAPI mediante feature flags.
-- Afinar el chatbot con prompts específicos para Llama y registrar la configuración en `backend/README.md`.
-- Integrar calendario (Google Calendar) con el cronograma anterior mediante la API de Calendar o un bot en ChatGPT usando el prompt solicitado.
-
-## Documentación y seguimiento
-- Actualiza este archivo y `README.md` cada vez que avances un día del plan.
-- Registra evidencias (capturas, logs o videos) en `flutter/docs/` para cada hito.
-- Cuando migres un módulo a NestJS, documenta el cambio en `backend/MODERNIZATION_PROGRESS.md` indicando fecha y responsable.
-- Usa el tablero interno para marcar días cumplidos y enlazar el commit correspondiente.
+## Documentacion y seguimiento
+- Actualiza este archivo y los README al cerrar cada hito.
+- Guarda evidencias (capturas, logs, videos) en `flutter/docs/`.
+- Registra avances de migracion en `flutter/backend/MODERNIZATION_PROGRESS.md`.

@@ -7,30 +7,30 @@ class AppGradients {
   static const LinearGradient softBackground = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFFFDF8F1), Color(0xFFF6F1FF)],
+    colors: [AppColors.background, AppColors.surfaceAlt],
   );
 
   static const LinearGradient cardPrimary = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [AppColors.primary, Color(0xFF9D8AF0)],
+    colors: [AppColors.primary, AppColors.tertiary],
   );
 
   static const LinearGradient cardSecondary = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFFCE6F1), Color(0xFFFDF4E9)],
+    colors: [AppColors.secondary, AppColors.surfaceAlt],
   );
 
   static const LinearGradient cardAccent = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFA6E4D3), Color(0xFFBEE9FF)],
+    colors: [AppColors.tertiary, AppColors.primary],
   );
 
   static const LinearGradient primaryBubble = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [AppColors.primary, Color(0xFF9D8AF0)],
+    colors: [AppColors.primary, AppColors.tertiary],
   );
 }

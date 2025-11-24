@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:mi_refugio_app/core/services/storage_service.dart';
+import 'package:mi_refugio_app/core/types/result.dart';
 import 'package:mi_refugio_app/features/auth/application/auth_state.dart';
+import 'package:mi_refugio_app/features/auth/data/models/auth_failure.dart';
 import 'package:uuid/uuid.dart';
 
 final uuid = Uuid();
@@ -29,11 +31,14 @@ class AuthRepository {
     );
   }
 
-  Future<AuthUser> loginWithCredentials({
+  Future<Result<AuthUser, AuthFailure>> loginWithCredentials({
     required String email,
     required String password,
   }) async {
-    await Future<void>.delayed(const Duration(milliseconds: 800));
+    await Future<void>.delayed(const Duration(milliseconds: 600));
+    if (email.isEmpty || password.isEmpty) {
+      return const Failure(AuthFailure(AuthFailureType.invalidCredentials));
+    }
     final user = AuthUser(
       id: uuid.v4(),
       email: email,
@@ -45,11 +50,14 @@ class AuthRepository {
       StorageKeys.lastUserId: user.email,
       StorageKeys.userCreatedAt: user.createdAt!.toIso8601String(),
     });
-    return user;
+    return Success(user);
   }
 
-  Future<AuthUser> loginWithGoogle(String token) async {
-    await Future<void>.delayed(const Duration(milliseconds: 600));
+  Future<Result<AuthUser, AuthFailure>> loginWithGoogle(String token) async {
+    await Future<void>.delayed(const Duration(milliseconds: 400));
+    if (token.isEmpty) {
+      return const Failure(AuthFailure(AuthFailureType.invalidCredentials));
+    }
     final user = AuthUser(
       id: uuid.v4(),
       email: 'google_user@mirefugio.cl',
@@ -61,11 +69,11 @@ class AuthRepository {
       StorageKeys.lastUserId: user.email,
       StorageKeys.userCreatedAt: user.createdAt!.toIso8601String(),
     });
-    return user;
+    return Success(user);
   }
 
-  Future<AuthUser> loginAsGuest() async {
-    await Future<void>.delayed(const Duration(milliseconds: 300));
+  Future<Result<AuthUser, AuthFailure>> loginAsGuest() async {
+    await Future<void>.delayed(const Duration(milliseconds: 250));
     final user = AuthUser(
       id: 'guest-${DateTime.now().millisecondsSinceEpoch}',
       email: 'guest@mirefugio.cl',
@@ -77,14 +85,15 @@ class AuthRepository {
       StorageKeys.lastUserId: user.email,
       StorageKeys.userCreatedAt: user.createdAt!.toIso8601String(),
     });
-    return user;
+    return Success(user);
   }
 
-  Future<void> logout() async {
+  Future<Result<void, AuthFailure>> logout() async {
     await _storage.setMany({
       StorageKeys.authToken: null,
       StorageKeys.lastUserId: null,
       StorageKeys.userCreatedAt: null,
     });
+    return const Success(null);
   }
 }
