@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Mi Cuenta | Mi Refugio{% endblock %}
+{% block content %}
+<section class="py-5">
+  <div class="container" style="max-width: 920px;">
+    <div class="row g-4">
+      <div class="col-12 col-lg-4">
+        <div class="card shadow-soft border-0 h-100">
+          <div class="card-body p-4 text-center">
+            {% if cliente.avatar %}
+            <img class="avatar mb-3 rounded-circle" src="{{ cliente.avatar.url }}" alt="Avatar de {{ user.get_full_name|default:user.username }}" style="width:140px;height:140px;object-fit:cover;">
+            {% else %}
+            <img class="avatar mb-3 rounded-circle" src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username|urlencode }}&background=1e40af&color=fff" alt="Avatar">
+            {% endif %}
+            <h5 class="mb-1">{{ user.get_full_name|default:user.username }}</h5>
+            <div class="text-secondary small">{{ user.email }}</div>
+            <hr>
+            <a href="{% url 'password_change' %}" class="btn btn-outline-mr btn-sm">Cambiar contrasena</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-lg-8">
+        <div class="card shadow-soft border-0 h-100">
+          <div class="card-body p-4">
+            <h2 class="h5 mb-3">Datos de la cuenta</h2>
+            <form method="post" action="{% url 'perfil' %}" class="row g-3" enctype="multipart/form-data">
+              {% csrf_token %}
+              <div class="col-md-6">
+                <label class="form-label" for="first_name">Nombre</label>
+                <input class="form-control" id="first_name" name="first_name" value="{{ user.first_name }}" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="last_name">Apellido</label>
+                <input class="form-control" id="last_name" name="last_name" value="{{ user.last_name }}" required>
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="email">Correo</label>
+                <input type="email" class="form-control" id="email" value="{{ user.email }}" name="email" required>
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="avatar">Foto de perfil</label>
+                <input type="file" class="form-control" id="avatar" name="avatar" accept="image/*">
+                <div class="form-text">Usa imágenes cuadradas menores a 2MB para un mejor resultado.</div>
+              </div>
+              <div class="col-12 d-flex gap-2">
+                <button class="btn btn-mr">Guardar cambios</button>
+                <a class="btn btn-outline-secondary" href="{% url 'home' %}">Volver</a>
+              </div>
+            </form>
+            <p class="small text-muted mt-3 mb-0">
+              * Esta es una edicion simple. Para cambios criticos, valida tu correo.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
