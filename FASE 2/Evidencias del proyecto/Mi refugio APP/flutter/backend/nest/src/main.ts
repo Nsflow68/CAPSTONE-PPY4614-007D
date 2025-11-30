@@ -14,7 +14,7 @@ async function bootstrap() {
     }),
   );
 
-  const port = process.env.PORT || 4000;
+  const port = process.env.PORT || 3001;
   await app.listen(port);
   Logger.log(`NestJS API levantada en http://localhost:${port}/api`, 'Bootstrap');
 }

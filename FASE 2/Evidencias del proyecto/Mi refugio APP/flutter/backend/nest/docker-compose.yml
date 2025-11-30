@@ -1,0 +1,38 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mirefugio
+      POSTGRES_PASSWORD: mirefugio
+      POSTGRES_DB: mirefugio
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  nest:
+    build: .
+    depends_on:
+      - db
+    environment:
+      PORT: 3001
+      NODE_ENV: development
+      DATABASE_URL: postgresql://mirefugio:mirefugio@db:5432/mirefugio?schema=mobile
+      JWT_SECRET: change-me
+      JWT_EXPIRES_IN: 1h
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:3b-instruct-q4_K_M}
+      CHATBOT_TIMEOUT_MS: ${CHATBOT_TIMEOUT_MS:-10000}
+      CHATBOT_RETRIES: ${CHATBOT_RETRIES:-1}
+    ports:
+      - "3001:3001"
+    command: ["node", "dist/main.js"]
+    volumes:
+      - ./dist:/app/dist:ro
+      - ./node_modules:/app/node_modules:ro
+
+volumes:
+  pgdata:
