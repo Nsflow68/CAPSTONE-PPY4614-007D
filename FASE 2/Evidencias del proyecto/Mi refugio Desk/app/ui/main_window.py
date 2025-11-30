@@ -14,8 +14,9 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from app.database.repositories.user_repository import UserRecord
+from app.models.user import UserRecord
 from app.ui.views.content_view import ContentView
+from app.ui.views.donations_view import DonationsView
 from app.ui.views.insights_view import InsightsView
 from app.ui.views.notifications_view import NotificationsView
 from app.ui.views.reports_view import ReportsView
@@ -99,8 +100,9 @@ class MainWindow(QMainWindow):
             "Gestión de Usuarios",
             "Insights y Estadísticas",
             "Gestión de Contenido y Chatbot",
+            "Donaciones",
             "Notificaciones y Mantenimiento",
-            "Reportes y Exportación de Datos",
+            "Exportación de Datos",
         )
         for text in button_texts:
             button = QPushButton(text)
@@ -121,6 +123,7 @@ class MainWindow(QMainWindow):
         self._stack.addWidget(self._user_management_view)
         self._stack.addWidget(InsightsView())
         self._stack.addWidget(ContentView())
+        self._stack.addWidget(DonationsView())
         self._stack.addWidget(NotificationsView())
         self._stack.addWidget(ReportsView())
 

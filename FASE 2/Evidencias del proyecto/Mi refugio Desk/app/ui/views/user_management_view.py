@@ -3,6 +3,7 @@ from typing import Optional, Set
 
 import pandas as pd
 import seaborn as sns
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -22,52 +23,46 @@ from PyQt5.QtWidgets import (
     QListWidgetItem,
     QGroupBox,
     QGridLayout,
+    QInputDialog,
 )
 from PyQt5.QtWidgets import QAbstractItemView
 from PyQt5.QtCore import Qt, QAbstractTableModel, QVariant
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
-from app.database.repositories.user_repository import UserRecord
-from app.utils.security import hash_password
+from app.models.user import UserRecord
+from app.services.api_client import ApiClientError
+from app.services.user_service import USER_COLUMNS, UserService
 
 # --- Clases de la Vista ---
 
 class UserManagementView(QWidget):
-    def __init__(self, current_user: Optional[UserRecord] = None):
+    def __init__(self, current_user: Optional[UserRecord] = None, user_service: Optional[UserService] = None):
         super().__init__()
         self._current_user = current_user
+        self._user_service = user_service or UserService()
 
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
-        
-        # Cargar datos de ejemplo (Movido al __init__ para accesibilidad global)
-        self.user_data = pd.DataFrame({
-            'ID': [1, 2, 3, 4, 5, 6, 7],
-            'Usuario': ['matias', 'ana', 'carlos', 'sofia', 'pedro', 'laura', 'david'],
-            'Nombre': ['Matias', 'Ana', 'Carlos', 'Sofia', 'Pedro', 'Laura', 'David'],
-            'Género': ['Masculino', 'Femenino', 'Masculino', 'Femenino', 'Masculino', 'Femenino', 'Masculino'],
-            'Edad': [25, 30, 22, 28, 45, 33, 19],
-            'Rol': ['Admin', 'Usuario', 'Usuario', 'Moderador', 'Usuario', 'Admin', 'Usuario'],
-            'Estado': ['Activo', 'Activo', 'Inactivo', 'Activo', 'Activo', 'Inactivo', 'Activo'],
-        })
-        sample_passwords = ["matias123", "ana2024", "carlos22", "sofiaSecure", "pedro45", "lauraKey", "davidSafe"]
-        self.user_data['Contraseña'] = [hash_password(pw) for pw in sample_passwords]
-        self._ensure_current_user_in_dataset()
-        
+
+        self.user_data = pd.DataFrame(columns=USER_COLUMNS)
+        self.activity_data = pd.DataFrame()
+        self.filtered_activity_data = pd.DataFrame()
+        self._filtered_user_ids: Set[int] = set()
+
         self.role_data = pd.DataFrame({
             'Rol': ['Admin', 'Moderador', 'Usuario'],
             'Permiso: Edición': ['Sí', 'No', 'No'],
             'Permiso: Reportes': ['Sí', 'Sí', 'No'],
             'Descripción': ['Control total', 'Moderar contenido', 'Acceso básico']
         })
-        
+
         # Pestañas de submenú
         tabs_layout = QHBoxLayout()
         self.btn_control = QPushButton("Control de Usuarios")
-        self.btn_roles = QPushButton("Gestión de Roles")
         self.btn_analisis = QPushButton("Análisis de Actividad")
-        
+        self._tab_buttons = [self.btn_control, self.btn_analisis]
+
         # Estilo de los botones (mismo violeta)
         button_style = """
             QPushButton {
@@ -82,39 +77,41 @@ class UserManagementView(QWidget):
                 border-top: 2px solid #A28FC9;
             }
         """
-        self.btn_control.setStyleSheet(button_style)
-        self.btn_roles.setStyleSheet(button_style)
-        self.btn_analisis.setStyleSheet(button_style)
-        
-        self.btn_control.setCheckable(True)
-        self.btn_roles.setCheckable(True)
-        self.btn_analisis.setCheckable(True)
+        for btn in self._tab_buttons:
+            btn.setStyleSheet(button_style)
+            btn.setCheckable(True)
+            btn.setAutoExclusive(True)
 
         tabs_layout.addWidget(self.btn_control)
-        tabs_layout.addWidget(self.btn_roles)
         tabs_layout.addWidget(self.btn_analisis)
         tabs_layout.addStretch()
-        
+
         main_layout.addLayout(tabs_layout)
-        
+
         # Contenedor de paneles dinámicos
         self.stacked_widget = QStackedWidget()
         main_layout.addWidget(self.stacked_widget)
-        
+
         # Vistas internas
         self.control_view = self.create_control_view()
-        self.roles_view = self.create_roles_view()
         self.analisis_view = self.create_analisis_view()
 
         self.stacked_widget.addWidget(self.control_view)
-        self.stacked_widget.addWidget(self.roles_view)
         self.stacked_widget.addWidget(self.analisis_view)
-        
-        self.btn_control.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(0))
-        self.btn_roles.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(1))
-        self.btn_analisis.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(2))
-        
-        self.btn_control.setChecked(True)
+
+        for index, button in enumerate(self._tab_buttons):
+            button.clicked.connect(lambda checked, idx=index: self._select_tab(idx))
+
+        self._select_tab(0)
+        self._load_users_from_api(initial=True)
+
+    def _select_tab(self, index: int) -> None:
+        """Activa una pestaña y desmarca el resto."""
+        self.stacked_widget.setCurrentIndex(index)
+        for i, button in enumerate(self._tab_buttons):
+            button.blockSignals(True)
+            button.setChecked(i == index)
+            button.blockSignals(False)
 
     # --- Panel 1: Control de Usuarios (CRUD Mejorado) ---
     def create_control_view(self):
@@ -143,15 +140,31 @@ class UserManagementView(QWidget):
         self.table_model = PandasModel(self.user_data)
         self.table_view.setModel(self.table_model)
         self.table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.table_view.setSelectionMode(QAbstractItemView.SingleSelection)
         layout.addWidget(self.table_view)
 
         # Botones de CRUD (Mejorados visualmente)
         crud_buttons_layout = QHBoxLayout()
-        self.add_btn = QPushButton("➕ Agregar Usuario")
-        self.modify_btn = QPushButton("✏️ Modificar Seleccionado")
-        self.delete_btn = QPushButton("🗑️ Eliminar")
-        self.add_btn.setStyleSheet("background-color: #5cb85c; color: white;")
-        self.delete_btn.setStyleSheet("background-color: #d9534f; color: white;")
+        self.add_btn = QPushButton("➕ Agregar Usuario")        
+        self.modify_btn = QPushButton("Modificar")
+        self.delete_btn = QPushButton("Eliminar")
+        self.modify_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #f0f0f0; color: #333; padding: 10px 14px; border-radius: 6px;
+            }
+            QPushButton:disabled {
+                background-color: #e0e0e0; color: #999;
+            }
+            QPushButton:hover:!disabled {
+                background-color: #dcdcdc;
+            }
+        """)
+        self.modify_btn.setMinimumWidth(120)
+        self.add_btn.setStyleSheet("background-color: #4caf50; color: white; padding: 10px 14px; border-radius: 6px;")
+        self.delete_btn.setStyleSheet("background-color: #e74c3c; color: white; padding: 10px 14px; border-radius: 6px;")
+        self.modify_btn.setEnabled(False)
+        self.delete_btn.setEnabled(False)
         
         self.add_btn.clicked.connect(self.add_user)
         self.modify_btn.clicked.connect(self.modify_user)
@@ -162,6 +175,10 @@ class UserManagementView(QWidget):
         crud_buttons_layout.addWidget(self.modify_btn)
         crud_buttons_layout.addWidget(self.delete_btn)
         layout.addLayout(crud_buttons_layout)
+
+        # Habilitamos botones según selección
+        if self.table_view.selectionModel():
+            self.table_view.selectionModel().selectionChanged.connect(self._on_table_selection_changed)
 
         return view
 
@@ -181,16 +198,79 @@ class UserManagementView(QWidget):
             
         self.table_model.set_data(filtered_df)
 
+    def _load_users_from_api(self, initial: bool = False) -> None:
+        try:
+            df = self._user_service.list_users_dataframe()
+        except ApiClientError as exc:
+            title = "Error de conexión" if initial else "Error al actualizar usuarios"
+            QMessageBox.critical(self, title, str(exc))
+            return
+
+        self.user_data = df if not df.empty else pd.DataFrame(columns=USER_COLUMNS)
+        self._ensure_current_user_in_dataset()
+        self._sync_user_views()
+
+    def _sync_user_views(self) -> None:
+        if hasattr(self, 'table_model'):
+            self.table_model.set_data(self.user_data)
+
+        if hasattr(self, 'user_list'):
+            self.user_list.clear()
+            if not self.user_data.empty and 'Nombre' in self.user_data:
+                self.user_list.addItems(self.user_data['Nombre'])
+
+        self._refresh_status_filter_options()
+        self._rebuild_activity_dataset()
+        self._populate_user_filter_list()
+        self._apply_activity_filter(initial=True)
+
+    def _refresh_status_filter_options(self) -> None:
+        if not hasattr(self, 'status_filter_combo'):
+            return
+        current = self.status_filter_combo.currentText() if self.status_filter_combo.count() else "Todos los Estados"
+        self.status_filter_combo.blockSignals(True)
+        self.status_filter_combo.clear()
+        self.status_filter_combo.addItem("Todos los Estados")
+        if 'Estado' in self.user_data:
+            for status in sorted({str(v) for v in self.user_data['Estado'].dropna().unique()}):
+                self.status_filter_combo.addItem(status)
+        index = self.status_filter_combo.findText(current)
+        if index != -1:
+            self.status_filter_combo.setCurrentIndex(index)
+        self.status_filter_combo.blockSignals(False)
+
+    def _rebuild_activity_dataset(self) -> None:
+        if self.user_data.empty:
+            self.activity_data = pd.DataFrame(columns=['user_id', 'login_count', 'chatbot_sessions'])
+            self.filtered_activity_data = self.activity_data.copy()
+            self._filtered_user_ids = set()
+            return
+
+        sample_login_counts = [50, 20, 100, 35, 78, 60, 42]
+        sample_chatbot_sessions = [20, 5, 40, 15, 60, 30, 18]
+        length = len(self.user_data)
+        login_counts = list(islice(cycle(sample_login_counts), length))
+        chatbot_sessions = list(islice(cycle(sample_chatbot_sessions), length))
+        ids_series = self.user_data['ID'].fillna(0).astype(int)
+        self.activity_data = pd.DataFrame({
+            'user_id': ids_series,
+            'login_count': login_counts,
+            'chatbot_sessions': chatbot_sessions
+        })
+        self.filtered_activity_data = self.activity_data.copy()
+        self._filtered_user_ids = set(ids_series.tolist())
+
     def _ensure_current_user_in_dataset(self) -> Optional[int]:
         if not self._current_user:
             return None
         username = self._current_user.username
         if 'Usuario' not in self.user_data.columns:
-            self.user_data['Usuario'] = ''
+            return None
         if not self.user_data[self.user_data['Usuario'] == username].empty:
             return None
 
-        new_id = int(self.user_data['ID'].max() + 1) if not self.user_data.empty else 1
+        existing_ids = self.user_data['ID'].dropna()
+        new_id = int(existing_ids.max() + 1) if not existing_ids.empty else 1
         display_name = self._current_user.full_name or username
         raw_role = (self._current_user.role or '').strip().lower()
         if raw_role == 'admin':
@@ -208,7 +288,7 @@ class UserManagementView(QWidget):
             'Edad': pd.NA,
             'Rol': role_value,
             'Estado': 'Activo',
-            'Contraseña': self._current_user.password_hash,
+            'Contraseña': "********" if self._current_user.password_hash else "",
         }
         new_df = pd.DataFrame([new_row])[self.user_data.columns]
         self.user_data = pd.concat([self.user_data, new_df], ignore_index=True)
@@ -220,60 +300,35 @@ class UserManagementView(QWidget):
 
     def set_current_user(self, user: Optional[UserRecord]) -> None:
         self._current_user = user
-        previous_selection: Set[int] = set()
-        if hasattr(self, 'user_filter_list'):
-            previous_selection = {item.data(Qt.UserRole) for item in self.user_filter_list.selectedItems()}
-
-        new_id = self._ensure_current_user_in_dataset()
-        if new_id is not None:
-            previous_selection.add(new_id)
-
-        if hasattr(self, 'table_model'):
-            self.table_model.set_data(self.user_data)
-
-        if hasattr(self, 'user_list'):
-            self.user_list.clear()
-            self.user_list.addItems(self.user_data['Nombre'])
-
-        if hasattr(self, 'activity_data'):
-            if new_id is not None and new_id not in set(self.activity_data['user_id']):
-                self._add_activity_record(new_id)
-            self._populate_user_filter_list()
-            if hasattr(self, 'user_filter_list'):
-                if previous_selection:
-                    self.user_filter_list.blockSignals(True)
-                    for index in range(self.user_filter_list.count()):
-                        item = self.user_filter_list.item(index)
-                        item.setSelected(item.data(Qt.UserRole) in previous_selection)
-                    self.user_filter_list.blockSignals(False)
-                    self._apply_activity_filter()
-                else:
-                    self._select_all_users_filter()
+        self._load_users_from_api()
 
     def add_user(self):
-        # Pasar los datos de roles y opciones al diálogo
         dialog = UserDialog(
             "Agregar Usuario",
             self.user_data.columns,
             roles=self.role_data['Rol'].tolist(),
-            gender_options=self.user_data['Género'].unique().tolist(),
+            gender_options=['Masculino', 'Femenino', 'No binario'],
             require_password=True,
         )
         if dialog.exec_() == QDialog.Accepted:
             new_user_data = dialog.get_data()
-            new_id = self.user_data['ID'].max() + 1 if not self.user_data.empty else 1
-            new_user_data['ID'] = new_id
-            new_user_df = pd.DataFrame([new_user_data])[self.user_data.columns]
-            self.user_data = pd.concat([self.user_data, new_user_df], ignore_index=True)
-            self.table_model.set_data(self.user_data)
+            password_plain = new_user_data.pop("password_raw", None)
+            if not password_plain:
+                QMessageBox.warning(self, "Validación", "La contraseña es obligatoria.")
+                return
+            try:
+                self._user_service.create_user(
+                    username=new_user_data.get('Usuario', ''),
+                    password=password_plain,
+                    full_name=new_user_data.get('Nombre'),
+                    role=new_user_data.get('Rol', 'Usuario'),
+                )
+            except ApiClientError as exc:
+                QMessageBox.critical(self, "Error al crear usuario", str(exc))
+                return
+
             QMessageBox.information(self, "Éxito", "Usuario agregado correctamente.")
-            # Refrescar la lista de usuarios en la vista de roles
-            if hasattr(self, 'user_list'):
-                self.user_list.clear()
-                self.user_list.addItems(self.user_data['Nombre'])
-            self._add_activity_record(new_id)
-            self._populate_user_filter_list()
-            self._apply_activity_filter()
+            self._load_users_from_api()
 
 
     def modify_user(self):
@@ -281,34 +336,59 @@ class UserManagementView(QWidget):
         if not selected_index.isValid():
             QMessageBox.warning(self, "Advertencia", "Seleccione un usuario para modificar.")
             return
-        
+
         row = selected_index.row()
         current_data = self.table_model._data.iloc[row].to_dict()
-        
+
         dialog = UserDialog(
             "Modificar Usuario",
             self.user_data.columns,
             current_data,
             self.role_data['Rol'].tolist(),
-            self.user_data['Género'].unique().tolist(),
-            existing_password=current_data.get('Contraseña'),
+            ['Masculino', 'Femenino', 'No binario'],
         )
-        
-        if dialog.exec_() == QDialog.Accepted:
-            modified_data = dialog.get_data()
-            # Encontrar el índice original en el DataFrame principal
-            original_index = self.user_data[self.user_data['ID'] == current_data['ID']].index[0]
-            
-            for key, value in modified_data.items():
-                self.user_data.at[original_index, key] = value
-            self.table_model.set_data(self.user_data)
-            QMessageBox.information(self, "Éxito", "Usuario modificado correctamente.")
-            # Refrescar la lista de usuarios en la vista de roles
-            if hasattr(self, 'user_list'):
-                self.user_list.clear()
-                self.user_list.addItems(self.user_data['Nombre'])
-            self._populate_user_filter_list()
-            self._apply_activity_filter()
+
+        if dialog.exec_() != QDialog.Accepted:
+            return
+
+        modified_data = dialog.get_data()
+        password_plain = modified_data.pop("password_raw", None)
+
+        summary = "\n".join(
+            [
+                f"Usuario: {modified_data.get('Usuario') or current_data.get('Usuario')}",
+                f"Nombre: {modified_data.get('Nombre') or current_data.get('Nombre')}",
+                f"Rol: {modified_data.get('Rol') or current_data.get('Rol')}",
+            ]
+        )
+
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Question)
+        msg.setWindowTitle("Aplicar cambios")
+        msg.setText(f"¿Aplicar estos cambios?\n\n{summary}")
+        msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        msg.button(QMessageBox.Yes).setText("Sí")
+        msg.button(QMessageBox.No).setText("No")
+        reply = msg.exec_()
+        if reply != QMessageBox.Yes:
+            return
+
+        try:
+            self._user_service.update_user(
+                int(current_data['ID']),
+                username=modified_data.get('Usuario'),
+                full_name=modified_data.get('Nombre'),
+                role=modified_data.get('Rol'),
+                status=modified_data.get('Estado'),
+                password=password_plain or None,
+            )
+        except ApiClientError as exc:
+            QMessageBox.critical(self, "Error al modificar", str(exc))
+            return
+
+        QMessageBox.information(self, "Éxito", "Usuario modificado correctamente.")
+        self._load_users_from_api()
+
             
     def delete_user(self):
         selected_index = self.table_view.currentIndex()
@@ -326,25 +406,16 @@ class UserManagementView(QWidget):
         reply = msg.exec_()
 
         if reply == QMessageBox.Yes:
-            # Obtener el índice de la fila seleccionada en el DataFrame filtrado actual
             row_index_in_filtered_df = selected_index.row()
-            
-            # Obtener el ID del usuario
             user_id_to_delete = self.table_model._data.iloc[row_index_in_filtered_df]['ID']
-            
-            # Eliminar la fila del DataFrame principal
-            self.user_data = self.user_data[self.user_data['ID'] != user_id_to_delete].reset_index(drop=True)
-            
-            # Refrescar la vista de la tabla (usando la función filter_users para aplicar los filtros actuales)
-            self.filter_users()
+            try:
+                self._user_service.delete_user(int(user_id_to_delete))
+            except ApiClientError as exc:
+                QMessageBox.critical(self, "Error al eliminar", str(exc))
+                return
+
             QMessageBox.information(self, "Éxito", "Usuario eliminado correctamente.")
-            # Refrescar la lista de usuarios en la vista de roles
-            if hasattr(self, 'user_list'):
-                self.user_list.clear()
-                self.user_list.addItems(self.user_data['Nombre'])
-            self._remove_activity_record(user_id_to_delete)
-            self._populate_user_filter_list()
-            self._apply_activity_filter()
+            self._load_users_from_api()
 
 
     # --- Panel 2: Gestión de Roles (Mejorado) ---
@@ -365,13 +436,14 @@ class UserManagementView(QWidget):
         roles_buttons = QHBoxLayout()
         add_role_btn = QPushButton("➕ Nuevo Rol")
         edit_permissions_btn = QPushButton("🛠️ Editar Permisos")
+        add_role_btn.setStyleSheet("padding: 8px 12px; border-radius: 6px; background-color: #e8e3f5;")
+        edit_permissions_btn.setStyleSheet("padding: 8px 12px; border-radius: 6px; background-color: #e8e3f5;")
         roles_buttons.addWidget(add_role_btn)
         roles_buttons.addWidget(edit_permissions_btn)
         roles_layout.addLayout(roles_buttons)
         
-        # Conexiones (simulación)
-        edit_permissions_btn.clicked.connect(lambda: QMessageBox.information(self, "Permisos", "Simulación de diálogo de edición de permisos."))
-        add_role_btn.clicked.connect(lambda: QMessageBox.information(self, "Nuevo Rol", "Simulación de añadir un nuevo rol a la tabla."))
+        add_role_btn.clicked.connect(self._add_role)
+        edit_permissions_btn.clicked.connect(lambda: QMessageBox.information(self, "Permisos", "Define permisos en la API/DB según tu modelo."))
 
         layout.addWidget(roles_group, 2) # Ocupa 2/3
 
@@ -381,7 +453,9 @@ class UserManagementView(QWidget):
         
         assign_layout.addWidget(QLabel("<strong>1. Seleccionar Usuario:</strong>"))
         self.user_list = QListWidget()
-        self.user_list.addItems(self.user_data['Nombre'])
+        self.user_list.setSelectionMode(QAbstractItemView.SingleSelection)
+        if not self.user_data.empty and 'Nombre' in self.user_data:
+            self.user_list.addItems(self.user_data['Nombre'])
         assign_layout.addWidget(self.user_list)
         
         assign_layout.addWidget(QLabel("<strong>2. Seleccionar Rol:</strong>"))
@@ -404,34 +478,47 @@ class UserManagementView(QWidget):
         selected_role = self.role_combo_assign.currentText()
         if selected_user_item:
             user_name = selected_user_item.text()
-            # Encontrar el índice original en el DataFrame principal
-            self.user_data.loc[self.user_data['Nombre'] == user_name, 'Rol'] = selected_role
+            row = self.user_data[self.user_data['Nombre'] == user_name]
+            if row.empty or 'ID' not in row.columns:
+                QMessageBox.warning(self, "Advertencia", "No se pudo determinar el usuario seleccionado.")
+                return
+            user_id = int(row.iloc[0]['ID'])
+            try:
+                self._user_service.update_user(user_id, role=selected_role)
+            except ApiClientError as exc:
+                QMessageBox.critical(self, "Error al actualizar rol", str(exc))
+                return
             QMessageBox.information(self, "Éxito", f"Rol de '{user_name}' asignado a '{selected_role}'.")
-            
-            # Actualizar tabla de control por si está visible
-            self.filter_users()
+            self._load_users_from_api()
         else:
             QMessageBox.warning(self, "Advertencia", "Seleccione un usuario de la lista para asignar el rol.")
+
+    def _add_role(self) -> None:
+        text, ok = QInputDialog.getText(self, "Nuevo rol", "Nombre del rol:")
+        if not ok or not text.strip():
+            return
+        role_name = text.strip()
+        if role_name in self.role_data['Rol'].values:
+            QMessageBox.information(self, "Roles", "Ese rol ya existe.")
+            return
+        new_row = {
+            'Rol': role_name,
+            'Permiso: Edición': 'No',
+            'Permiso: Reportes': 'No',
+            'Descripción': '',
+        }
+        self.role_data = pd.concat([self.role_data, pd.DataFrame([new_row])], ignore_index=True)
+        self.roles_table_model.set_data(self.role_data)
+        self.role_combo_assign.addItem(role_name)
+        QMessageBox.information(self, "Roles", f"Rol '{role_name}' añadido (gestiona permisos en la API/DB si aplica).")
 
 
     # --- Panel 3: Análisis de Actividad (Profundizado) ---
     def create_analisis_view(self):
         view = QWidget()
         layout = QVBoxLayout(view)
-        
-        # Cargar datos de actividad (ejemplo)
-        sample_login_counts = [50, 20, 100, 35, 78, 60, 42]
-        sample_chatbot_sessions = [20, 5, 40, 15, 60, 30, 18]
-        length = len(self.user_data)
-        login_counts = list(islice(cycle(sample_login_counts), length))
-        chatbot_sessions = list(islice(cycle(sample_chatbot_sessions), length))
-        self.activity_data = pd.DataFrame({
-            'user_id': self.user_data['ID'],
-            'login_count': login_counts,
-            'chatbot_sessions': chatbot_sessions
-        })
-        self.filtered_activity_data = self.activity_data.copy()
-        self._filtered_user_ids = set(self.user_data['ID'])
+
+        self._rebuild_activity_dataset()
 
         filter_group = QGroupBox("Filtros de Usuarios")
         filter_layout = QVBoxLayout(filter_group)
@@ -452,8 +539,20 @@ class UserManagementView(QWidget):
 
         buttons_layout = QHBoxLayout()
         self._select_all_btn = QPushButton("Seleccionar todos")
-        self._select_all_btn.clicked.connect(self._select_all_users_filter)
         self._clear_selection_btn = QPushButton("Limpiar selección")
+        hover_style = """
+            QPushButton {
+                padding: 6px 12px;
+                border-radius: 6px;
+                background-color: #f5f5f5;
+            }
+            QPushButton:hover {
+                background-color: #e0dff7;
+            }
+        """
+        self._select_all_btn.setStyleSheet(hover_style)
+        self._clear_selection_btn.setStyleSheet(hover_style)
+        self._select_all_btn.clicked.connect(self._select_all_users_filter)
         self._clear_selection_btn.clicked.connect(self._clear_user_filter_selection)
         buttons_layout.addWidget(self._select_all_btn)
         buttons_layout.addWidget(self._clear_selection_btn)
@@ -562,6 +661,11 @@ class UserManagementView(QWidget):
             self.user_filter_list.item(index).setSelected(False)
         self.user_filter_list.blockSignals(False)
         self._apply_activity_filter()
+
+    def _on_table_selection_changed(self, *args) -> None:
+        has_selection = bool(self.table_view.selectionModel().hasSelection())
+        self.modify_btn.setEnabled(has_selection)
+        self.delete_btn.setEnabled(has_selection)
 
     def _apply_activity_filter(self, initial: bool = False) -> None:
         if not hasattr(self, 'user_filter_list'):
@@ -708,13 +812,11 @@ class UserDialog(QDialog):
         data=None,
         roles=None,
         gender_options=None,
-        existing_password: Optional[str] = None,
         require_password: bool = False,
     ):
         super().__init__()
         self.setWindowTitle(title)
         base_data = data.copy() if data else {h: '' for h in headers if h not in {'ID', 'Estado'}}
-        self._existing_password = existing_password or (base_data.get('Contraseña') if base_data else None)
         if 'Contraseña' in base_data:
             base_data['Contraseña'] = ''
         self.data = base_data
@@ -782,12 +884,8 @@ class UserDialog(QDialog):
                 value = input_widget.text()
                 if header == 'Contraseña':
                     value = value.strip()
-                    if value:
-                        data[header] = hash_password(value)
-                    elif self._existing_password:
-                        data[header] = self._existing_password
-                    else:
-                        data[header] = ''
+                    data['password_raw'] = value or None
+                    data[header] = "********" if value else ""
                 else:
                     data[header] = value
             elif isinstance(input_widget, QComboBox):

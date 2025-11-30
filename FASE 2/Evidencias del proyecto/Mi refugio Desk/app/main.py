@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from PyQt5.QtWidgets import QApplication, QDialog, QMessageBox
+from PyQt5.QtWidgets import QApplication, QDialog, QMessageBox, QStyleFactory
 
 from app.services.auth_service import AuthService
 from app.ui.login_dialog import LoginDialog
@@ -31,7 +31,12 @@ def main() -> None:
 
 
 def _apply_theme(app: QApplication) -> None:
-    """Carga el QSS principal si está disponible."""
+    """Configura estilo base y carga el QSS principal si está disponible."""
+    # Forzamos el estilo Fusion para asegurar que el QSS se respete en todos los controles.
+    fusion = QStyleFactory.create("Fusion")
+    if fusion is not None:
+        app.setStyle(fusion)
+
     theme_path = Path(__file__).resolve().parent.parent / "styles" / "main_theme.qss"
     if not theme_path.exists():
         return

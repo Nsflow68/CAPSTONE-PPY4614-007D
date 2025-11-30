@@ -6,7 +6,6 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QShowEvent
 from PyQt5.QtWidgets import (
     QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QHBoxLayout,
     QLabel,
@@ -15,7 +14,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
 )
 
-from app.database.repositories.user_repository import UserRecord
+from app.models.user import UserRecord
 from app.services.auth_service import AuthService
 
 
@@ -43,6 +42,7 @@ class LoginDialog(QDialog):
         self._status_label.setWordWrap(True)
         self._status_label.setObjectName("LoginStatusLabel")
         self._status_label.setAlignment(Qt.AlignCenter)
+        self._status_label.setStyleSheet("color: #c62828;")
         self._username_input.textChanged.connect(self._clear_status)
         self._password_input.textChanged.connect(self._clear_status)
 
@@ -67,6 +67,7 @@ class LoginDialog(QDialog):
         form_container.addStretch()         # espacio a la derecha
 
         layout.addLayout(form_container)
+        layout.addWidget(self._status_label)
 
 
         buttons_layout = QHBoxLayout()

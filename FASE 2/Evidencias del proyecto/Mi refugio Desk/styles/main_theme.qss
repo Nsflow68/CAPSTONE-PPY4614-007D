@@ -86,9 +86,8 @@ QMainWindow {
 }
 
 /* -----------------------------------
-   2. Sub-Pestañas de Vista (En UserManagementView, ContentView, etc.)
+   2. Sub-Pestañas
    ----------------------------------- */
-/* Usamos el ObjectName "TabBarButton" para darle el aspecto de pestaña */
 QPushButton#TabBarButton {
     font-size: 14px;
     padding: 10px 15px;
@@ -103,14 +102,15 @@ QPushButton#TabBarButton {
 QPushButton#TabBarButton:checked {
     background-color: #fff;
     color: #333;
-    border-top: 2px solid #A28FC9; /* Resalta con el color principal */
+    border-top: 2px solid #A28FC9;
     font-weight: bold;
-    border-bottom: 1px solid white; /* Simula que se fusiona con el fondo de la vista */
+    border-bottom: 1px solid white;
 }
 
 /* -----------------------------------
    3. Elementos Comunes y Formularios
    ----------------------------------- */
+
 QDialog {
     background-color: #ffffff;
     border-radius: 12px;
@@ -152,11 +152,15 @@ QGroupBox::title {
     color: #4A4A4A;
 }
 
+/* -----------------------------------
+   CAMPOS DE FORMULARIO
+   ----------------------------------- */
 QLineEdit, QTextEdit, QComboBox {
     padding: 8px;
     border: 1px solid #ccc;
     border-radius: 4px;
     background-color: #ffffff;
+    color: #000000;
 }
 
 QLineEdit:focus, QTextEdit:focus, QComboBox:focus {
@@ -165,7 +169,63 @@ QLineEdit:focus, QTextEdit:focus, QComboBox:focus {
 }
 
 /* -----------------------------------
-   4. Botones de Acción (CRUD y Exportación)
+   COMBOBOX — FIX COMPLETO
+   ----------------------------------- */
+
+/* Vista desplegable */
+QComboBox QAbstractItemView {
+    background-color: #ffffff;   /* Fondo visible */
+    color: #000000;              /* Texto negro */
+    border: 1px solid #ccc;
+    selection-background-color: #E8E3F5;
+    selection-color: #000000;
+}
+
+/* Ítems */
+QComboBox QAbstractItemView::item {
+    padding: 6px 10px;
+    color: #000000;
+    background-color: #ffffff;
+}
+
+/* Hover */
+QComboBox QAbstractItemView::item:hover {
+    background-color: #E8E3F5;   /* Morado suave */
+    color: #000000;
+}
+
+/* Seleccionado */
+QComboBox QAbstractItemView::item:selected {
+    background-color: #D9D0F0;
+    color: #000000;
+}
+
+/* Compatibilidad global con vistas de lista/tabla */
+QAbstractItemView {
+    color: #000000;
+    background-color: #ffffff;
+    selection-background-color: #E8E3F5;
+    selection-color: #000000;
+}
+
+QListView::item, QTreeView::item {
+    color: #000000;
+    background-color: #ffffff;
+    padding: 6px 10px;
+}
+
+QListView::item:hover, QTreeView::item:hover {
+    background-color: #E8E3F5;
+    color: #000000;
+}
+
+QListView::item:selected, QTreeView::item:selected {
+    background-color: #D9D0F0;
+    color: #000000;
+}
+
+/* -----------------------------------
+   4. Botones (CRUD y Exportación)
    ----------------------------------- */
 QPushButton {
     padding: 8px 15px;
@@ -174,26 +234,26 @@ QPushButton {
     font-weight: 500;
 }
 
-/* Botón de Éxito (Agregar, Subir, Guardar) */
+/* Botón de Éxito */
 #AddButton, #SuccessButton {
     background-color: #5cb85c; 
     color: white;
 }
 
-/* Botón de Advertencia (Eliminar, Restaurar) */
+/* Botón de Advertencia */
 #DeleteButton, #DangerButton {
     background-color: #d9534f; 
     color: white;
 }
 
-/* Botón de Acción Principal (Asignar Rol, Generar Reporte, Guardar Chatbot) */
+/* Acción Principal */
 #PrimaryActionButton {
     background-color: #A28FC9; 
     color: white;
     font-weight: bold;
 }
 
-/* Botón de Información/Exportación (Azul) */
+/* Exportación */
 #InfoButton {
     background-color: #5bc0de;
     color: white;
@@ -203,7 +263,7 @@ QPushButton {
    5. Tablas y Listas
    ----------------------------------- */
 QTableView {
-    selection-background-color: #D1C4E9; /* Morado claro para selección */
+    selection-background-color: #D1C4E9; /* Morado claro */
     selection-color: black;
     border: 1px solid #E0E0E0;
     gridline-color: #F0F0F0;
@@ -212,4 +272,39 @@ QTableView {
 QListWidget {
     border: 1px solid #E0E0E0;
     border-radius: 4px;
+}
+/* ----------------------------------------------------
+   FIX UNIVERSAL: ELIMINAR ICONOS AUTOMÁTICOS DE BOTONES
+   ---------------------------------------------------- */
+
+/* Eliminar iconos por defecto en TODOS los botones */
+QPushButton {
+    qproperty-icon: none;
+    qproperty-iconSize: 0px;
+}
+
+/* Evitar que macOS o Qt muestren iconos por defecto (líneas/barras) */
+QPushButton::menu-indicator {
+    image: none;
+    width: 0px;
+    height: 0px;
+}
+
+/* Evitar iconos automáticos en botones default (macOS principalmente) */
+QPushButton:default {
+    qproperty-icon: none;
+    qproperty-iconSize: 0px;
+}
+
+/* Evitar iconos en botones checkables (toggle buttons) */
+QPushButton:checked {
+    qproperty-icon: none;
+    qproperty-iconSize: 0px;
+}
+
+/* Evitar que el sistema operativo intente sobrecargar iconos */
+QPushButton::indicator {
+    width: 0px;
+    height: 0px;
+    image: none;
 }

@@ -25,15 +25,18 @@ from PyQt5.QtWidgets import (
 )
 
 from app.services.chatbot_service import ChatbotService
+from app.services.resource_service import RESOURCE_COLUMNS, ResourceService
+from app.services.api_client import ApiClientError
 
 
 class ContentView(QWidget):
-    def __init__(self, chatbot_service: Optional[ChatbotService] = None) -> None:
+    def __init__(self, chatbot_service: Optional[ChatbotService] = None, resource_service: Optional[ResourceService] = None) -> None:
         super().__init__()
         self._chatbot_service = chatbot_service or ChatbotService()
+        self._resource_service = resource_service or ResourceService()
 
         self._chatbot_df = pd.DataFrame()
-        self._resource_df = self._build_default_resources()
+        self._resource_df = pd.DataFrame(columns=RESOURCE_COLUMNS)
 
         self._tab_buttons: list[QPushButton] = []
         self._stack = QStackedWidget()
@@ -49,6 +52,7 @@ class ContentView(QWidget):
 
         self._build_ui()
         self._load_chatbot_entries()
+        self._load_resources()
 
     # ------------------------------------------------------------------ #
     # UI construction helpers
@@ -187,7 +191,11 @@ class ContentView(QWidget):
     # Chatbot logic
     # ------------------------------------------------------------------ #
     def _load_chatbot_entries(self) -> None:
-        self._chatbot_df = self._chatbot_service.list_as_dataframe()
+        try:
+            self._chatbot_df = self._chatbot_service.list_as_dataframe()
+        except ApiClientError as exc:
+            QMessageBox.critical(self, "Error al cargar chatbot", str(exc))
+            self._chatbot_df = pd.DataFrame(columns=["ID", "Pregunta/Keyword", "Respuesta"])
         self._chatbot_list.clear()
         if not self._chatbot_df.empty:
             self._chatbot_list.addItems(self._chatbot_df["Pregunta/Keyword"].tolist())
@@ -210,29 +218,26 @@ class ContentView(QWidget):
             QMessageBox.warning(self, "Advertencia", "Debe ingresar tanto la pregunta como la respuesta.")
             return
 
-        if self._current_chatbot_id is None:
-            created = self._chatbot_service.create_entry(keyword, response)
-            if created:
+        try:
+            if self._current_chatbot_id is None:
+                self._chatbot_service.create_entry(keyword, response)
                 QMessageBox.information(self, "Éxito", "Elemento agregado correctamente.")
             else:
-                QMessageBox.critical(
+                reply = QMessageBox.question(
                     self,
-                    "Error",
-                    "No se pudo agregar el elemento. La palabra clave ya existe.",
+                    "Confirmar Modificación",
+                    "¿Desea actualizar el elemento seleccionado?",
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.No,
                 )
-        else:
-            reply = QMessageBox.question(
-                self,
-                "Confirmar Modificación",
-                "¿Desea actualizar el elemento seleccionado?",
-                QMessageBox.Yes | QMessageBox.No,
-                QMessageBox.No,
-            )
-            if reply == QMessageBox.Yes:
-                self._chatbot_service.update_entry(self._current_chatbot_id, keyword, response)
-                QMessageBox.information(self, "Éxito", "Elemento actualizado correctamente.")
-            else:
-                return
+                if reply == QMessageBox.Yes:
+                    self._chatbot_service.update_entry(self._current_chatbot_id, keyword, response)
+                    QMessageBox.information(self, "Éxito", "Elemento actualizado correctamente.")
+                else:
+                    return
+        except ApiClientError as exc:
+            QMessageBox.critical(self, "Error", str(exc))
+            return
 
         self._load_chatbot_entries()
 
@@ -249,7 +254,11 @@ class ContentView(QWidget):
             QMessageBox.No,
         )
         if reply == QMessageBox.Yes:
-            self._chatbot_service.delete_entry(self._current_chatbot_id)
+            try:
+                self._chatbot_service.delete_entry(self._current_chatbot_id)
+            except ApiClientError as exc:
+                QMessageBox.critical(self, "Error", str(exc))
+                return
             self._load_chatbot_entries()
             QMessageBox.information(self, "Éxito", "Elemento eliminado correctamente.")
 
@@ -273,6 +282,17 @@ class ContentView(QWidget):
     # ------------------------------------------------------------------ #
     # Resource logic (mocked data)
     # ------------------------------------------------------------------ #
+    def _load_resources(self) -> None:
+        try:
+            self._resource_df = self._resource_service.list_resources()
+        except ApiClientError as exc:
+            QMessageBox.critical(self, "Error al cargar recursos", str(exc))
+            if self._resource_df.empty:
+                self._resource_df = self._build_default_resources()
+        self._resource_table_model.set_data(self._resource_df)
+        if hasattr(self, "_resource_search"):
+            self._filter_resources(self._resource_search.text())
+
     def _filter_resources(self, text: str) -> None:
         if text:
             filtered = self._resource_df[
@@ -286,37 +306,30 @@ class ContentView(QWidget):
         self._resource_table_model.set_data(filtered)
 
     def _add_resource(self) -> None:
-        dialog = ResourceDialog()
-        if dialog.exec_() == QDialog.Accepted:
-            new_resource = dialog.get_data()
-            new_resource["ID"] = (
-                int(self._resource_df["ID"].max()) + 1 if not self._resource_df.empty else 101
-            )
-            self._resource_df = pd.concat([self._resource_df, pd.DataFrame([new_resource])], ignore_index=True)
-            self._resource_table_model.set_data(self._resource_df)
-            QMessageBox.information(self, "Éxito", "Recurso agregado correctamente.")
+        QMessageBox.information(
+            self,
+            "No disponible",
+            "La API actual solo expone la lista de recursos (GET /resources). "
+            "Para crear o eliminar recursos se requiere habilitar esos endpoints en el backend.",
+        )
 
     def _delete_resource(self) -> None:
-        selection = self._resource_table_view.currentIndex()
-        if not selection.isValid():
-            QMessageBox.warning(self, "Advertencia", "Seleccione un recurso para eliminar.")
-            return
-
-        reply = QMessageBox.question(
+        QMessageBox.information(
             self,
-            "Confirmar",
-            "¿Está seguro que desea eliminar el recurso seleccionado?",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No,
+            "No disponible",
+            "La eliminación de recursos no está implementada en la API.",
         )
-        if reply == QMessageBox.Yes:
-            row = selection.row()
-            self._resource_df = self._resource_df.drop(self._resource_df.index[row]).reset_index(drop=True)
-            self._resource_table_model.set_data(self._resource_df)
-            QMessageBox.information(self, "Éxito", "Recurso eliminado correctamente.")
 
     def _view_resource(self) -> None:
-        QMessageBox.information(self, "Acción", "Simulación de ver o descargar un recurso.")
+        selection = self._resource_table_view.currentIndex()
+        if not selection.isValid():
+            QMessageBox.information(self, "Recurso", "Seleccione un recurso para ver el detalle.")
+            return
+        row = self._resource_df.iloc[selection.row()]
+        details = f"Nombre: {row.get('Nombre Archivo', '')}\nTipo: {row.get('Tipo', '')}"
+        if row.get("URL"):
+            details += f"\nURL: {row.get('URL')}"
+        QMessageBox.information(self, "Recurso", details if details.strip() else "Sin datos disponibles.")
 
     # ------------------------------------------------------------------ #
     # Misc helpers
@@ -334,6 +347,7 @@ class ContentView(QWidget):
                 "Nombre Archivo": ["Manual_Usuario.pdf", "Guia_Inicio.docx", "Video_Tutorial.mp4"],
                 "Tipo": ["PDF", "DOCX", "MP4"],
                 "Tamaño (KB)": [1500, 450, 12000],
+                "URL": ["", "", ""],
             }
         )
 

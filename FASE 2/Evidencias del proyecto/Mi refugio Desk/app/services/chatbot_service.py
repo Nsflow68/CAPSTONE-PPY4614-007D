@@ -1,37 +1,60 @@
-"""Servicio para gestionar contenido del chatbot."""
+"""Servicio para gestionar contenido del chatbot vía API."""
 from __future__ import annotations
 
-from typing import Iterable
+from typing import Iterable, List, Mapping
 
 import pandas as pd
 
-from app.database.repositories.chatbot_repository import (
-    ChatbotEntry,
-    ChatbotRepository,
-)
+from app.services.api_client import ApiClient, ApiClientError
+
+DEFAULT_COLUMNS = ["ID", "Pregunta/Keyword", "Respuesta"]
 
 
 class ChatbotService:
-    def __init__(self, repository: ChatbotRepository | None = None) -> None:
-        self._repository = repository or ChatbotRepository()
-        self._seed_defaults()
-
-    def _seed_defaults(self) -> None:
-        defaults: Iterable[ChatbotEntry] = [
-            ChatbotEntry(id=None, keyword="Hola", response="¡Hola! ¿En qué puedo ayudarte hoy?"),
-            ChatbotEntry(id=None, keyword="Horario", response="Nuestro horario es de 9:00 a 18:00."),
-            ChatbotEntry(id=None, keyword="Contacto", response="Puedes contactarnos a info@app.com."),
-        ]
-        self._repository.seed_defaults(defaults)
+    def __init__(self, api_client: ApiClient | None = None) -> None:
+        self._client = api_client or ApiClient()
 
     def list_as_dataframe(self) -> pd.DataFrame:
-        return self._repository.list_entries()
+        try:
+            response = self._client.get("/chatbot")
+        except ApiClientError:
+            # Dejamos que la vista capture la excepción para mostrar feedback.
+            raise
 
-    def create_entry(self, keyword: str, response: str) -> bool:
-        return self._repository.create(ChatbotEntry(id=None, keyword=keyword, response=response)) is not None
+        records = self._normalise_records(response.data)
+        return pd.DataFrame.from_records(records, columns=DEFAULT_COLUMNS)
+
+    def create_entry(self, keyword: str, response: str) -> None:
+        payload = {"keyword": keyword, "response": response}
+        self._client.post("/chatbot", payload)
 
     def update_entry(self, entry_id: int, keyword: str, response: str) -> None:
-        self._repository.update(entry_id, ChatbotEntry(id=entry_id, keyword=keyword, response=response))
+        payload = {"keyword": keyword, "response": response}
+        self._client.put(f"/chatbot/{entry_id}", payload)
 
     def delete_entry(self, entry_id: int) -> None:
-        self._repository.delete(entry_id)
+        self._client.delete(f"/chatbot/{entry_id}")
+
+    # ------------------------------------------------------------------ #
+    # Helpers
+    # ------------------------------------------------------------------ #
+    @staticmethod
+    def _normalise_records(data: Iterable[Mapping[str, object]] | object) -> List[dict]:
+        if isinstance(data, Mapping):
+            items = [data]
+        elif isinstance(data, Iterable) and not isinstance(data, (str, bytes)):
+            items = data
+        else:
+            return []
+        normalised: List[dict] = []
+        for item in items:
+            if not isinstance(item, Mapping):
+                continue
+            normalised.append(
+                {
+                    "ID": item.get("id"),
+                    "Pregunta/Keyword": item.get("keyword"),
+                    "Respuesta": item.get("response"),
+                }
+            )
+        return normalised

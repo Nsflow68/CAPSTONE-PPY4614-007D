@@ -1,11 +1,11 @@
-"""Servicio de autenticación de usuarios."""
+"""Servicio de autenticación contra la API."""
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Optional
 
-from app.database.repositories.user_repository import UserRepository, UserRecord
-from app.utils.security import hash_password, verify_password
+from app.models.user import UserRecord
+from app.services.api_client import ApiClient, ApiClientError
 
 
 @dataclass
@@ -16,39 +16,31 @@ class AuthResult:
 
 
 class AuthService:
-    def __init__(self, repository: Optional[UserRepository] = None) -> None:
-        self._repository = repository or UserRepository()
-        self._repository.ensure_default_admin(
-            username="admin",
-            password_hash=hash_password("admin123"),
-        )
+    def __init__(self, api_client: Optional[ApiClient] = None) -> None:
+        self._client = api_client or ApiClient()
 
     def authenticate(self, username: str, password: str) -> AuthResult:
-        user = self._repository.get_user_by_username(username)
-        if not user:
-            return AuthResult(False, "Credenciales inválidas.")
-        if not verify_password(password, user.password_hash):
-            return AuthResult(False, "Credenciales inválidas.")
+        payload = {"username": username, "password": password}
+        try:
+            response = self._client.post("/auth/login", payload)
+        except ApiClientError as exc:
+            return AuthResult(False, str(exc))
+
+        data = response.data
+        if not isinstance(data, dict):
+            return AuthResult(False, "Respuesta inesperada de la API.")
+
+        if not data.get("success"):
+            return AuthResult(False, data.get("message", "Credenciales inválidas."))
+
+        user_data = data.get("user") or {}
+        user = UserRecord(
+            id=user_data.get("id"),
+            username=user_data.get("username") or user_data.get("email") or username,
+            full_name=user_data.get("full_name") or user_data.get("name"),
+            role=user_data.get("role") or "user",
+            password_hash=user_data.get("password_hash"),
+        )
         if (user.role or "").lower() != "admin":
             return AuthResult(False, "Acceso restringido. Solo administradores.")
         return AuthResult(True, user=user)
-
-    def register_user(
-        self,
-        username: str,
-        password: str,
-        full_name: Optional[str] = None,
-        role: str = "user",
-    ) -> AuthResult:
-        if self._repository.get_user_by_username(username):
-            return AuthResult(False, "El usuario ya existe.")
-        record = UserRecord(
-            username=username,
-            password_hash=hash_password(password),
-            full_name=full_name,
-            role=role,
-        )
-        created = self._repository.create_user(record)
-        if not created:
-            return AuthResult(False, "No se pudo crear el usuario.")
-        return AuthResult(True, "Usuario creado correctamente.", user=created)

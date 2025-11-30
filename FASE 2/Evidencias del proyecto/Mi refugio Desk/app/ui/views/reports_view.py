@@ -1,201 +1,284 @@
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                             QComboBox, QPushButton, QStackedWidget, QListWidget, 
-                             QGroupBox, QCheckBox, QGridLayout, QScrollArea)
-from PyQt5.QtCore import Qt, QDate
+from __future__ import annotations
+
+import os
+from typing import Callable, Dict, List, Optional, Tuple
+
+import pandas as pd
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (
+    QFileDialog,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+    QComboBox,
+)
+
+from app.services.api_client import ApiClientError
+from app.services.chatbot_service import ChatbotService
+from app.services.donation_service import DonationService
+from app.services.resource_service import ResourceService
+from app.services.user_service import USER_COLUMNS, UserService
+
+
+ExportProvider = Callable[[], pd.DataFrame]
+
 
 class ReportsView(QWidget):
-    def __init__(self):
+    """Vista única para exportar datos en distintos formatos."""
+
+    def __init__(
+        self,
+        user_service: Optional[UserService] = None,
+        chatbot_service: Optional[ChatbotService] = None,
+        resource_service: Optional[ResourceService] = None,
+        donation_service: Optional[DonationService] = None,
+    ) -> None:
         super().__init__()
-        
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        
-        # Pestañas de submenú (Mismo estilo)
-        tabs_layout = QHBoxLayout()
-        self.btn_generator = QPushButton("Generación de Reportes")
-        self.btn_export = QPushButton("Gestión de Exportaciones")
-        
-        # Estilo CSS para las pestañas
-        button_style = """
+        self._user_service = user_service or UserService()
+        self._chatbot_service = chatbot_service or ChatbotService()
+        self._resource_service = resource_service or ResourceService()
+        self._donation_service = donation_service or DonationService()
+
+        self._module_selector = QComboBox()
+        self._format_selector = QComboBox()
+        self._columns_list = QListWidget()
+        self._status_label = QLabel()
+
+        self._module_providers: Dict[str, Tuple[str, ExportProvider]] = {
+            "Usuarios": ("usuarios", self._load_users_df),
+            "Chatbot": ("chatbot", self._load_chatbot_df),
+            "Donaciones": ("donaciones", self._load_donations_df),
+            "Recursos": ("recursos", self._load_resources_df),
+        }
+
+        self._build_ui()
+        self._refresh_columns()
+
+    # ------------------------------------------------------------------ #
+    # UI
+    # ------------------------------------------------------------------ #
+    def _build_ui(self) -> None:
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(14)
+
+        title = QLabel("<h2>Exportación de Datos</h2>")
+        title.setAlignment(Qt.AlignLeft)
+        layout.addWidget(title)
+
+        layout.addWidget(self._build_selection_box())
+        layout.addWidget(self._build_columns_box())
+        layout.addLayout(self._build_actions())
+        layout.addWidget(self._status_label)
+        layout.addStretch()
+
+    def _build_selection_box(self) -> QWidget:
+        box = QGroupBox("Origen y formato")
+        box_layout = QHBoxLayout(box)
+        box_layout.setContentsMargins(10, 8, 10, 8)
+        box_layout.setSpacing(14)
+
+        self._module_selector.addItems(self._module_providers.keys())
+        self._module_selector.currentIndexChanged.connect(self._refresh_columns)
+        self._module_selector.setMinimumWidth(200)
+
+        self._format_selector.addItems(["CSV", "Excel (XLSX)", "JSON"])
+        self._format_selector.setMinimumWidth(140)
+
+        box_layout.addWidget(QLabel("Módulo:"))
+        box_layout.addWidget(self._module_selector, 1)
+        box_layout.addWidget(QLabel("Formato:"))
+        box_layout.addWidget(self._format_selector, 1)
+        box_layout.addStretch()
+        return box
+
+    def _build_columns_box(self) -> QWidget:
+        box = QGroupBox("Columnas a exportar")
+        box_layout = QVBoxLayout(box)
+        box_layout.setContentsMargins(10, 8, 10, 8)
+        box_layout.setSpacing(8)
+
+        buttons_row = QHBoxLayout()
+        select_all_btn = QPushButton("Seleccionar todo")
+        clear_btn = QPushButton("Limpiar selección")
+        btn_style = """
             QPushButton {
-                font-size: 14px;
-                padding: 10px;
-                border: 1px solid #ccc;
-                border-bottom: none;
-                background-color: #E6E6E6;
+                padding: 6px 12px;
+                border-radius: 6px;
+                background-color: #f5f5f5;
             }
-            QPushButton:checked {
-                background-color: #fff;
-                border-top: 2px solid #A28FC9; /* Color violeta de ejemplo */
+            QPushButton:hover {
+                background-color: #e0dff7;
             }
         """
-        self.btn_generator.setStyleSheet(button_style)
-        self.btn_export.setStyleSheet(button_style)
-        
-        self.btn_generator.setCheckable(True)
-        self.btn_export.setCheckable(True)
+        select_all_btn.setStyleSheet(btn_style)
+        clear_btn.setStyleSheet(btn_style)
+        select_all_btn.clicked.connect(self._select_all_columns)
+        clear_btn.clicked.connect(self._clear_columns)
+        buttons_row.addWidget(select_all_btn)
+        buttons_row.addWidget(clear_btn)
+        buttons_row.addStretch()
 
-        tabs_layout.addWidget(self.btn_generator)
-        tabs_layout.addWidget(self.btn_export)
-        tabs_layout.addStretch()
-        
-        main_layout.addLayout(tabs_layout)
-        
-        # Contenedor de paneles dinámicos
-        self.stacked_widget = QStackedWidget()
-        main_layout.addWidget(self.stacked_widget)
-        
-        # Vistas internas
-        self.generator_view = self.create_generator_view()
-        self.export_view = self.create_export_view()
+        self._columns_list.setSelectionMode(QListWidget.MultiSelection)
+        self._columns_list.setMinimumHeight(180)
 
-        self.stacked_widget.addWidget(self.generator_view)
-        self.stacked_widget.addWidget(self.export_view)
-        
-        # Conexiones de botones a los paneles
-        self.btn_generator.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(0))
-        self.btn_export.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(1))
-        
-        # Asegurarse de que el primer botón esté seleccionado al inicio
-        self.btn_generator.setChecked(True)
+        box_layout.addLayout(buttons_row)
+        box_layout.addWidget(self._columns_list)
+        return box
 
-    # ----------------------------------------------------------------------
-    # --- Panel 1: Generación de Reportes (Personalización y Lista) ---
-    # ----------------------------------------------------------------------
-    def create_generator_view(self):
-        view = QWidget()
-        layout = QHBoxLayout(view)
-        layout.setContentsMargins(10, 10, 10, 10)
-        
-        # --- Columna Izquierda: Opciones de Generación ---
-        generator_group = QGroupBox("Opciones de Reporte Personalizado")
-        generator_layout = QVBoxLayout(generator_group)
+    def _build_actions(self) -> QHBoxLayout:
+        actions = QHBoxLayout()
+        actions.addStretch()
+        export_btn = QPushButton("📤 Exportar")
+        export_btn.setMinimumHeight(40)
+        export_btn.setStyleSheet(
+            """
+            QPushButton {
+                padding: 10px 18px;
+                border-radius: 8px;
+                background-color: #5bc0de;
+                color: white;
+                font-weight: 600;
+            }
+            QPushButton:hover { background-color: #31b0d5; }
+            """
+        )
+        export_btn.clicked.connect(self._export)
+        actions.addWidget(export_btn)
+        return actions
 
-        # 1. Selector de Tipo
-        generator_layout.addWidget(QLabel("<strong>Tipo de Métrica:</strong>"))
-        self.report_selector = QComboBox()
-        self.report_selector.addItems(["Crecimiento de Usuarios", "Distribución de Roles", "Actividad del Chatbot", "Métricas de Contenido"])
-        generator_layout.addWidget(self.report_selector)
-        
-        # 2. Selector de Período (Fechas)
-        generator_layout.addWidget(QLabel("<hr><strong>Período de Análisis:</strong>"))
-        period_layout = QGridLayout()
-        
-        period_layout.addWidget(QLabel("Fecha Inicio:"), 0, 0)
-        # En una implementación real, usarías QDateEdit o QCalendarWidget
-        period_layout.addWidget(QLabel(QDate.currentDate().addMonths(-1).toString(Qt.ISODate)), 0, 1) # Simulación de selector de fecha
+    # ------------------------------------------------------------------ #
+    # Data loading
+    # ------------------------------------------------------------------ #
+    def _refresh_columns(self) -> None:
+        self._columns_list.clear()
+        df = self._get_current_dataframe(sample_only=True)
+        if df is None or df.empty:
+            self._status_label.setText("Sin datos disponibles para este módulo.")
+            return
+        for col in df.columns:
+            if col.lower() in {"contraseña", "password", "password_hash"}:
+                continue
+            item = QListWidgetItem(col)
+            item.setSelected(True)
+            self._columns_list.addItem(item)
+        self._status_label.setText("")
 
-        period_layout.addWidget(QLabel("Fecha Fin:"), 1, 0)
-        period_layout.addWidget(QLabel(QDate.currentDate().toString(Qt.ISODate)), 1, 1) # Simulación de selector de fecha
-        
-        generator_layout.addLayout(period_layout)
-        
-        # 3. Opciones Avanzadas (Filtros)
-        generator_layout.addWidget(QLabel("<hr><strong>Filtros Adicionales:</strong>"))
-        self.filter_checkbox1 = QCheckBox("Incluir datos de administradores")
-        self.filter_checkbox2 = QCheckBox("Agrupar por género")
-        generator_layout.addWidget(self.filter_checkbox1)
-        generator_layout.addWidget(self.filter_checkbox2)
-        
-        generator_layout.addStretch()
-        
-        # Botón de acción
-        self.generate_button = QPushButton("✨ Generar y Visualizar Informe")
-        self.generate_button.setStyleSheet("background-color: #A28FC9; color: white; padding: 10px; font-weight: bold;")
-        generator_layout.addWidget(self.generate_button)
-        
-        layout.addWidget(generator_group, 1)
+    def _get_current_dataframe(self, sample_only: bool = False) -> Optional[pd.DataFrame]:
+        module_name = self._module_selector.currentText()
+        if module_name not in self._module_providers:
+            return None
+        provider = self._module_providers[module_name][1]
+        try:
+            df = provider()
+            if df is None:
+                return None
+            if sample_only and df.shape[0] > 200:
+                return df.head(200)
+            return df
+        except ApiClientError as exc:
+            QMessageBox.critical(self, "Error al obtener datos", str(exc))
+            return None
+        except Exception as exc:  # pragma: no cover - visual feedback only
+            QMessageBox.critical(self, "Error", f"No se pudieron cargar los datos: {exc}")
+            return None
 
-        # --- Columna Derecha: Lista de Informes Recientes ---
-        list_group = QGroupBox("Informes Generados Recientemente")
-        list_layout = QVBoxLayout(list_group)
-        
-        self.generated_reports_list = QListWidget()
-        self.generated_reports_list.addItems([
-            "Crecimiento - Octubre 2025.pdf",
-            "Actividad Chatbot - Últimos 7 Días.pdf",
-            "Distribución de Roles - Q3 2025.csv",
-            "Métricas de Contenido - Septiembre.xlsx",
-        ])
-        
-        list_layout.addWidget(self.generated_reports_list)
-        
-        list_buttons = QHBoxLayout()
-        self.open_report_btn = QPushButton("Abrir 📂")
-        self.download_report_btn = QPushButton("Descargar ⬇️")
-        list_buttons.addWidget(self.open_report_btn)
-        list_buttons.addWidget(self.download_report_btn)
-        list_layout.addLayout(list_buttons)
-        
-        layout.addWidget(list_group, 2)
-        
-        return view
+    def _load_users_df(self) -> pd.DataFrame:
+        return self._user_service.list_users_dataframe()
 
-    # ----------------------------------------------------------------------
-    # --- Panel 2: Gestión de Exportaciones (Exportación Masiva) ---
-    # ----------------------------------------------------------------------
-    def create_export_view(self):
-        view = QWidget()
-        layout = QVBoxLayout(view)
-        layout.setContentsMargins(10, 10, 10, 10)
-        
-        # --- Panel de Selección de Datos ---
-        data_selection_group = QGroupBox("Selección de Datos a Exportar")
-        data_selection_layout = QGridLayout(data_selection_group)
+    def _load_chatbot_df(self) -> pd.DataFrame:
+        return self._chatbot_service.list_as_dataframe()
 
-        data_selection_layout.addWidget(QLabel("<strong>Módulo:</strong>"), 0, 0)
-        self.data_module_selector = QComboBox()
-        self.data_module_selector.addItems(["Usuarios", "Interacciones del Chatbot", "Contenido y Recursos", "Logs del Sistema"])
-        data_selection_layout.addWidget(self.data_module_selector, 0, 1)
+    def _load_resources_df(self) -> pd.DataFrame:
+        return self._resource_service.list_resources()
 
-        data_selection_layout.addWidget(QLabel("<strong>Formato de Salida:</strong>"), 1, 0)
-        self.format_selector = QComboBox()
-        self.format_selector.addItems(["CSV (Datos Crudos)", "JSON (API)", "Excel (Análisis)"])
-        data_selection_layout.addWidget(self.format_selector, 1, 1)
-        
-        layout.addWidget(data_selection_group)
+    def _load_donations_df(self) -> pd.DataFrame:
+        df, _ = self._donation_service.fetch_donations()
+        return df
 
-        # --- Panel de Opciones Avanzadas ---
-        advanced_options_group = QGroupBox("Opciones de Filtro y Exportación")
-        advanced_options_layout = QVBoxLayout(advanced_options_group)
-        
-        advanced_options_layout.addWidget(QLabel("<strong>Columnas a Incluir:</strong>"))
-        
-        scroll_area = QScrollArea()
-        scroll_content = QWidget()
-        scroll_layout = QVBoxLayout(scroll_content)
-        
-        # Simulación de opciones de columna
-        scroll_layout.addWidget(QCheckBox("Nombre de Usuario"))
-        scroll_layout.addWidget(QCheckBox("ID"))
-        scroll_layout.addWidget(QCheckBox("Fecha de Creación"))
-        scroll_layout.addWidget(QCheckBox("Último Login"))
-        scroll_layout.addWidget(QCheckBox("Rol Asignado"))
-        
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setWidget(scroll_content)
-        scroll_area.setMaximumHeight(120)
-        advanced_options_layout.addWidget(scroll_area)
-        
-        layout.addWidget(advanced_options_group)
-        
-        # --- Botón de Acción Final ---
-        self.export_button = QPushButton("📤 Iniciar Exportación Masiva")
-        self.export_button.setStyleSheet("background-color: #5bc0de; color: white; padding: 15px; font-size: 16px;") # Estilo Azul para Exportar
-        
-        layout.addWidget(self.export_button)
-        layout.addStretch()
-        
-        return view
+    # ------------------------------------------------------------------ #
+    # Export logic
+    # ------------------------------------------------------------------ #
+    def _export(self) -> None:
+        df = self._get_current_dataframe()
+        if df is None or df.empty:
+            QMessageBox.information(self, "Exportación", "No hay datos para exportar.")
+            return
 
-# Bloque de ejecución de prueba (opcional, para ejecutar el archivo solo)
-if __name__ == '__main__':
-    from PyQt5.QtWidgets import QApplication
+        selected_cols = [item.text() for item in self._columns_list.selectedItems()]
+        if selected_cols:
+            missing = [c for c in selected_cols if c not in df.columns]
+            if missing:
+                QMessageBox.warning(self, "Exportación", "Algunas columnas seleccionadas no existen en los datos.")
+            else:
+                df = df[selected_cols]
+
+        fmt = self._format_selector.currentText()
+        module_key = self._module_providers[self._module_selector.currentText()][0]
+        suggested_name = f"export_{module_key}"
+
+        if fmt.startswith("CSV"):
+            default_filter = "CSV (*.csv)"
+            default_ext = ".csv"
+        elif fmt.startswith("Excel"):
+            default_filter = "Excel (*.xlsx)"
+            default_ext = ".xlsx"
+        else:
+            default_filter = "JSON (*.json)"
+            default_ext = ".json"
+
+        path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Guardar exportación",
+            suggested_name + default_ext,
+            ";;".join(["CSV (*.csv)", "Excel (*.xlsx)", "JSON (*.json)"]),
+            default_filter,
+        )
+        if not path:
+            return
+        if not os.path.splitext(path)[1]:
+            path += default_ext
+
+        try:
+            if fmt.startswith("CSV"):
+                df.to_csv(path, index=False)
+            elif fmt.startswith("Excel"):
+                df.to_excel(path, index=False)
+            else:
+                df.to_json(path, orient="records", force_ascii=False, indent=2)
+        except Exception as exc:  # pragma: no cover - visual feedback only
+            QMessageBox.critical(self, "Error al exportar", f"No se pudo guardar el archivo:\n{exc}")
+            return
+
+        QMessageBox.information(self, "Exportación completa", f"Archivo guardado en:\n{path}")
+
+    # ------------------------------------------------------------------ #
+    # Helpers
+    # ------------------------------------------------------------------ #
+    def _select_all_columns(self) -> None:
+        for i in range(self._columns_list.count()):
+            item = self._columns_list.item(i)
+            item.setSelected(True)
+
+    def _clear_columns(self) -> None:
+        for i in range(self._columns_list.count()):
+            item = self._columns_list.item(i)
+            item.setSelected(False)
+
+
+# Ejecución aislada para probar la vista
+if __name__ == "__main__":  # pragma: no cover - manual test helper
     import sys
-    
+    from PyQt5.QtWidgets import QApplication
+
     app = QApplication(sys.argv)
-    window = ReportsView()
-    window.setWindowTitle("Reportes y Exportación de Datos")
-    window.resize(900, 600)
-    window.show()
+    w = ReportsView()
+    w.resize(640, 520)
+    w.show()
     sys.exit(app.exec_())

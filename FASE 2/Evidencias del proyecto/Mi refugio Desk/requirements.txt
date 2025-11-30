@@ -22,3 +22,5 @@ six==1.17.0
 threadpoolctl==3.6.0
 tzdata==2025.2
 wordcloud==1.9.4
+requests==2.32.3
+openpyxl==3.1.5
