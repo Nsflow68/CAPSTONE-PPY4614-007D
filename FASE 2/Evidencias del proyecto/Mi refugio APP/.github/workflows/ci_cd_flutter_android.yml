@@ -1,0 +1,77 @@
+name: CI/CD - Flutter Android
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'flutter/**'
+      - '.github/workflows/ci_cd_flutter_android.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'flutter/**'
+
+jobs:
+  analyze-and-test:
+    name: Analyze and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+
+      - name: Get dependencies
+        working-directory: flutter
+        run: flutter pub get
+
+      - name: Analyze code
+        working-directory: flutter
+        run: flutter analyze
+
+      - name: Run tests
+        working-directory: flutter
+        run: flutter test
+
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    needs: analyze-and-test
+    # Solo construir en push a main, no en pull requests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+
+      - name: Get dependencies
+        working-directory: flutter
+        run: flutter pub get
+
+      - name: Build APK
+        working-directory: flutter
+        run: flutter build apk --release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: android-release-apk
+          path: flutter/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30

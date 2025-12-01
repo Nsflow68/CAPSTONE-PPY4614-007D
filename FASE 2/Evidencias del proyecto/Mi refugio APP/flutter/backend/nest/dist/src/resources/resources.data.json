@@ -1,0 +1,36 @@
+[
+    {
+        "name": "Línea de la Vida 24/7",
+        "category": "Urgencia",
+        "description": "Atención inmediata para crisis emocionales y prevención del suicidio.",
+        "contact": "Fono 600 360 7777",
+        "website": "https://lineadelavida.cl",
+        "availability": "24/7 Nacional",
+        "id": "0f4888afb2c4"
+    },
+    {
+        "name": "Salud Joven",
+        "category": "Juventud",
+        "description": "Chat y videollamadas gratuitas con psicólogos orientados a jóvenes.",
+        "contact": "WhatsApp +56 9 1234 5678",
+        "website": "https://saludjoven.gob.cl",
+        "availability": "L-V 09:00-21:00",
+        "id": "b84763057b68"
+    },
+    {
+        "name": "Red de profesionales en salud mental",
+        "category": "Profesionales",
+        "description": "Directorio de psicólogos y psiquiatras con verificación de credenciales.",
+        "website": "https://redpsicologos.cl",
+        "availability": "Agenda online",
+        "id": "7b90e7edb512"
+    },
+    {
+        "name": "Centro de Mindfulness Chile",
+        "category": "Mindfulness",
+        "description": "Programas de reducción de estrés basados en mindfulness (MBSR).",
+        "website": "https://mindfulnesschile.cl",
+        "availability": "Sesiones híbridas",
+        "id": "6656804dd93d"
+    }
+]

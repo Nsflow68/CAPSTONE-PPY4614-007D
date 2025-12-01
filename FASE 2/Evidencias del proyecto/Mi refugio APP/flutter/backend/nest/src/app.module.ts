@@ -7,9 +7,11 @@ import { MindfulnessModule } from './mindfulness/mindfulness.module';
 import { HydrationModule } from './hydration/hydration.module';
 import { DiaryModule } from './diary/diary.module';
 import { ResourcesModule } from './resources/resources.module';
+import { RefugesModule } from './refuges/refuges.module';
+import { AdoptionsModule } from './adoptions/adoptions.module';
 import { PrismaModule } from './database/prisma.module';
 import { CommonModule } from './common/common.module';
-import { ChatbotModule } from './chatbot/chatbot.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -25,7 +27,9 @@ import { ChatbotModule } from './chatbot/chatbot.module';
     HydrationModule,
     DiaryModule,
     ResourcesModule,
-    ChatbotModule,
+    RefugesModule,
+    AdoptionsModule,
+    ChatModule,
   ],
 })
 export class AppModule {}

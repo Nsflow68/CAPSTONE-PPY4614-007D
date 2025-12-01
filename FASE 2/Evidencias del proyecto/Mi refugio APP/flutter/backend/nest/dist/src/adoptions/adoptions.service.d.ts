@@ -1,0 +1,195 @@
+import { PrismaService } from '../database/prisma.service';
+import { CreateAdoptionDto } from './dto/create-adoption.dto';
+import { UpdateAdoptionDto } from './dto/update-adoption.dto';
+export declare class AdoptionsService {
+    private readonly prisma;
+    constructor(prisma: PrismaService);
+    findAll(refugeId?: string, status?: string, petType?: string): Promise<({
+        refuge: {
+            name: string;
+            id: string;
+            email: string | null;
+            region: string;
+            phone: string | null;
+        };
+    } & {
+        id: string;
+        description: string;
+        createdAt: Date;
+        updatedAt: Date;
+        imageUrl: string | null;
+        petName: string;
+        petType: string;
+        petBreed: string | null;
+        petAge: number | null;
+        petGender: string | null;
+        status: string;
+        adoptedBy: string | null;
+        adoptedAt: Date | null;
+        refugeId: string;
+    })[]>;
+    findOne(id: string): Promise<{
+        refuge: {
+            name: string;
+            id: string;
+            description: string;
+            email: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            website: string | null;
+            region: string;
+            address: string;
+            phone: string | null;
+            capacity: number;
+            occupied: number;
+            commune: string | null;
+            latitude: number | null;
+            longitude: number | null;
+            services: string[];
+            imageUrl: string | null;
+            isActive: boolean;
+        };
+    } & {
+        id: string;
+        description: string;
+        createdAt: Date;
+        updatedAt: Date;
+        imageUrl: string | null;
+        petName: string;
+        petType: string;
+        petBreed: string | null;
+        petAge: number | null;
+        petGender: string | null;
+        status: string;
+        adoptedBy: string | null;
+        adoptedAt: Date | null;
+        refugeId: string;
+    }>;
+    create(createAdoptionDto: CreateAdoptionDto): Promise<{
+        refuge: {
+            name: string;
+            id: string;
+            description: string;
+            email: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            website: string | null;
+            region: string;
+            address: string;
+            phone: string | null;
+            capacity: number;
+            occupied: number;
+            commune: string | null;
+            latitude: number | null;
+            longitude: number | null;
+            services: string[];
+            imageUrl: string | null;
+            isActive: boolean;
+        };
+    } & {
+        id: string;
+        description: string;
+        createdAt: Date;
+        updatedAt: Date;
+        imageUrl: string | null;
+        petName: string;
+        petType: string;
+        petBreed: string | null;
+        petAge: number | null;
+        petGender: string | null;
+        status: string;
+        adoptedBy: string | null;
+        adoptedAt: Date | null;
+        refugeId: string;
+    }>;
+    update(id: string, updateAdoptionDto: UpdateAdoptionDto): Promise<{
+        refuge: {
+            name: string;
+            id: string;
+            description: string;
+            email: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            website: string | null;
+            region: string;
+            address: string;
+            phone: string | null;
+            capacity: number;
+            occupied: number;
+            commune: string | null;
+            latitude: number | null;
+            longitude: number | null;
+            services: string[];
+            imageUrl: string | null;
+            isActive: boolean;
+        };
+    } & {
+        id: string;
+        description: string;
+        createdAt: Date;
+        updatedAt: Date;
+        imageUrl: string | null;
+        petName: string;
+        petType: string;
+        petBreed: string | null;
+        petAge: number | null;
+        petGender: string | null;
+        status: string;
+        adoptedBy: string | null;
+        adoptedAt: Date | null;
+        refugeId: string;
+    }>;
+    remove(id: string): Promise<{
+        id: string;
+        description: string;
+        createdAt: Date;
+        updatedAt: Date;
+        imageUrl: string | null;
+        petName: string;
+        petType: string;
+        petBreed: string | null;
+        petAge: number | null;
+        petGender: string | null;
+        status: string;
+        adoptedBy: string | null;
+        adoptedAt: Date | null;
+        refugeId: string;
+    }>;
+    markAsAdopted(id: string, adoptedBy: string): Promise<{
+        refuge: {
+            name: string;
+            id: string;
+            description: string;
+            email: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            website: string | null;
+            region: string;
+            address: string;
+            phone: string | null;
+            capacity: number;
+            occupied: number;
+            commune: string | null;
+            latitude: number | null;
+            longitude: number | null;
+            services: string[];
+            imageUrl: string | null;
+            isActive: boolean;
+        };
+    } & {
+        id: string;
+        description: string;
+        createdAt: Date;
+        updatedAt: Date;
+        imageUrl: string | null;
+        petName: string;
+        petType: string;
+        petBreed: string | null;
+        petAge: number | null;
+        petGender: string | null;
+        status: string;
+        adoptedBy: string | null;
+        adoptedAt: Date | null;
+        refugeId: string;
+    }>;
+}

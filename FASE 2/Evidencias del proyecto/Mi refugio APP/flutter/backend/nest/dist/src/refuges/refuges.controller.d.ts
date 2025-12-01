@@ -1,0 +1,155 @@
+import { RefugesService } from './refuges.service';
+import { CreateRefugeDto } from './dto/create-refuge.dto';
+import { UpdateRefugeDto } from './dto/update-refuge.dto';
+export declare class RefugesController {
+    private readonly refugesService;
+    constructor(refugesService: RefugesService);
+    findAll(region?: string, isActive?: boolean): Promise<({
+        adoptions: {
+            id: string;
+            description: string;
+            createdAt: Date;
+            updatedAt: Date;
+            imageUrl: string | null;
+            petName: string;
+            petType: string;
+            petBreed: string | null;
+            petAge: number | null;
+            petGender: string | null;
+            status: string;
+            adoptedBy: string | null;
+            adoptedAt: Date | null;
+            refugeId: string;
+        }[];
+    } & {
+        name: string;
+        id: string;
+        description: string;
+        email: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        website: string | null;
+        region: string;
+        address: string;
+        phone: string | null;
+        capacity: number;
+        occupied: number;
+        commune: string | null;
+        latitude: number | null;
+        longitude: number | null;
+        services: string[];
+        imageUrl: string | null;
+        isActive: boolean;
+    })[]>;
+    findOne(id: string): Promise<{
+        adoptions: {
+            id: string;
+            description: string;
+            createdAt: Date;
+            updatedAt: Date;
+            imageUrl: string | null;
+            petName: string;
+            petType: string;
+            petBreed: string | null;
+            petAge: number | null;
+            petGender: string | null;
+            status: string;
+            adoptedBy: string | null;
+            adoptedAt: Date | null;
+            refugeId: string;
+        }[];
+    } & {
+        name: string;
+        id: string;
+        description: string;
+        email: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        website: string | null;
+        region: string;
+        address: string;
+        phone: string | null;
+        capacity: number;
+        occupied: number;
+        commune: string | null;
+        latitude: number | null;
+        longitude: number | null;
+        services: string[];
+        imageUrl: string | null;
+        isActive: boolean;
+    }>;
+    getStatistics(id: string): Promise<{
+        refuge: {
+            id: string;
+            name: string;
+            capacity: number;
+            occupied: number;
+        };
+        adoptions: {
+            total: number;
+            adopted: number;
+            available: number;
+        };
+        occupancyRate: number;
+    }>;
+    create(createRefugeDto: CreateRefugeDto): Promise<{
+        name: string;
+        id: string;
+        description: string;
+        email: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        website: string | null;
+        region: string;
+        address: string;
+        phone: string | null;
+        capacity: number;
+        occupied: number;
+        commune: string | null;
+        latitude: number | null;
+        longitude: number | null;
+        services: string[];
+        imageUrl: string | null;
+        isActive: boolean;
+    }>;
+    update(id: string, updateRefugeDto: UpdateRefugeDto): Promise<{
+        name: string;
+        id: string;
+        description: string;
+        email: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        website: string | null;
+        region: string;
+        address: string;
+        phone: string | null;
+        capacity: number;
+        occupied: number;
+        commune: string | null;
+        latitude: number | null;
+        longitude: number | null;
+        services: string[];
+        imageUrl: string | null;
+        isActive: boolean;
+    }>;
+    remove(id: string): Promise<{
+        name: string;
+        id: string;
+        description: string;
+        email: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        website: string | null;
+        region: string;
+        address: string;
+        phone: string | null;
+        capacity: number;
+        occupied: number;
+        commune: string | null;
+        latitude: number | null;
+        longitude: number | null;
+        services: string[];
+        imageUrl: string | null;
+        isActive: boolean;
+    }>;
+}

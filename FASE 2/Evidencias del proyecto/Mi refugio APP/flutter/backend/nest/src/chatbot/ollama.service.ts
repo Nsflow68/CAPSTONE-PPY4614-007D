@@ -38,7 +38,13 @@ export class OllamaService {
   }
 
   async generate(params: GenerateParams): Promise<GenerateResult> {
-    const { prompt, system, temperature = 0.4, timeoutMs = 60_000 } = params;
+    const {
+      prompt,
+      system = 'Actúa como un acompañante emocional empático. Responde con calidez, escucha activa y ofrece sugerencias simples para manejar emociones como ansiedad, estrés o tristeza.',
+      temperature = 0.4,
+      timeoutMs = 60_000,
+    } = params;
+
     const startedAt = Date.now();
 
     try {
@@ -57,7 +63,11 @@ export class OllamaService {
       );
 
       const text = typeof response.data?.response === 'string' ? response.data.response : '';
-      return { text, latencyMs: Date.now() - startedAt, model: this.model };
+      return {
+        text,
+        latencyMs: Date.now() - startedAt,
+        model: this.model,
+      };
     } catch (error) {
       this.logger.warn(`Fallo al invocar Ollama: ${error?.message ?? error}`);
       throw error;

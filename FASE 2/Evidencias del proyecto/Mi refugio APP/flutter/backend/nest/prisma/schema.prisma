@@ -64,3 +64,45 @@ model Resource {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
+
+model Refuge {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  address     String
+  phone       String?
+  email       String?
+  website     String?
+  capacity    Int      @default(0)
+  occupied    Int      @default(0)
+  region      String
+  commune     String?
+  latitude    Float?
+  longitude   Float?
+  services    String[]
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  adoptions   Adoption[]
+}
+
+model Adoption {
+  id          String   @id @default(uuid())
+  petName     String
+  petType     String
+  petBreed    String?
+  petAge      Int?
+  petGender   String?
+  description String
+  imageUrl    String?
+  status      String   @default("available")
+  adoptedBy   String?
+  adoptedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  refuge      Refuge   @relation(fields: [refugeId], references: [id], onDelete: Cascade)
+  refugeId    String
+}
