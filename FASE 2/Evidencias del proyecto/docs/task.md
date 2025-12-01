@@ -1,0 +1,22 @@
+# Task Checklist
+
+- [x] **Deep Inspection & Audit**
+    - [x] Analyze repository structure (Frontend/Backend/Legacy).
+    - [x] Identify backend technology (Express vs NestJS).
+    - [x] Create Audit Report and Refactoring Plan.
+- [x] **Backend Migration (NestJS)**
+    - [x] Initialize NestJS project.
+    - [x] Implement TypeORM with AWS RDS (Schemas: app, web).
+    - [x] Port Auth logic (Django Password Hash compatibility).
+    - [x] Verify API endpoints (`/auth/login`, `/users`).
+- [/] **Fix Login Loop (Urgent)**
+    - [x] Implement In-Memory Cache in Flutter.
+    - [ ] Debug `AuthNotifier` and `GoRouter` conflict.
+    - [ ] Verify persistent login flow.
+- [ ] **Project Cleanup**
+    - [ ] Remove legacy `App` folder.
+    - [ ] Archive old Express backend.
+    - [ ] Reorganize to `frontend` / `backend`.
+- [ ] **Documentation**
+    - [ ] Create `SETUP.md`.
+    - [ ] Update `README.md`.
