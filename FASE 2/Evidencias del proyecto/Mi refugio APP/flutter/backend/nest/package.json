@@ -41,7 +41,6 @@
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^10.1.2",
     "@nestjs/testing": "^10.4.5",
-    "@types/axios": "^0.9.36",
     "@types/bcryptjs": "^2.4.6",
     "@types/express": "^4.17.21",
     "@types/jest": "^29.5.12",

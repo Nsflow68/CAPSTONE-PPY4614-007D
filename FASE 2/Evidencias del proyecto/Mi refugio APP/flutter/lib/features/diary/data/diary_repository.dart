@@ -25,10 +25,11 @@ class DiaryRepository {
   /// Flutter espera: DiaryEntryModel con campos adicionales.
   Future<Result<List<DiaryEntryModel>, DiaryFailure>> getEntries() async {
     try {
-      final response = await _api.getRaw('diary');
+      final response = await _api.getRaw('diary/entries');
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = await _api.getJson('diary');
+        final Map<String, dynamic> result = await _api.getJson('diary/entries');
+        final List<dynamic> data = result['items'] as List<dynamic>? ?? [];
         final entries = data
             .map((json) => _mapBackendToModel(json as Map<String, dynamic>))
             .toList();
@@ -76,10 +77,10 @@ class DiaryRepository {
   ) async {
     try {
       final payload = _mapModelToBackend(entry);
-      final response = await _api.postRaw('diary', body: payload);
+      final response = await _api.postRaw('diary/entries', body: payload);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final Map<String, dynamic> data = await _api.postJson('diary', body: payload);
+        final Map<String, dynamic> data = await _api.postJson('diary/entries', body: payload);
         final created = _mapBackendToModel(data);
         return Success(created);
       }
@@ -153,9 +154,12 @@ class DiaryRepository {
   Map<String, dynamic> _mapModelToBackend(DiaryEntryModel entry) {
     return {
       'title': entry.title,
-      'body': entry.content, // Flutter usa "content", backend usa "body"
+      'content': entry.content,
       'mood': entry.mood,
-      'createdAt': entry.createdAt.toIso8601String(),
+      'score': entry.score,
+      'moodText': entry.moodText ?? '',
+      'date': entry.date.toIso8601String(),
+      'emotions': entry.emotions,
       'tags': entry.tags,
     };
   }
