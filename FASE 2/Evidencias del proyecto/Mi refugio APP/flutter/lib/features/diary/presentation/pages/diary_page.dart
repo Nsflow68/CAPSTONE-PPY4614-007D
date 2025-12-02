@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../shared/constants/app_colors.dart';
+import '../../../../shared/constants/app_assets.dart';
 import '../../../../shared/widgets/empty_state.dart';
 import '../../../../shared/widgets/loading_indicator.dart';
 import '../../application/diary_provider.dart';
@@ -19,16 +21,34 @@ class DiaryPage extends ConsumerStatefulWidget {
   ConsumerState<DiaryPage> createState() => _DiaryPageState();
 }
 
-class _DiaryPageState extends ConsumerState<DiaryPage> {
+class _DiaryPageState extends ConsumerState<DiaryPage> with TickerProviderStateMixin {
   String _selectedMood = 'Todos';
   DateTimeRange? _selectedRange;
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeOut,
+    );
+    _fadeController.forward();
+    
     scheduleMicrotask(() {
       ref.read(diaryProvider.notifier).loadEntries();
     });
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
   }
 
   Future<void> _reload() {
@@ -99,31 +119,37 @@ class _DiaryPageState extends ConsumerState<DiaryPage> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openCreateEntry,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Nueva entrada'),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 90),
+        child: FloatingActionButton.extended(
+          onPressed: _openCreateEntry,
+          icon: const Icon(Icons.add_rounded),
+          label: const Text('Nueva entrada'),
+        ),
       ),
       body: SafeArea(
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 250),
-          child: state.map(
-            initial: (_) => const _DiaryLoading(),
-            loading: (_) => const _DiaryLoading(),
-            loaded: (data) => _DiaryLoadedView(
-              key: ValueKey(data.entries.length + data.entries.hashCode),
-              entries: data.entries,
-              selectedMood: _selectedMood,
-              onMoodSelected: (value) => setState(() => _selectedMood = value),
-              onRefresh: _reload,
-              onCreate: _openCreateEntry,
-              onOpenRange: _openRangePicker,
-              range: _selectedRange,
-            ),
-            empty: (_) => DiaryEmptyView(onCreate: _openCreateEntry),
-            error: (failure) => DiaryErrorView(
-              message: failure.failure.readableMessage(),
-              onRetry: _reload,
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            child: state.map(
+              initial: (_) => const _DiaryLoading(),
+              loading: (_) => const _DiaryLoading(),
+              loaded: (data) => _DiaryLoadedView(
+                key: ValueKey(data.entries.length + data.entries.hashCode),
+                entries: data.entries,
+                selectedMood: _selectedMood,
+                onMoodSelected: (value) => setState(() => _selectedMood = value),
+                onRefresh: _reload,
+                onCreate: _openCreateEntry,
+                onOpenRange: _openRangePicker,
+                range: _selectedRange,
+              ),
+              empty: (_) => DiaryEmptyView(onCreate: _openCreateEntry),
+              error: (failure) => DiaryErrorView(
+                message: failure.failure.readableMessage(),
+                onRetry: _reload,
+              ),
             ),
           ),
         ),
@@ -201,14 +227,48 @@ class _DiaryLoadedView extends StatelessWidget {
           if (filtered.isEmpty)
             _DiaryEmptyState(onCreate: onCreate)
           else
-            ...filtered.map(
-              (entry) => Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: _DiaryEntryCard(entry: entry),
-              ),
+            ...filtered.asMap().entries.map(
+              (entry) {
+                final index = entry.key;
+                final diaryEntry = entry.value;
+                return _AnimatedEntryCard(
+                  delay: index * 100,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: _DiaryEntryCard(entry: diaryEntry),
+                  ),
+                );
+              },
             ),
         ],
       ),
+    );
+  }
+}
+
+// Animated Entry Card Wrapper
+class _AnimatedEntryCard extends StatelessWidget {
+  final Widget child;
+  final int delay;
+
+  const _AnimatedEntryCard({required this.child, required this.delay});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 500 + delay),
+      curve: Curves.easeOut,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+      child: child,
     );
   }
 }
@@ -316,15 +376,22 @@ class _DiaryHeader extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.primary.withValues(alpha: 0.16),
-            AppColors.tertiary.withValues(alpha: 0.10),
+            Color(0xFF667eea),
+            Color(0xFF764ba2),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0xFF667eea).withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -333,209 +400,154 @@ class _DiaryHeader extends StatelessWidget {
               Text(
                 'Resumen',
                 style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
                 ),
               ),
               const Spacer(),
-              TextButton.icon(
-                onPressed: onOpenRange,
-                icon: const Icon(Icons.date_range_outlined),
-                label: Text(rangeLabel),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.date_range_outlined, color: Colors.white, size: 18),
+                    const SizedBox(width: 6),
+                    Text(
+                      rangeLabel,
+                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final width = constraints.maxWidth;
-              final itemWidth = width < 480 ? width : (width - 16) / 2;
-              return Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                children: [
-                  _SummaryStat(
-                    icon: Icons.auto_graph_rounded,
-                    label: 'Entradas totales',
-                    value: summary.total.toString(),
-                    width: itemWidth,
-                  ),
-                  _SummaryStat(
-                    icon: Icons.calendar_view_week_rounded,
-                    label: 'Ultimos 7 dias',
-                    value: summary.weekCount.toString(),
-                    width: itemWidth,
-                  ),
-                  _SummaryStat(
-                    icon: Icons.sentiment_satisfied_alt_rounded,
-                    label: 'Estado predominante',
-                    value: summary.topMood ?? 'Sin registros',
-                    width: itemWidth,
-                  ),
-                  _SummaryStat(
-                    icon: Icons.favorite_rounded,
-                    label: 'Promedio de bienestar',
-                    value: averageLabel,
-                    width: itemWidth,
-                  ),
-                ],
-              );
-            },
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _SummaryStatCompact(
+                  icon: Icons.auto_graph_rounded,
+                  label: 'Total',
+                  value: summary.total.toString(),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _SummaryStatCompact(
+                  icon: Icons.calendar_view_week_rounded,
+                  label: 'Esta semana',
+                  value: summary.weekCount.toString(),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _SummaryStatCompact(
+                  icon: Icons.sentiment_satisfied_alt_rounded,
+                  label: 'Estado frecuente',
+                  value: summary.topMood ?? 'N/A',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _SummaryStatCompact(
+                  icon: Icons.favorite_rounded,
+                  label: 'Promedio',
+                  value: averageLabel,
+                ),
+              ),
+            ],
           ),
           if (summary.topEmotions.isNotEmpty) ...[
-            const SizedBox(height: 18),
+            const SizedBox(height: 20),
             Text(
               'Emociones frecuentes',
-              style: theme.textTheme.titleMedium?.copyWith(
+              style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
+                color: Colors.white,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Wrap(
-              spacing: 10,
-              runSpacing: 10,
+              spacing: 8,
+              runSpacing: 8,
               children: summary.topEmotions
                   .map(
-                    (emotion) => Chip(
-                      label: Text(emotion),
-                      backgroundColor: AppColors.surfaceAlt,
-                      visualDensity: VisualDensity.compact,
+                    (emotion) => Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.25),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        emotion,
+                        style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                      ),
                     ),
                   )
                   .toList(),
             ),
           ],
-          if (summary.recentEntry != null) ...[
-            const SizedBox(height: 18),
-            Text(
-              'Ultima entrada registrada',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            _DiaryHighlight(entry: summary.recentEntry!),
-          ],
         ],
       ),
     );
   }
 }
 
-class _SummaryStat extends StatelessWidget {
-  const _SummaryStat({
+class _SummaryStatCompact extends StatelessWidget {
+  const _SummaryStatCompact({
     required this.icon,
     required this.label,
     required this.value,
-    required this.width,
   });
 
   final IconData icon;
   final String label;
   final String value;
-  final double width;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = theme.colorScheme.primary;
     return Container(
-      width: width,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 16,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Icon(icon, color: color),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DiaryHighlight extends StatelessWidget {
-  const _DiaryHighlight({required this.entry});
-
-  final DiaryEntryModel entry;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final dateLabel = DateFormat('d MMM · HH:mm', 'es').format(entry.createdAt);
-
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            entry.title,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            entry.content,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Icon(
-                Icons.schedule_outlined,
-                size: 16,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                dateLabel,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+          Icon(icon, color: Colors.white, size: 24),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
-              ),
-              const Spacer(),
-              Text(
-                entry.mood.isEmpty ? 'Sin estado' : entry.mood,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.primary,
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.white.withOpacity(0.8),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -566,10 +578,10 @@ class _MoodFilters extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
         Wrap(
-          spacing: 12,
-          runSpacing: 12,
+          spacing: 10,
+          runSpacing: 10,
           children: filters
               .map(
                 (mood) => ChoiceChip(
@@ -589,123 +601,184 @@ class _MoodFilters extends StatelessWidget {
   }
 }
 
-class _DiaryEntryCard extends StatelessWidget {
+class _DiaryEntryCard extends StatefulWidget {
   const _DiaryEntryCard({required this.entry});
 
   final DiaryEntryModel entry;
 
   @override
+  State<_DiaryEntryCard> createState() => _DiaryEntryCardState();
+}
+
+class _DiaryEntryCardState extends State<_DiaryEntryCard> with SingleTickerProviderStateMixin {
+  late AnimationController _scaleController;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _scaleController = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.98).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _scaleController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final dateLabel = DateFormat('EEE d MMM yyyy', 'es').format(entry.date);
-    final timeLabel = DateFormat('HH:mm', 'es').format(entry.createdAt);
-    final color = _moodColor(entry.score);
+    final dateLabel = DateFormat('EEE d MMM yyyy', 'es').format(widget.entry.date);
+    final timeLabel = DateFormat('HH:mm', 'es').format(widget.entry.createdAt);
+    final color = _moodColor(widget.entry.score);
+    final emotionIcon = EmotionIcons.getEmotionIcon(widget.entry.mood);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 18,
-            offset: const Offset(0, 12),
+    return GestureDetector(
+      onTapDown: (_) => _scaleController.forward(),
+      onTapUp: (_) => _scaleController.reverse(),
+      onTapCancel: () => _scaleController.reverse(),
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                color.withOpacity(0.1),
+                color.withOpacity(0.05),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: color.withOpacity(0.3),
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: color.withOpacity(0.15),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.16),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    entry.mood.isEmpty ? 'Sin estado' : entry.mood,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: color,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  '${entry.score}/10',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: color,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              entry.title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              entry.content,
-              maxLines: 4,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.78),
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 12),
-            if (entry.emotions.isNotEmpty)
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: entry.emotions
-                    .take(4)
-                    .map(
-                      (emotion) => Chip(
-                        label: Text(emotion),
-                        visualDensity: VisualDensity.compact,
-                        backgroundColor: AppColors.surfaceAlt,
+                Row(
+                  children: [
+                    // Emotion Icon
+                    Container(
+                      width: 56,
+                      height: 56,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                    )
-                    .toList(),
-              ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Icon(
-                  Icons.schedule_rounded,
-                  size: 18,
-                  color: theme.colorScheme.onSurfaceVariant,
+                      child: SvgPicture.asset(
+                        emotionIcon,
+                        colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.entry.mood.isEmpty ? 'Sin estado' : widget.entry.mood,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: color,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '$dateLabel · $timeLabel',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: color,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        '${widget.entry.score}/10',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(height: 16),
                 Text(
-                  '$dateLabel · $timeLabel',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  entry.moodText,
-                  style: theme.textTheme.bodySmall?.copyWith(
+                  widget.entry.title,
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: color,
                   ),
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  widget.entry.content,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.78),
+                    height: 1.5,
+                  ),
+                ),
+                if (widget.entry.emotions.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: widget.entry.emotions
+                        .take(4)
+                        .map(
+                          (emotion) => Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: color.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              emotion,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: color,
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -738,7 +811,7 @@ class _DiaryEmptyState extends StatelessWidget {
               width: 96,
               height: 96,
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.15),
+                color: AppColors.primary.withOpacity(0.15),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -749,7 +822,7 @@ class _DiaryEmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'Aun no hay registros',
+              'Aún no hay registros',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -798,14 +871,19 @@ class DiaryErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return EmptyState(
-      icon: Icons.error_outline_rounded,
-      title: 'Error al cargar entradas',
-      message: message,
-      action: ElevatedButton.icon(
-        onPressed: onRetry,
-        icon: const Icon(Icons.refresh_rounded),
-        label: const Text('Reintentar'),
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.error_outline, size: 64, color: AppColors.danger),
+          const SizedBox(height: 16),
+          Text(message),
+          const SizedBox(height: 16),
+          FilledButton(
+            onPressed: onRetry,
+            child: const Text('Reintentar'),
+          ),
+        ],
       ),
     );
   }

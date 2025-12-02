@@ -26,7 +26,7 @@ class AppLocalizations {
   String get loginPrimaryButton => 'Iniciar sesión';
   String get loginSocialDivider => 'o continúa con';
   String get loginGoogleButton => 'Continuar con Google';
-  String get loginContinueGuest => 'Explorar como invitado';
+
   String get loginNoAccountQuestion => '¿No tienes cuenta?';
   String get loginRegisterAction => 'Regístrate aquí';
   String get loginDarkModeLabel => 'Modo oscuro';

@@ -10,7 +10,7 @@ import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/signup_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
 
-import '../../features/onboarding/presentation/pages/guide_page.dart';
+// import '../../features/onboarding/presentation/pages/guide_page.dart';
 
 import '../../features/navigation/presentation/widgets/main_shell.dart';
 import '../../features/home/presentation/pages/home_page.dart';
@@ -29,8 +29,8 @@ import '../../features/wellness/presentation/pages/nutrition_page.dart';
 /// Utiliza GoRouter con un guard de autenticación que escucha el estado
 /// de Auth para proteger rutas privadas y gestionar el flujo de navegación.
 final appRouterProvider = Provider<GoRouter>((ref) {
-  // Escuchar el estado de autenticación para hacer el router reactivo
-  final authState = ref.watch(authProvider);
+  // DO NOT watch authProvider here, it causes GoRouter to be recreated on every auth change!
+  // final authState = ref.watch(authProvider);
 
   return GoRouter(
     // Arranca en splash para decidir el flujo inicial
@@ -64,10 +64,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const ForgotPasswordPage(),
       ),
 
-      GoRoute(
-        path: '/guide',
-        builder: (_, __) => const GuidePage(),
-      ),
+      // Guide route removed as requested
 
       // ═══════════════════════════════════════════════════════════════
       // RUTAS PRIVADAS (Shell con bottom navigation)
@@ -163,11 +160,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         '/login',
         '/signup',
         '/forgot-password',
-        '/guide',
       };
 
-      // Determinar si el usuario está autenticado basado en AuthState
+      // Determinar si el usuario está autenticado basado en AuthState ACTUAL
+      final authState = ref.read(authProvider);
       final isAuthenticated = authState is AuthAuthenticated;
+      
+      print('ROUTER DEBUG: Location: $location, Auth: $isAuthenticated');
 
       // Si estamos en splash, dejar pasar (Splash decidirá el flujo)
       if (location == '/splash') {
@@ -178,6 +177,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (!isAuthenticated) {
         // Si intenta acceder a una ruta privada, redirigir a login
         if (!publicRoutes.contains(location)) {
+          print('ROUTER DEBUG: Redirecting to /login (Not authenticated)');
           return '/login';
         }
         // Si está en una ruta pública, permitir acceso
@@ -189,7 +189,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         // Si intenta acceder a login o signup, redirigir a home
         // (evita que usuario autenticado vuelva a login con back button)
         if (location == '/login' || location == '/signup') {
-          return '/home';
+           print('ROUTER DEBUG: Authenticated, redirecting to /home');
+           return '/home';
         }
         // Para otras rutas (públicas o privadas), permitir acceso
         return null;

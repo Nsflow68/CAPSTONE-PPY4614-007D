@@ -20,10 +20,26 @@ class MainShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = [
-      const _NavItem(icon: Icons.home_rounded, label: 'Inicio'),
-      const _NavItem(icon: Icons.menu_book_rounded, label: 'Diario'),
-      const _NavItem(icon: Icons.smart_toy_rounded, label: 'ChatBot'),
-      const _NavItem(icon: Icons.person_rounded, label: 'Perfil'),
+      const _NavItem(
+        icon: Icons.home_outlined,
+        selectedIcon: Icons.home_rounded,
+        label: 'Inicio',
+      ),
+      const _NavItem(
+        icon: Icons.book_outlined,
+        selectedIcon: Icons.book_rounded,
+        label: 'Diario',
+      ),
+      const _NavItem(
+        icon: Icons.smart_toy_outlined,
+        selectedIcon: Icons.smart_toy_rounded,
+        label: 'ChatBot',
+      ),
+      const _NavItem(
+        icon: Icons.person_outline_rounded,
+        selectedIcon: Icons.person_rounded,
+        label: 'Perfil',
+      ),
     ];
     final theme = Theme.of(context);
 
@@ -40,8 +56,8 @@ class MainShell extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Colors.white.withValues(alpha: 0.86),
-                    Colors.white.withValues(alpha: 0.72),
+                    Colors.white.withOpacity(0.86),
+                    Colors.white.withOpacity(0.72),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -53,7 +69,7 @@ class MainShell extends StatelessWidget {
                 data: NavigationBarThemeData(
                   backgroundColor: Colors.transparent,
                   height: 68,
-                  indicatorColor: AppColors.primary.withValues(alpha: 0.18),
+                  indicatorColor: AppColors.primary.withOpacity(0.18),
                   indicatorShape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(18),
                   ),
@@ -64,15 +80,15 @@ class MainShell extends StatelessWidget {
                           : FontWeight.w500,
                       color: states.contains(WidgetState.selected)
                           ? AppColors.primary
-                          : AppColors.textSecondary.withValues(alpha: 0.65),
+                          : AppColors.textSecondary.withOpacity(0.65),
                     ),
                   ),
                   iconTheme: WidgetStateProperty.resolveWith<IconThemeData?>(
                     (states) => IconThemeData(
-                      size: states.contains(WidgetState.selected) ? 28 : 24,
+                      size: states.contains(WidgetState.selected) ? 26 : 24,
                       color: states.contains(WidgetState.selected)
                           ? AppColors.primary
-                          : AppColors.textSecondary.withValues(alpha: 0.65),
+                          : AppColors.textSecondary.withOpacity(0.65),
                     ),
                   ),
                 ),
@@ -86,7 +102,9 @@ class MainShell extends StatelessWidget {
                     for (final item in items)
                       NavigationDestination(
                         icon: Icon(item.icon),
+                        selectedIcon: Icon(item.selectedIcon),
                         label: item.label,
+                        tooltip: item.label, // Accessibility
                       ),
                   ],
                 ),
@@ -100,8 +118,13 @@ class MainShell extends StatelessWidget {
 }
 
 class _NavItem {
-  const _NavItem({required this.icon, required this.label});
+  const _NavItem({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+  });
 
   final IconData icon;
+  final IconData selectedIcon;
   final String label;
 }

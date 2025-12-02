@@ -21,16 +21,16 @@
 
   static final env = _envString('APP_ENV', defaultValue: 'dev');
 
-  static final useNestBackend = _envBool('USE_NEST_BACKEND', defaultValue: false);
+  static final useNestBackend = _envBool('USE_NEST_BACKEND', defaultValue: true);
 
   static final apiBaseUrl = useNestBackend
       ? _envString(
           'NEST_API_BASE_URL',
-          defaultValue: 'http://10.0.2.2:4000/api',
+          defaultValue: 'http://10.0.2.2:3001/api/',
         )
       : _envString(
           'API_BASE_URL',
-          defaultValue: 'http://10.0.2.2:8000',
+          defaultValue: 'http://10.0.2.2:8000/',
         );
   static final apiLogging = _envBool('API_LOGGING', defaultValue: true);
   static final connectTimeout = Duration(seconds: _envInt('CONNECT_TIMEOUT_S', defaultValue: 10));

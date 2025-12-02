@@ -33,8 +33,11 @@ class ApiService {
 
   Uri buildUri(String path, [Map<String, String>? queryParameters]) {
     final base = Uri.parse(AppConfig.apiBaseUrl);
+    print('API SERVICE: Base URL = ${AppConfig.apiBaseUrl}');
     final normalizedPath = path.startsWith('/') ? path.substring(1) : path;
+    print('API SERVICE: Normalized path = $normalizedPath');
     final resolved = base.resolve(normalizedPath);
+    print('API SERVICE: Resolved URI = $resolved');
     return queryParameters == null
         ? resolved
         : resolved.replace(queryParameters: queryParameters);
@@ -42,7 +45,7 @@ class ApiService {
 
   Future<Map<String, String>> _authHeaders() async {
     final headers = Map<String, String>.from(_defaultHeaders);
-    final token = await _storage?.getString('auth_token');
+    final token = await _storage?.getString(StorageKeys.authToken);
     if (token != null && token.isNotEmpty) {
       headers['Authorization'] = 'Bearer $token';
     }
@@ -115,10 +118,21 @@ class ApiService {
     Map<String, String>? query,
     Map<String, String>? headers,
   }) async {
+    print('API SERVICE: postRaw called with path=$path');
     final uri = buildUri(path, query);
+    print('API SERVICE: Final URI = $uri');
     final h = {...await _authHeaders(), ...?headers};
     final payload = body is String ? body : jsonEncode(body);
-    return _retryingRequest(() => _http.post(uri, headers: h, body: payload));
+    print('API SERVICE: Payload = $payload');
+    try {
+      final response = await _retryingRequest(() => _http.post(uri, headers: h, body: payload));
+      print('API SERVICE: Response status = ${response.statusCode}');
+      print('API SERVICE: Response body = ${response.body}');
+      return response;
+    } catch (e) {
+      print('API SERVICE: ERROR = $e');
+      rethrow;
+    }
   }
 
   Future<http.Response> putRaw(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mi_refugio_app/core/router/router.dart';
+import 'package:mi_refugio_app/core/services/api_service.dart';
 import 'package:mi_refugio_app/core/services/storage_service.dart';
 import 'package:mi_refugio_app/core/services/theme_controller.dart';
 import 'package:mi_refugio_app/core/theme/app_theme.dart';
@@ -10,6 +11,7 @@ import 'package:mi_refugio_app/l10n/app_localizations.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await StorageService.instance.initialize();
+  ApiService.instance.initialize(storage: StorageService.instance);
   runApp(const ProviderScope(child: MiRefugioApp()));
 }
 

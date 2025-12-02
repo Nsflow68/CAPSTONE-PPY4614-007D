@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
@@ -21,15 +22,20 @@ class DiaryRepository {
   /// Obtiene todos los registros del diario del usuario actual.
   ///
   /// Mapea la respuesta del backend al modelo de Flutter.
-  /// Backend devuelve: { id, title, body, mood, createdAt, tags, userId }
-  /// Flutter espera: DiaryEntryModel con campos adicionales.
+  /// Backend devuelve: { entries: [...] }
   Future<Result<List<DiaryEntryModel>, DiaryFailure>> getEntries() async {
     try {
-      final response = await _api.getRaw('diary/entries');
+      print('DEBUG: Calling getEntries');
+      final uri = _api.buildUri('diary');
+      print('DEBUG: Full URI: $uri');
+      
+      final response = await _api.getRaw('diary');
+      print('DEBUG: Response status: ${response.statusCode}');
+      print('DEBUG: Response body: ${response.body}');
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> result = await _api.getJson('diary/entries');
-        final List<dynamic> data = result['items'] as List<dynamic>? ?? [];
+        final Map<String, dynamic> result = await _api.getJson('diary');
+        final List<dynamic> data = result['entries'] as List<dynamic>? ?? [];
         final entries = data
             .map((json) => _mapBackendToModel(json as Map<String, dynamic>))
             .toList();
@@ -37,21 +43,24 @@ class DiaryRepository {
       }
 
       return Failure(_mapStatusToFailure(response.statusCode, response.body));
-    } on TimeoutException catch (_) {
+    } on TimeoutException catch (e) {
+      print('DEBUG: TimeoutException: $e');
       return const Failure(
         DiaryFailure(
           DiaryFailureType.network,
           message: 'La solicitud tardó demasiado tiempo',
         ),
       );
-    } on SocketException catch (_) {
+    } on SocketException catch (e) {
+      print('DEBUG: SocketException: $e');
       return const Failure(
         DiaryFailure(
           DiaryFailureType.network,
           message: 'No se pudo conectar con el servidor',
         ),
       );
-    } on http.ClientException catch (_) {
+    } on http.ClientException catch (e) {
+      print('DEBUG: ClientException: $e');
       return const Failure(
         DiaryFailure(
           DiaryFailureType.network,
@@ -59,6 +68,7 @@ class DiaryRepository {
         ),
       );
     } catch (e) {
+      print('DEBUG: Unknown Exception: $e');
       return Failure(
         DiaryFailure(
           DiaryFailureType.unknown,
@@ -71,16 +81,15 @@ class DiaryRepository {
   /// Crea un nuevo registro en el diario.
   ///
   /// Mapea el modelo de Flutter a la estructura esperada por el backend.
-  /// Backend espera: { title, body, mood, createdAt?, tags? }
   Future<Result<DiaryEntryModel, DiaryFailure>> createEntry(
     DiaryEntryModel entry,
   ) async {
     try {
       final payload = _mapModelToBackend(entry);
-      final response = await _api.postRaw('diary/entries', body: payload);
+      final response = await _api.postRaw('diary', body: payload);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final Map<String, dynamic> data = await _api.postJson('diary/entries', body: payload);
+        final Map<String, dynamic> data = jsonDecode(response.body);
         final created = _mapBackendToModel(data);
         return Success(created);
       }
@@ -119,28 +128,27 @@ class DiaryRepository {
 
   /// Mapea la respuesta del backend al modelo de Flutter.
   ///
-  /// Backend: { id, title, body, mood, createdAt, tags, userId }
-  /// Flutter: DiaryEntryModel con campos adicionales
+  /// Backend: { id, title, content, mood, score, moodText, emotions, tags, date, userId, createdAt, updatedAt }
+  /// Flutter: DiaryEntryModel
   DiaryEntryModel _mapBackendToModel(Map<String, dynamic> json) {
     final createdAt = DateTime.tryParse(json['createdAt'] as String? ?? '') ??
         DateTime.now();
-
-    // El backend no tiene score, moodText, emotions ni date separado.
-    // Generamos valores por defecto razonables.
-    final mood = (json['mood'] as String? ?? '').trim();
-    final score = _inferScoreFromMood(mood);
-    final moodText = _generateMoodText(mood, score);
+    final date = DateTime.tryParse(json['date'] as String? ?? '') ??
+        DateTime(createdAt.year, createdAt.month, createdAt.day);
 
     return DiaryEntryModel(
       id: json['id']?.toString() ?? '',
       title: json['title'] as String? ?? '',
-      content: json['body'] as String? ?? '', // backend usa "body"
-      mood: mood,
-      moodText: moodText,
-      score: score,
-      date: DateTime(createdAt.year, createdAt.month, createdAt.day),
+      content: json['content'] as String? ?? '',
+      mood: (json['mood'] as String? ?? '').trim(),
+      moodText: json['moodText'] as String? ?? '',
+      score: json['score'] as int? ?? 5,
+      date: date,
       createdAt: createdAt,
-      emotions: const [], // backend no tiene emotions, usamos lista vacía
+      emotions: (json['emotions'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
       tags: (json['tags'] as List<dynamic>?)
               ?.map((tag) => tag.toString())
               .toList() ??
