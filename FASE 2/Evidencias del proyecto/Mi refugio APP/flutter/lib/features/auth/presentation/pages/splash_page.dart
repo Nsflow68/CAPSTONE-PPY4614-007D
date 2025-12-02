@@ -6,7 +6,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../application/auth_provider.dart';
-import '../../application/auth_state.dart';
 import 'package:mi_refugio_app/shared/constants/app_colors.dart';
 
 class SplashPage extends ConsumerStatefulWidget {
@@ -24,8 +23,12 @@ class _SplashPageState extends ConsumerState<SplashPage> {
   }
 
   Future<void> _initializeApp() async {
-    // Force logout to ensure clean state
-    await ref.read(authProvider.notifier).logout();
+    try {
+      // Force logout to ensure clean state
+      await ref.read(authProvider.notifier).logout();
+    } catch (e) {
+      debugPrint('SplashPage: Logout failed: $e');
+    }
 
     if (!mounted) return;
 

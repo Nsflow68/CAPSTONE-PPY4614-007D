@@ -29,7 +29,7 @@ const mentalHealthResources = <ResourceItem>[
     description:
         'Contención emocional, acompañamiento y talleres gratuitos para fortalecer redes de apoyo y seguridad emocional.',
     category: 'Comunidad',
-    asset: 'assets/images/mascot/pose3.png',
+    asset: 'assets/images/mental_health/apoyo.png',
     website: 'https://todomejora.org',
   ),
   ResourceItem(
@@ -39,7 +39,7 @@ const mentalHealthResources = <ResourceItem>[
     description:
         'Encuentra psicólogos y psicólogas validados, con especialidades en salud mental, trauma y bienestar.',
     category: 'Profesionales',
-    asset: 'assets/images/mascot/pose4.png',
+    asset: 'assets/images/mental_health/apoyo.png',
     website: 'https://www.colegiodepsicologos.cl',
   ),
   ResourceItem(
@@ -69,7 +69,49 @@ const mentalHealthResources = <ResourceItem>[
     description:
         'Sesiones gratuitas en línea, recursos descargables y cápsulas para regular el estrés desde casa.',
     category: 'Mindfulness',
-    asset: 'assets/images/mascot/pose2.png',
+    asset: 'assets/images/mental_health/respiracion.png',
     website: 'https://www.saludmental.uchile.cl/respira',
+  ),
+  ResourceItem(
+    id: 'fono-drogas',
+    title: 'Fono Drogas y Alcohol',
+    subtitle: 'Senda - Gobierno de Chile',
+    description:
+        'Orientación y ayuda gratuita, anónima y confidencial para personas afectadas por el consumo de alcohol y otras drogas.',
+    category: 'Urgencia',
+    asset: 'assets/images/government/gobierno_chile.png',
+    contact: '1412',
+    website: 'https://www.senda.gob.cl',
+  ),
+  ResourceItem(
+    id: 'hablemos-de-todo',
+    title: 'Hablemos de Todo',
+    subtitle: 'INJUV',
+    description:
+        'Plataforma de información y orientación para jóvenes sobre salud mental, violencia, sexualidad y más.',
+    category: 'Juventud',
+    asset: 'assets/images/government/gobierno_chile.png',
+    website: 'https://hablemosdetodo.injuv.gob.cl',
+  ),
+  ResourceItem(
+    id: 'chile-crece',
+    title: 'Chile Crece Contigo',
+    subtitle: 'Protección a la Infancia',
+    description:
+        'Sistema de protección integral a la infancia que acompaña, protege y apoya a todos los niños, niñas y sus familias.',
+    category: 'Comunidad',
+    asset: 'assets/images/government/gobierno_chile.png',
+    website: 'https://www.chilecrececontigo.gob.cl',
+  ),
+  ResourceItem(
+    id: 'fono-infancia',
+    title: 'Fono Infancia',
+    subtitle: 'Apoyo a la crianza',
+    description:
+        'Apoyo psicológico gratuito a padres y cuidadores para la crianza respetuosa y el desarrollo integral de niños y niñas.',
+    category: 'Comunidad',
+    asset: 'assets/images/government/gobierno_chile.png',
+    contact: '800 200 818',
+    website: 'https://www.fonoinfancia.cl',
   ),
 ];

@@ -3,15 +3,15 @@ import 'dart:math' as math;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../shared/constants/app_gradients.dart';
 import '../../../../shared/constants/app_shadows.dart';
 import '../../../../shared/data/hydration_guidelines.dart';
 import '../../../../shared/models/hydration_daily_intake.dart';
 import '../../../rewards/application/reward_provider.dart';
 import '../../application/hydration_providers.dart';
+import '../../../../core/services/notification_service.dart';
 import '../../data/hydration_repository.dart';
 
 class HydrationPage extends ConsumerWidget {
@@ -21,45 +21,33 @@ class HydrationPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final summaryAsync = ref.watch(hydrationSummaryProvider);
 
-    return DecoratedBox(
-      decoration: const BoxDecoration(gradient: AppGradients.softBackground),
-      child: Scaffold(
+    return Scaffold(
+      backgroundColor: const Color(0xFFE3F2FD), // Pastel Blue Background
+      appBar: AppBar(
+        title: const Text('Hidratación'),
         backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: const Text('Hidratación'),
-          actions: [
-            IconButton(
-              tooltip: 'Configurar recordatorios',
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Pronto podrás programar recordatorios inteligentes desde aquí.',
-                    ),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.alarm_add_rounded),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () => _showNotificationSettings(context),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(hydrationSummaryProvider);
+            await ref.read(hydrationSummaryProvider.future);
+          },
+          child: summaryAsync.when(
+            data: (entries) => _HydrationContent(
+              entries: entries,
+              onRegisterIntake: () => _showRegisterIntakeSheet(context, ref),
             ),
-          ],
-        ),
-        body: SafeArea(
-          child: RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(hydrationSummaryProvider);
-              await ref.read(hydrationSummaryProvider.future);
-            },
-            child: summaryAsync.when(
-              data: (entries) => _HydrationContent(
-                entries: entries,
-                onRegisterIntake: () =>
-                    _showRegisterIntakeSheet(context, ref),
-              ),
-              loading: () => const _HydrationLoading(),
-              error: (error, __) => _HydrationError(
-                message: error.toString(),
-                onRetry: () => ref.invalidate(hydrationSummaryProvider),
-              ),
+            loading: () => const _HydrationLoading(),
+            error: (error, __) => _HydrationError(
+              message: error.toString(),
+              onRetry: () => ref.invalidate(hydrationSummaryProvider),
             ),
           ),
         ),
@@ -87,15 +75,15 @@ class _HydrationContent extends StatelessWidget {
     );
     final goalMl = todayData.goalMl ?? 2000.0;
     final consumedMl = todayData.totalMl;
-    final remainingMl = math.max(0.0, goalMl - consumedMl);
+    final progress = (consumedMl / goalMl).clamp(0.0, 1.0);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
       children: [
-        _HydrationHero(
-          goalMl: goalMl,
+        _MascotHydrationHero(
+          progress: progress,
           consumedMl: consumedMl,
-          remainingMl: remainingMl,
+          goalMl: goalMl,
           onRegisterIntake: onRegisterIntake,
         ),
         const SizedBox(height: 22),
@@ -108,98 +96,118 @@ class _HydrationContent extends StatelessWidget {
         const SizedBox(height: 12),
         for (final tip in hydrationRecommendations)
           _HydrationTipCard(tip: tip),
-        const SizedBox(height: 24),
-        Text('Fuentes validadas', style: theme.textTheme.titleMedium),
-        const SizedBox(height: 12),
-        const _SourceCard(
-          title: 'Ministerio de Salud de Chile',
-          subtitle: 'Guía de hidratación saludable 2024 · Elige Vivir Sano',
-          asset: 'assets/images/government/gobierno_chile.png',
-          link: 'https://eligevivirsano.cl/',
-        ),
-        const SizedBox(height: 12),
-        const _SourceCard(
-          title: 'Colegio de Nutricionistas',
-          subtitle:
-              'Recomendaciones sobre hidratación y consumo de infusiones',
-          asset: 'assets/images/government/gobierno_chile.png',
-          link: 'https://www.colegionutricionistas.cl/',
-        ),
       ],
     );
   }
 }
 
-class _HydrationHero extends StatelessWidget {
-  const _HydrationHero({
-    required this.goalMl,
+class _MascotHydrationHero extends StatelessWidget {
+  final double progress;
+  final double consumedMl;
+  final double goalMl;
+  final VoidCallback onRegisterIntake;
+
+  const _MascotHydrationHero({
+    required this.progress,
     required this.consumedMl,
-    required this.remainingMl,
+    required this.goalMl,
     required this.onRegisterIntake,
   });
 
-  final double goalMl;
-  final double consumedMl;
-  final double remainingMl;
-  final VoidCallback onRegisterIntake;
+  String get _mascotAsset {
+    if (progress < 0.25) return 'assets/images/rewards/pose_1.svg';
+    if (progress < 0.5) return 'assets/images/rewards/pose_2.svg';
+    if (progress < 0.75) return 'assets/images/rewards/pose_3.svg';
+    return 'assets/images/rewards/pose_4.svg';
+  }
+
+  String get _mascotMessage {
+    if (progress < 0.25) return '¡Empecemos a hidratarnos!';
+    if (progress < 0.5) return '¡Vas muy bien, sigue así!';
+    if (progress < 0.75) return '¡Casi llegamos a la meta!';
+    return '¡Excelente trabajo! 🎉';
+  }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final goalLiters = goalMl / 1000;
-    final consumedLiters = consumedMl / 1000;
-
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: const LinearGradient(
-          colors: [Color(0xFFEAF3FF), Color(0xFFF3F7FF)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(32),
         boxShadow: AppShadows.soft,
       ),
-      child: Row(
+      child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Icon(
-              Icons.water_drop_rounded,
-              color: Color(0xFF3A84FF),
-              size: 36,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE3F2FD),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        _mascotMessage,
+                        style: const TextStyle(
+                          color: Color(0xFF1976D2),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '${(consumedMl / 1000).toStringAsFixed(1)}L',
+                      style: const TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2D3436),
+                      ),
+                    ),
+                    Text(
+                      'de ${(goalMl / 1000).toStringAsFixed(1)}L meta diaria',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: const Color(0xFF2D3436).withOpacity(0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(
+                height: 120,
+                width: 120,
+                child: SvgPicture.asset(_mascotAsset),
+              ),
+            ],
           ),
-          const SizedBox(width: 18),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Programa Elige Vivir Sano',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Meta sugerida: ${goalLiters.toStringAsFixed(1)}L. '
-                  '${remainingMl > 0 ? 'Te faltan ${(remainingMl / 1000).toStringAsFixed(1)}L para llegar.' : '¡Meta diaria alcanzada!'}',
-                  style: theme.textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 12),
-                FilledButton.icon(
-                  onPressed: onRegisterIntake,
-                  icon: const Icon(Icons.local_drink_rounded, size: 18),
-                  label: Text(
-                    'Registrar vaso (acumulado ${consumedLiters.toStringAsFixed(1)}L)',
-                  ),
-                ),
-              ],
+          const SizedBox(height: 24),
+          LinearProgressIndicator(
+            value: progress,
+            backgroundColor: const Color(0xFFE3F2FD),
+            color: const Color(0xFF2196F3),
+            minHeight: 12,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: onRegisterIntake,
+              icon: const Icon(Icons.water_drop),
+              label: const Text('Registrar vaso'),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF2196F3),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
             ),
           ),
         ],
@@ -258,7 +266,7 @@ class _HydrationChart extends StatelessWidget {
                 gridData: FlGridData(
                   drawVerticalLine: false,
                   getDrawingHorizontalLine: (_) => FlLine(
-                    color: Colors.blueGrey.withValues(alpha: 0.08),
+                    color: Colors.blueGrey.withOpacity(0.08),
                     strokeWidth: 1,
                   ),
                 ),
@@ -275,6 +283,7 @@ class _HydrationChart extends StatelessWidget {
                       reservedSize: 38,
                       getTitlesWidget: (value, meta) => Text(
                         value.toStringAsFixed(1),
+                        style: const TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ),
                   ),
@@ -289,7 +298,10 @@ class _HydrationChart extends StatelessWidget {
                         final entry = sortedEntries[index];
                         return Padding(
                           padding: const EdgeInsets.only(top: 8),
-                          child: Text(_weekdayLabel(entry.date)),
+                          child: Text(
+                            _weekdayLabel(entry.date),
+                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
                         );
                       },
                     ),
@@ -308,7 +320,7 @@ class _HydrationChart extends StatelessWidget {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          const Color(0xFF3A84FF).withValues(alpha: 0.18),
+                          const Color(0xFF3A84FF).withOpacity(0.18),
                           Colors.transparent,
                         ],
                       ),
@@ -384,39 +396,7 @@ class _HydrationLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
-      children: const [
-        _HydrationLoadingCard(height: 140),
-        SizedBox(height: 22),
-        _HydrationLoadingCard(height: 260),
-        SizedBox(height: 24),
-        _HydrationLoadingCard(height: 100),
-        SizedBox(height: 12),
-        _HydrationLoadingCard(height: 100),
-      ],
-    );
-  }
-}
-
-class _HydrationLoadingCard extends StatelessWidget {
-  const _HydrationLoadingCard({required this.height});
-
-  final double height;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: height,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: AppShadows.soft,
-      ),
-      child: const Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
+    return const Center(child: CircularProgressIndicator());
   }
 }
 
@@ -431,29 +411,17 @@ class _HydrationError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 48, 20, 28),
-      children: [
-        Icon(Icons.report_problem_rounded,
-            size: 52, color: theme.colorScheme.error),
-        const SizedBox(height: 16),
-        Text(
-          'No pudimos cargar tus datos de hidratación',
-          style: theme.textTheme.titleMedium,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          message,
-          style: theme.textTheme.bodyMedium,
-        ),
-        const SizedBox(height: 16),
-        FilledButton.icon(
-          onPressed: onRetry,
-          icon: const Icon(Icons.refresh_rounded),
-          label: const Text('Reintentar'),
-        ),
-      ],
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 48, color: Colors.red),
+          const SizedBox(height: 16),
+          Text(message),
+          const SizedBox(height: 16),
+          ElevatedButton(onPressed: onRetry, child: const Text('Reintentar')),
+        ],
+      ),
     );
   }
 }
@@ -493,57 +461,6 @@ class _HydrationTipCard extends StatelessWidget {
                 Text(tip.detail, style: theme.textTheme.bodyMedium),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SourceCard extends StatelessWidget {
-  const _SourceCard({
-    required this.title,
-    required this.subtitle,
-    required this.asset,
-    required this.link,
-  });
-
-  final String title;
-  final String subtitle;
-  final String asset;
-  final String link;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: AppShadows.soft,
-      ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Image.asset(asset, width: 56, height: 56, fit: BoxFit.cover),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: theme.textTheme.titleMedium),
-                const SizedBox(height: 4),
-                Text(subtitle, style: theme.textTheme.bodyMedium),
-              ],
-            ),
-          ),
-          IconButton(
-            tooltip: 'Abrir fuente oficial',
-            onPressed: () => _launchExternal(context, link),
-            icon: const Icon(Icons.open_in_new_rounded),
           ),
         ],
       ),
@@ -624,36 +541,118 @@ class _HydrationRegisterSheetState extends State<_HydrationRegisterSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Registrar nueva ingesta',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 24),
+          Text(
+            'Registrar nueva ingesta',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF2D3436),
+            ),
+          ),
+          const SizedBox(height: 8),
           Text(
             'Escoge la cantidad aproximada de agua que tomaste.',
-            style: theme.textTheme.bodyMedium,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: Colors.grey[600],
+            ),
           ),
-          const SizedBox(height: 18),
-          Slider(
-            value: _amount,
-            min: 150,
-            max: 750,
-            divisions: 4,
-            label: '${_amount.toInt()} ml',
-            onChanged: (value) => setState(() => _amount = value),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _PresetButton(
+                amount: 250,
+                label: 'Vaso',
+                isSelected: _amount == 250,
+                onTap: () => setState(() => _amount = 250),
+              ),
+              _PresetButton(
+                amount: 500,
+                label: 'Botella',
+                isSelected: _amount == 500,
+                onTap: () => setState(() => _amount = 500),
+              ),
+              _PresetButton(
+                amount: 750,
+                label: 'Grande',
+                isSelected: _amount == 750,
+                onTap: () => setState(() => _amount = 750),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(_amount),
-            child: Text('Registrar ${_amount.toInt()} ml'),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('150 ml', style: TextStyle(color: Colors.grey[400], fontWeight: FontWeight.w600)),
+              Text(
+                '${_amount.toInt()} ml',
+                style: const TextStyle(
+                  color: Color(0xFF2196F3),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24,
+                ),
+              ),
+              Text('750 ml', style: TextStyle(color: Colors.grey[400], fontWeight: FontWeight.w600)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: const Color(0xFF2196F3),
+              inactiveTrackColor: const Color(0xFFE3F2FD),
+              thumbColor: const Color(0xFF2196F3),
+              overlayColor: const Color(0xFF2196F3).withOpacity(0.2),
+              trackHeight: 8,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
+            ),
+            child: Slider(
+              value: _amount,
+              min: 150,
+              max: 750,
+              divisions: 12,
+              onChanged: (value) => setState(() => _amount = value),
+            ),
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () => Navigator.of(context).pop(_amount),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF2196F3),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                'Registrar ahora',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
           ),
         ],
       ),
@@ -661,19 +660,79 @@ class _HydrationRegisterSheetState extends State<_HydrationRegisterSheet> {
   }
 }
 
-Future<void> _launchExternal(BuildContext context, String url) async {
-  final uri = Uri.tryParse(url);
-  if (uri == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Enlace no válido')),
-    );
-    return;
-  }
+class _PresetButton extends StatelessWidget {
+  const _PresetButton({
+    required this.amount,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
 
-  final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-  if (!launched && context.mounted) {
+  final int amount;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF2196F3) : const Color(0xFFF5F5F5),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF2196F3) : Colors.transparent,
+            width: 2,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              Icons.local_drink_rounded,
+              color: isSelected ? Colors.white : Colors.grey[600],
+              size: 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.grey[800],
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
+            ),
+            Text(
+              '$amount ml',
+              style: TextStyle(
+                color: isSelected ? Colors.white.withOpacity(0.8) : Colors.grey[500],
+                fontSize: 10,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> _showNotificationSettings(BuildContext context) async {
+  final time = await showTimePicker(
+    context: context,
+    initialTime: const TimeOfDay(hour: 10, minute: 0),
+    helpText: 'Programar recordatorio diario',
+  );
+
+  if (time != null && context.mounted) {
+    await NotificationService().scheduleDailyNotification(
+      id: 1, // Unique ID for hydration
+      title: '¡Hora de hidratarse!',
+      body: 'Recuerda tomar un vaso de agua para mantenerte saludable.',
+      time: time,
+    );
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('No se pudo abrir el enlace')),
+      SnackBar(content: Text('Recordatorio programado para las ${time.format(context)}')),
     );
   }
 }

@@ -43,6 +43,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String email,
     required String password,
     required String fullName,
+    required String rut,
+    DateTime? birthDate,
+    String? gender,
   }) async {
     state = const AuthLoading();
     final result = await _repository.register(
@@ -50,6 +53,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       email: email,
       password: password,
       fullName: fullName,
+      rut: rut,
+      birthDate: birthDate,
+      gender: gender,
     );
     
     // If registration is success, we might want to auto-login

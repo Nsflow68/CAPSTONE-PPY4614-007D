@@ -29,6 +29,8 @@ dependencies:
   equatable: ^2.0.5
   uuid: ^4.5.1
   flutter_tts: ^4.2.3
+  flutter_local_notifications: ^19.5.0
+  timezone: ^0.10.1
 
 dev_dependencies:
   flutter_test:
@@ -48,6 +50,9 @@ flutter:
     - assets/images/iconos/
     - assets/images/mascota/
     - assets/images/logo/
+    - assets/images/nutrition/
+    - assets/images/rewards/
+    - assets/images/wellness/
     - assets/videos/
     - assets/audio/
 

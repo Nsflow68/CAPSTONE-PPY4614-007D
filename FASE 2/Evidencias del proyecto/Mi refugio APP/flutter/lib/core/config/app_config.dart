@@ -26,16 +26,16 @@
   static final apiBaseUrl = useNestBackend
       ? _envString(
           'NEST_API_BASE_URL',
-          defaultValue: 'http://10.0.2.2:3001/api/',
+          defaultValue: 'http://localhost:3001/api/',
         )
       : _envString(
           'API_BASE_URL',
-          defaultValue: 'http://10.0.2.2:8000/',
+          defaultValue: 'http://localhost:8000/',
         );
   static final apiLogging = _envBool('API_LOGGING', defaultValue: true);
   static final connectTimeout = Duration(seconds: _envInt('CONNECT_TIMEOUT_S', defaultValue: 10));
   static final sendTimeout = Duration(seconds: _envInt('SEND_TIMEOUT_S', defaultValue: 10));
-  static final receiveTimeout = Duration(seconds: _envInt('RECEIVE_TIMEOUT_S', defaultValue: 15));
+  static final receiveTimeout = Duration(seconds: _envInt('RECEIVE_TIMEOUT_S', defaultValue: 300));
 
   static final dbHost = _envString(
     'DB_HOST',

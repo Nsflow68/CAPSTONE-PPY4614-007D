@@ -62,12 +62,14 @@ class _ChatbotPageState extends ConsumerState<ChatbotPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(chatbotProvider);
+    final theme = Theme.of(context);
     final messages = _messages(state);
 
     // Scroll al final cuando cambien los mensajes
     _scrollToBottom();
 
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Refu · Acompañamiento'),
         actions: [
@@ -80,7 +82,10 @@ class _ChatbotPageState extends ConsumerState<ChatbotPage> {
       ),
       body: SafeArea(
         child: DecoratedBox(
-          decoration: const BoxDecoration(gradient: AppGradients.softBackground),
+          decoration: BoxDecoration(
+            gradient: AppGradients.softBackground,
+            color: theme.scaffoldBackgroundColor,
+          ),
           child: Column(
             children: [
               const _ChatHero(),

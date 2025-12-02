@@ -123,6 +123,7 @@ class GuidePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -139,8 +140,9 @@ class GuidePage extends StatelessWidget {
           ),
           SliverToBoxAdapter(
             child: Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: AppGradients.softBackground,
+                color: theme.scaffoldBackgroundColor,
               ),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),

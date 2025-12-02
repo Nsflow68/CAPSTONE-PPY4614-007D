@@ -3,7 +3,7 @@ build/
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
-.env
+# .env
 .DS_Store
 *.log
 coverage/

@@ -140,30 +140,68 @@ class AuthRepository {
     required String email,
     required String password,
     required String fullName,
+    required String rut,
+    DateTime? birthDate,
+    String? gender,
   }) async {
     try {
+      print('AUTH REPO: Attempting register for $email');
       final data = await _api.postJson<Map<String, dynamic>>(
-        'users',
+        'auth/register',
         body: {
           'username': username,
           'email': email,
           'password': password,
-          'full_name': fullName,
-          'role': 'user',
+          'name': fullName, // Backend expects 'name', not 'full_name' in auth/register DTO usually, checking backend...
+          // Wait, backend User entity has 'name'. AuthController.register DTO?
+          // Let's assume 'name' for now as per User entity.
+          'rut': rut,
+          'birthDate': birthDate?.toIso8601String(),
+          'gender': gender,
         },
       );
+      print('AUTH REPO: Register response data: $data');
 
       // If postJson returns, it means success (200/201) because ApiService throws on error
       final user = AuthUser(
           id: data['id'].toString(),
-          email: data['username'], // backend returns username as email sometimes? no, check controller
-          name: data['full_name'] ?? data['username'],
+          email: data['email'], 
+          name: data['name'] ?? data['username'],
           createdAt: DateTime.now(),
       );
       
       return Success(user);
     } catch (e) {
-      return Failure(AuthFailure(AuthFailureType.server, message: e.toString()));
+      print('AUTH REPO: Register error: $e');
+      String errorMessage = e.toString();
+      
+      // Try to parse backend error message
+      if (e.toString().contains('ClientException')) {
+        try {
+          // Extract JSON body from exception string if possible, or just use the message
+          // Since ClientException.toString() format is "ClientException: <message>, uri=..."
+          // And ApiService throws "HTTP <code>: <body>"
+          
+          final parts = e.toString().split(': ');
+          if (parts.length > 2) {
+             // Attempt to find JSON in the string
+             final jsonStart = e.toString().indexOf('{');
+             final jsonEnd = e.toString().lastIndexOf('}');
+             if (jsonStart != -1 && jsonEnd != -1) {
+               final jsonStr = e.toString().substring(jsonStart, jsonEnd + 1);
+               // Use RegExp to find "message":"..." or "message": "..."
+               final regExp = RegExp(r'"message"\s*:\s*"([^"]+)"');
+               final match = regExp.firstMatch(jsonStr);
+               if (match != null) {
+                 errorMessage = match.group(1) ?? errorMessage;
+                 return Failure(AuthFailure(AuthFailureType.unknown, message: errorMessage));
+               }
+             }
+          }
+        } catch (_) {}
+      }
+      
+      return Failure(AuthFailure(AuthFailureType.server, message: errorMessage));
     }
   }
 }

@@ -5,6 +5,7 @@ import "package:mi_refugio_app/shared/constants/app_gradients.dart";
 import "package:mi_refugio_app/shared/constants/app_shadows.dart";
 import "package:mi_refugio_app/shared/data/mental_health_resources.dart";
 import "package:mi_refugio_app/shared/models/resource_item.dart";
+import "package:url_launcher/url_launcher.dart";
 
 class ResourcesPage extends StatefulWidget {
   const ResourcesPage({super.key});
@@ -37,9 +38,12 @@ class _ResourcesPageState extends State<ResourcesPage> {
     final theme = Theme.of(context);
     final filtered = _applyFilters(mentalHealthResources);
     return DecoratedBox(
-      decoration: const BoxDecoration(gradient: AppGradients.softBackground),
+      decoration: BoxDecoration(
+        gradient: AppGradients.softBackground,
+        color: theme.scaffoldBackgroundColor,
+      ),
       child: Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(title: const Text("Recursos profesionales")),
         body: SafeArea(
           child: ListView(
@@ -189,29 +193,51 @@ class _ResourceCard extends StatelessWidget {
           Text(item.description, style: theme.textTheme.bodyMedium),
           if (item.contact != null) ...[
             const SizedBox(height: 16),
-            Row(
-              children: [
-                const Icon(Icons.support_agent_outlined, size: 20),
-                const SizedBox(width: 8),
-                Text(item.contact!, style: theme.textTheme.bodyLarge),
-              ],
+            InkWell(
+              onTap: () => _launchUrl(context, 'tel:${item.contact!.replaceAll(' ', '')}'),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    const Icon(Icons.phone_in_talk_rounded, size: 20, color: AppColors.primary),
+                    const SizedBox(width: 8),
+                    Text(
+                      item.contact!,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
           if (item.website != null) ...[
             const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.open_in_new_rounded, size: 20),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    item.website!,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: AppColors.primary,
+            InkWell(
+              onTap: () => _launchUrl(context, item.website!),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    const Icon(Icons.public_rounded, size: 20, color: AppColors.primary),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        item.website!,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: AppColors.primary,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ],
         ],

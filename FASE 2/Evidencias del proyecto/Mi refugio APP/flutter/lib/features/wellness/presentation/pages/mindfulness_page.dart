@@ -10,6 +10,7 @@ import '../../../../shared/data/mindfulness_audio_resources.dart';
 import '../../../../shared/models/mindfulness_session.dart';
 import '../../../../shared/models/mindfulness_summary.dart';
 import '../../application/mindfulness_providers.dart';
+import '../../../../core/services/notification_service.dart';
 
 class MindfulnessPage extends ConsumerWidget {
   const MindfulnessPage({super.key});
@@ -28,22 +29,18 @@ class MindfulnessPage extends ConsumerWidget {
         title: const Text('Mindfulness'),
         actions: [
           IconButton(
-            tooltip: 'Programar recomendaciones',
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Muy pronto podrás programar recordatorios personalizados.',
-                  ),
-                ),
-              );
-            },
-            icon: const Icon(Icons.auto_awesome_rounded),
+            tooltip: 'Programar práctica',
+            onPressed: () => _showNotificationSettings(context),
+            icon: const Icon(Icons.notifications_outlined),
           ),
         ],
       ),
+      backgroundColor: theme.scaffoldBackgroundColor, // Ensure opaque background behind gradient
       body: Container(
-        decoration: const BoxDecoration(gradient: AppGradients.softBackground),
+        decoration: BoxDecoration(
+          gradient: AppGradients.softBackground,
+          color: theme.scaffoldBackgroundColor, // Fallback color
+        ),
         child: SafeArea(
           child: RefreshIndicator(
             onRefresh: () async {
@@ -435,6 +432,14 @@ class _AudioResourceCardState extends State<_AudioResourceCard> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+                const SizedBox(height: 2),
+                Text(
+                  widget.resource.credits,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
                 TextButton.icon(
                   onPressed: () => widget.onOpenResource(widget.resource.sourceUrl),
                   icon: const Icon(Icons.open_in_new_rounded, size: 18),
@@ -670,5 +675,25 @@ Future<void> _launchExternal(BuildContext context, String url) async {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('No se pudo abrir el enlace')));
+  }
+}
+
+Future<void> _showNotificationSettings(BuildContext context) async {
+  final time = await showTimePicker(
+    context: context,
+    initialTime: const TimeOfDay(hour: 20, minute: 0),
+    helpText: 'Programar práctica diaria',
+  );
+
+  if (time != null && context.mounted) {
+    await NotificationService().scheduleDailyNotification(
+      id: 3, // Unique ID for mindfulness
+      title: 'Momento de calma',
+      body: 'Tómate unos minutos para respirar y reconectar contigo.',
+      time: time,
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Recordatorio programado para las ${time.format(context)}')),
+    );
   }
 }

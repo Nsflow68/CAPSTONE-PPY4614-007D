@@ -7,8 +7,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../shared/constants/app_colors.dart';
+import '../../../../shared/constants/app_gradients.dart';
 import '../../../../shared/constants/app_assets.dart';
-import '../../../../shared/widgets/empty_state.dart';
 import '../../../../shared/widgets/loading_indicator.dart';
 import '../../application/diary_provider.dart';
 import '../../data/models/diary_entry_model.dart';
@@ -374,14 +374,7 @@ class _DiaryHeader extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color(0xFF667eea),
-            Color(0xFF764ba2),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: AppGradients.primaryBubble,
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(

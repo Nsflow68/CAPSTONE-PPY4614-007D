@@ -1,17 +1,21 @@
+// Temporarily stubbing reward_tile to unblock compilation
 import 'package:flutter/material.dart';
-import 'package:mi_refugio_app/features/rewards/application/reward_state.dart';
 import 'package:mi_refugio_app/shared/constants/app_colors.dart';
 
 class RewardTile extends StatelessWidget {
   const RewardTile({
-    required this.reward,
+    required this.title,
+    required this.description,
+    required this.points,
     this.balance,
     this.highlight = false,
     this.onTap,
     super.key,
   });
 
-  final Reward reward;
+  final String title;
+  final String description;
+  final int points;
   final int? balance;
   final bool highlight;
   final VoidCallback? onTap;
@@ -59,15 +63,13 @@ class RewardTile extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    reward.active
-                        ? Icons.emoji_events_rounded
-                        : Icons.auto_awesome_rounded,
+                    Icons.auto_awesome_rounded,
                     color: highlight ? Colors.white : AppColors.primary,
                   ),
                 ),
                 const Spacer(),
                 Text(
-                  '${reward.points} pts',
+                  '$points pts',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: highlight ? Colors.white : AppColors.primary,
@@ -77,7 +79,7 @@ class RewardTile extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             Text(
-              reward.title,
+              title,
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: highlight ? Colors.white : AppColors.textPrimary,
@@ -85,7 +87,7 @@ class RewardTile extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              reward.description,
+              description,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: highlight
                     ? Colors.white.withValues(alpha: 0.9)
@@ -97,7 +99,7 @@ class RewardTile extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  'Necesitas ${reward.points} pts',
+                  'Necesitas $points pts',
                   style: theme.textTheme.labelLarge?.copyWith(
                     color: highlight ? Colors.white : AppColors.textPrimary,
                     fontWeight: FontWeight.w600,

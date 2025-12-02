@@ -20,6 +20,9 @@ class AppColors {
   /// Lila (Tertiary)
   static const Color tertiary = Color(0xFFB0A3D6);
 
+  /// Verde Pastel
+  static const Color pastelGreen = Color(0xFFA5D6A7);
+
   // ═══════════════════════════════════════════════════════════════════════
   // FONDOS Y SUPERFICIES
   // ═══════════════════════════════════════════════════════════════════════

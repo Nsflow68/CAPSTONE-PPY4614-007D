@@ -1,272 +1,655 @@
-# Arquitectura de Mi Refugio APP (Versión Móvil)
+# Arquitectura - Mi Refugio App
 
-## Información General
+Documentación técnica de la arquitectura del sistema Mi Refugio.
 
-- **Proyecto**: Mi Refugio - Aplicación Móvil Android
-- **Stack Tecnológico**: Flutter + NestJS + PostgreSQL + LLM Local (Ollama)
-- **Tipo**: Aplicación móvil de acompañamiento emocional con gestión de refugios y adopciones
-- **Grupo**: Grupo 6 - Sección 007D
-- **Fecha**: Noviembre 2025
+## Visión General
 
-## Arquitectura General
+Mi Refugio es una aplicación móvil multiplataforma (Android/iOS) construida con Flutter, respaldada por un backend REST API en NestJS con base de datos PostgreSQL.
 
-La aplicación Mi Refugio está construida siguiendo una arquitectura moderna de tres capas:
+### Diagrama de Alto Nivel
 
 ```
-┌─────────────────────────────────────┐
-│     Cliente Móvil (Flutter)         │
-│  - Android APK                      │
-│  - Arquitectura MVVM/Clean          │
-│  - Riverpod (State Management)      │
-└──────────────┬──────────────────────┘
-               │ HTTP/REST
-               │
-┌──────────────▼──────────────────────┐
-│     Backend API (NestJS)            │
-│  - RESTful API                      │
-│  - TypeScript                       │
-│  - Prisma ORM                       │
-│  - JWT Authentication               │
-└──────────────┬──────────────────────┘
-               │ PostgreSQL
-               │
-┌──────────────▼──────────────────────┐
-│     Base de Datos (PostgreSQL)      │
-│  - Schema: mobile                   │
-│  - Modelos: User, Refuge, Adoption  │
-│  - DiaryEntry, Resource, etc.       │
-└─────────────────────────────────────┘
-
-┌─────────────────────────────────────┐
-│     LLM Local (Ollama)              │
-│  - Modelo: llama3.2:3b-instruct     │
-│  - Servicio: Refu (chatbot)         │
-│  - Endpoint HTTP local              │
-└─────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│                     CAPA DE PRESENTACIÓN                  │
+│                                                           │
+│  ┌─────────────────────────────────────────────────────┐ │
+│  │           Flutter App (Android/iOS)                 │ │
+│  │                                                     │ │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐         │ │
+│  │  │  Pages   │  │ Widgets  │  │ Providers│         │ │
+│  │  └──────────┘  └──────────┘  └──────────┘         │ │
+│  │                                                     │ │
+│  │  State Management: Riverpod                        │ │
+│  │  Routing: GoRouter                                 │ │
+│  └─────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────┘
+                            │
+                            │ HTTP/REST (JSON)
+                            ▼
+┌──────────────────────────────────────────────────────────┐
+│                    CAPA DE APLICACIÓN                     │
+│                                                           │
+│  ┌─────────────────────────────────────────────────────┐ │
+│  │              Backend NestJS                         │ │
+│  │                                                     │ │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐         │ │
+│  │  │Controllers│ │ Services │  │  Guards  │         │ │
+│  │  └──────────┘  └──────────┘  └──────────┘         │ │
+│  │                                                     │ │
+│  │  Modules: Auth, Users, Diary, Wellness, etc.       │ │
+│  └─────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────┘
+                            │
+                            │ TypeORM
+                            ▼
+┌──────────────────────────────────────────────────────────┐
+│                    CAPA DE DATOS                          │
+│                                                           │
+│  ┌─────────────────────────────────────────────────────┐ │
+│  │         PostgreSQL (AWS RDS)                        │ │
+│  │                                                     │ │
+│  │  Schema: app                                        │ │
+│  │  Tables: users, diary_entries, wellness_logs, etc. │ │
+│  └─────────────────────────────────────────────────────┘ │
+│                                                           │
+│  ┌─────────────────────────────────────────────────────┐ │
+│  │         Ollama (LLM - Opcional)                     │ │
+│  │  Model: llama3.2:3b-instruct-q4_K_M                 │ │
+│  └─────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────┘
 ```
-
-## Módulos del Backend (NestJS)
-
-### Módulos Core
-1. **AuthModule**: Autenticación JWT, login, registro
-2. **HealthModule**: Health checks del sistema
-3. **DatabaseModule (Prisma)**: Conexión y ORM
-
-### Módulos de Dominio
-4. **RefugesModule**: Gestión de refugios de animales
-   - Listar refugios por región
-   - Detalle de refugio
-   - Estadísticas de ocupación
-
-5. **AdoptionsModule**: Gestión de mascotas en adopción
-   - Listar adopciones disponibles
-   - Filtrado por tipo de mascota
-   - Marcar como adoptado
-
-6. **ChatModule**: Chatbot Refu con LLM local
-   - **LlmLocalService**: Integración con Ollama
-   - **RefuService**: Lógica de conversación empática
-   - Fallback responses
-
-7. **DiaryModule**: Diario emocional del usuario
-8. **HydrationModule**: Seguimiento de hidratación
-9. **MindfulnessModule**: Sesiones de mindfulness
-10. **ResourcesModule**: Recursos de salud mental
-
-## Estructura del Proyecto
-
-```
-Mi refugio APP/
-├── flutter/                    # Aplicación móvil Flutter
-│   ├── lib/
-│   │   ├── core/              # Servicios, config, router
-│   │   ├── features/          # Módulos por feature
-│   │   │   ├── auth/
-│   │   │   ├── refuges/       # Refugios (nuevo)
-│   │   │   ├── adoptions/     # Adopciones (nuevo)
-│   │   │   ├── chatbot/       # Chat con Refu
-│   │   │   ├── diary/
-│   │   │   ├── home/
-│   │   │   └── ...
-│   │   └── shared/            # Widgets, constantes
-│   ├── android/
-│   ├── assets/
-│   ├── pubspec.yaml
-│   ├── .env.staging.example
-│   └── .env.production.example
-│
-├── backend/
-│   └── nest/                  # Backend NestJS
-│       ├── src/
-│       │   ├── auth/
-│       │   ├── refuges/       # Módulo refugios (nuevo)
-│       │   ├── adoptions/     # Módulo adopciones (nuevo)
-│       │   ├── chat/          # Chat con Refu (reorganizado)
-│       │   │   └── refu/
-│       │   │       ├── llm-local.service.ts
-│       │   │       └── refu.service.ts
-│       │   ├── diary/
-│       │   ├── health/
-│       │   └── ...
-│       ├── prisma/
-│       │   └── schema.prisma  # Modelos de datos
-│       ├── docker-compose.yml
-│       ├── Dockerfile
-│       ├── .env.staging.example
-│       └── .env.production.example
-│
-├── docs/                      # Documentación (esta carpeta)
-│   ├── arquitectura.md
-│   ├── api_mobile.md
-│   ├── guias_visual.md
-│   └── testing_checklist.md
-│
-├── .github/
-│   └── workflows/
-│       ├── ci_cd_nest.yml
-│       └── ci_cd_flutter_android.yml
-│
-└── README.md
-```
-
-## Decisiones de Arquitectura (DA)
-
-### DA-001: Arquitectura Limpia en Flutter
-**Decisión**: Implementar Clean Architecture con separación de capas (data, domain, presentation).
-
-**Justificación**:
-- Testabilidad y mantenibilidad
-- Separación de responsabilidades
-- Independencia del framework
-
-### DA-002: Riverpod para State Management
-**Decisión**: Usar Riverpod como solución de gestión de estado.
-
-**Justificación**:
-- Type-safe y compile-time safe
-- Mejor rendimiento que Provider
-- Integración con go_router
-
-### DA-003: NestJS como Backend Framework
-**Decisión**: Usar NestJS con TypeScript para el backend.
-
-**Justificación**:
-- Arquitectura modular por defecto
-- Soporte nativo para TypeScript
-- Ecosystem robusto (Prisma, Passport, etc.)
-
-### DA-004: PostgreSQL como Base de Datos
-**Decisión**: PostgreSQL con schema `mobile` dedicado.
-
-**Justificación**:
-- Relacional, robusto, open-source
-- Soporte para schemas múltiples
-- Compatibilidad con Prisma ORM
-
-### DA-005: Prisma como ORM
-**Decisión**: Prisma ORM para acceso a datos.
-
-**Justificación**:
-- Type-safe queries
-- Migraciones automáticas
-- Excelente developer experience
-
-### DA-006: LLM Local (Ollama) para Chatbot
-**Decisión**: Integración con modelo LLM local vía Ollama.
-
-**Justificación**:
-- Sin dependencia de APIs externas (OpenAI, Google)
-- Control total sobre el modelo
-- Privacidad de datos del usuario
-- Costos operativos reducidos
-
-### DA-007: JWT para Autenticación
-**Decisión**: JSON Web Tokens para autenticación stateless.
-
-**Justificación**:
-- Stateless, escalable
-- Compatible con aplicaciones móviles
-- Estándar de la industria
-
-### DA-008: Docker para Infraestructura
-**Decisión**: Docker y Docker Compose para desarrollo y deploy.
-
-**Justificación**:
-- Entornos reproducibles
-- Fácil setup para desarrollo
-- Portable entre ambientes
-
-## Flujo de Datos
-
-### Ejemplo: Listar Refugios
-
-1. **Usuario** abre la pantalla de refugios en Flutter
-2. **RefugeProvider** (Riverpod) solicita datos al **RefugeRepository**
-3. **RefugeRepository** hace request HTTP a `/api/refuges`
-4. **NestJS RefugesController** recibe la petición
-5. **RefugesService** consulta la base de datos vía **Prisma**
-6. **PostgreSQL** retorna los datos
-7. Los datos fluyen de vuelta hasta el **UI** en Flutter
-8. La interfaz se actualiza reactivamente gracias a Riverpod
-
-### Ejemplo: Chat con Refu
-
-1. **Usuario** envía mensaje en ChatbotPage
-2. **ChatbotProvider** llama a **ChatbotRepository**
-3. Request POST a `/api/chat/refu` con el mensaje
-4. **ChatController** → **RefuService**
-5. **RefuService** → **LlmLocalService**
-6. **LlmLocalService** hace request HTTP a Ollama (`http://localhost:11434`)
-7. **Ollama** genera respuesta con el modelo llama3.2
-8. Respuesta fluye de vuelta al usuario en la UI
-
-## Seguridad
-
-- **Autenticación**: JWT con tokens de 1 hora
-- **Validación**: DTOs con class-validator en NestJS
-- **CORS**: Configurado en NestJS
-- **HTTPS**: Recomendado en producción
-- **Secrets**: Variables de entorno (.env)
-- **Rate Limiting**: Opcional (configurar en producción)
-
-## Escalabilidad
-
-- **Backend**: Stateless, horizontal scaling posible
-- **Base de Datos**: PostgreSQL soporta replicación
-- **LLM**: Puede moverse a servidor dedicado si es necesario
-- **Cache**: Redis puede agregarse para mejorar rendimiento
-
-## Tecnologías Clave
-
-### Frontend (Flutter)
-- **flutter_riverpod**: State management
-- **go_router**: Navegación declarativa
-- **http**: Cliente HTTP
-- **google_fonts**, **flutter_svg**: UI
-
-### Backend (NestJS)
-- **@nestjs/core**, **@nestjs/common**: Core framework
-- **@prisma/client**: ORM
-- **@nestjs/jwt**, **passport**: Autenticación
-- **@nestjs/axios**: HTTP client para Ollama
-- **class-validator**, **class-transformer**: Validación
-
-### Infraestructura
-- **PostgreSQL 15**: Base de datos
-- **Docker & Docker Compose**: Contenedores
-- **Ollama**: Runtime para LLM local
-
-## Próximos Pasos (Post-Presentación)
-
-1. Implementar pantallas completas de refugios y adopciones en Flutter
-2. Agregar tests unitarios y de integración
-3. Configurar monitoreo (logging, métricas)
-4. Implementar CI/CD completo con deploy automático
-5. Optimizar rendimiento del LLM
-6. Agregar notificaciones push
-7. Implementar analytics
 
 ---
 
-**Documento alineado al DAS (Documento de Arquitectura de Software)**
-Creado por Claude Code - Noviembre 2025
+## Arquitectura Frontend (Flutter)
+
+### Estructura de Carpetas
+
+```
+flutter/lib/
+├── core/                           # Configuración y servicios globales
+│   ├── config/
+│   │   └── app_config.dart        # Configuración de la app
+│   ├── router/
+│   │   └── app_router.dart        # Configuración de GoRouter
+│   ├── services/
+│   │   ├── api_service.dart       # Cliente HTTP
+│   │   └── notification_service.dart
+│   └── theme/
+│       └── app_theme.dart         # Tema de la aplicación
+│
+├── features/                       # Módulos por funcionalidad
+│   ├── auth/                      # Autenticación
+│   │   ├── application/
+│   │   │   ├── auth_provider.dart
+│   │   │   └── auth_state.dart
+│   │   ├── data/
+│   │   │   ├── models/
+│   │   │   │   └── user_model.dart
+│   │   │   └── repositories/
+│   │   │       └── auth_repository.dart
+│   │   └── presentation/
+│   │       ├── pages/
+│   │       │   ├── login_page.dart
+│   │       │   └── signup_page.dart
+│   │       └── widgets/
+│   │
+│   ├── diary/                     # Diario emocional
+│   ├── wellness/                  # Bienestar
+│   ├── rewards/                   # Recompensas
+│   └── ...
+│
+├── shared/                        # Código compartido
+│   ├── constants/
+│   │   └── app_colors.dart       # Colores de la app
+│   ├── models/                   # Modelos compartidos
+│   ├── utils/                    # Utilidades
+│   └── widgets/                  # Widgets reutilizables
+│
+└── main.dart                     # Entry point
+```
+
+### Patrón de Arquitectura
+
+**Clean Architecture + Feature-First**
+
+Cada feature sigue la estructura:
+
+```
+feature/
+├── application/     # Lógica de negocio (Providers, State)
+├── data/           # Acceso a datos (Repositories, Models)
+└── presentation/   # UI (Pages, Widgets)
+```
+
+**Ventajas:**
+- Separación de responsabilidades
+- Testabilidad
+- Escalabilidad
+- Reutilización de código
+
+### State Management (Riverpod)
+
+**Providers:**
+```dart
+// Provider de estado
+final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+  return AuthNotifier(ref.read(authRepositoryProvider));
+});
+
+// Provider de repositorio
+final authRepositoryProvider = Provider<AuthRepository>((ref) {
+  return AuthRepository(ref.read(apiServiceProvider));
+});
+```
+
+**Estados:**
+```dart
+sealed class AuthState {}
+
+class AuthInitial extends AuthState {}
+class AuthLoading extends AuthState {}
+class Authenticated extends AuthState {
+  final User user;
+  Authenticated(this.user);
+}
+class AuthError extends AuthState {
+  final String message;
+  AuthError(this.message);
+}
+```
+
+### Navegación (GoRouter)
+
+```dart
+final router = GoRouter(
+  routes: [
+    GoRoute(
+      path: '/',
+      builder: (context, state) => const OnboardingPage(),
+    ),
+    GoRoute(
+      path: '/home',
+      builder: (context, state) => const HomePage(),
+    ),
+    // ...
+  ],
+  redirect: (context, state) {
+    // Lógica de redirección basada en autenticación
+  },
+);
+```
+
+### Comunicación con Backend
+
+**ApiService:**
+```dart
+class ApiService {
+  final String baseUrl;
+  final http.Client client;
+
+  Future<Map<String, dynamic>> post(String endpoint, Map<String, dynamic> body) async {
+    final response = await client.post(
+      Uri.parse('$baseUrl$endpoint'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(body),
+    );
+    return jsonDecode(response.body);
+  }
+}
+```
+
+**Repository:**
+```dart
+class AuthRepository {
+  final ApiService apiService;
+
+  Future<User> register(RegisterDto dto) async {
+    final response = await apiService.post('/auth/register', dto.toJson());
+    return User.fromJson(response);
+  }
+}
+```
+
+---
+
+## Arquitectura Backend (NestJS)
+
+### Estructura de Carpetas
+
+```
+backend_real/src/
+├── modules/                        # Módulos de negocio
+│   ├── auth/
+│   │   ├── dto/
+│   │   │   ├── login.dto.ts
+│   │   │   └── register.dto.ts
+│   │   ├── auth.controller.ts
+│   │   ├── auth.service.ts
+│   │   └── auth.module.ts
+│   │
+│   ├── users/
+│   │   ├── entities/
+│   │   │   └── user.entity.ts
+│   │   ├── users.controller.ts
+│   │   ├── users.service.ts
+│   │   └── users.module.ts
+│   │
+│   ├── diary/
+│   ├── wellness/
+│   └── ...
+│
+├── config/                        # Configuración
+│   └── typeorm.config.ts
+│
+├── common/                        # Código compartido
+│   ├── filters/
+│   │   └── all-exceptions.filter.ts
+│   └── utils/
+│
+└── main.ts                       # Entry point
+```
+
+### Patrón de Arquitectura
+
+**Modular Architecture + Dependency Injection**
+
+Cada módulo encapsula:
+- **Controller**: Manejo de requests HTTP
+- **Service**: Lógica de negocio
+- **Repository**: Acceso a datos (TypeORM)
+- **DTO**: Data Transfer Objects
+- **Entity**: Modelos de base de datos
+
+### Módulos Principales
+
+#### Auth Module
+```typescript
+@Module({
+  imports: [UsersModule],
+  controllers: [AuthController],
+  providers: [AuthService],
+})
+export class AuthModule {}
+```
+
+**Responsabilidades:**
+- Registro de usuarios
+- Login con credenciales
+- Login con Google
+- Generación de tokens
+
+#### Users Module
+```typescript
+@Module({
+  imports: [TypeOrmModule.forFeature([User])],
+  controllers: [UsersController],
+  providers: [UsersService],
+  exports: [UsersService],
+})
+export class UsersModule {}
+```
+
+**Responsabilidades:**
+- CRUD de usuarios
+- Validación de RUT
+- Gestión de perfiles
+
+#### Diary Module
+**Responsabilidades:**
+- Registro de entradas emocionales
+- Consulta de historial
+- Análisis de patrones
+
+#### Wellness Module
+**Responsabilidades:**
+- Seguimiento de hidratación
+- Registro de nutrición
+- Gestión de ejercicios de mindfulness
+
+### Base de Datos (PostgreSQL)
+
+**Schema:** `app`
+
+**Tablas Principales:**
+
+```sql
+-- Usuarios
+CREATE TABLE app.users (
+  id TEXT PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  username VARCHAR(255) UNIQUE,
+  name VARCHAR(255),
+  password TEXT NOT NULL,
+  rut VARCHAR(20) UNIQUE NOT NULL,
+  birthdate DATE,
+  gender VARCHAR(50),
+  role VARCHAR(50) DEFAULT 'user',
+  "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Entradas de diario
+CREATE TABLE app.diary_entries (
+  id SERIAL PRIMARY KEY,
+  user_id TEXT REFERENCES app.users(id),
+  mood VARCHAR(50),
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Logs de bienestar
+CREATE TABLE app.wellness_logs (
+  id SERIAL PRIMARY KEY,
+  user_id TEXT REFERENCES app.users(id),
+  type VARCHAR(50), -- 'hydration', 'nutrition', 'mindfulness'
+  value JSONB,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### TypeORM Entities
+
+```typescript
+@Entity({ schema: 'app', name: 'users' })
+export class User {
+  @PrimaryColumn('text')
+  id: string;
+
+  @Column({ unique: true })
+  email: string;
+
+  @Column({ unique: true })
+  rut: string;
+
+  @Column({ select: false })
+  password: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  createdAt: Date;
+
+  @BeforeInsert()
+  setTimestamps() {
+    const now = new Date();
+    this.createdAt = now;
+    this.updatedAt = now;
+  }
+}
+```
+
+---
+
+## Flujo de Datos
+
+### Registro de Usuario
+
+```
+┌─────────┐     1. POST /auth/register      ┌────────────┐
+│ Flutter │ ──────────────────────────────► │  NestJS    │
+│   App   │                                 │  Backend   │
+└─────────┘                                 └────────────┘
+     │                                            │
+     │                                            │ 2. Validate DTO
+     │                                            │
+     │                                            ▼
+     │                                      ┌────────────┐
+     │                                      │   Auth     │
+     │                                      │  Service   │
+     │                                      └────────────┘
+     │                                            │
+     │                                            │ 3. Generate UUID
+     │                                            │ 4. Hash password (removed)
+     │                                            │
+     │                                            ▼
+     │                                      ┌────────────┐
+     │                                      │   Users    │
+     │                                      │  Service   │
+     │                                      └────────────┘
+     │                                            │
+     │                                            │ 5. Validate RUT
+     │                                            │ 6. Check duplicates
+     │                                            │
+     │                                            ▼
+     │                                      ┌────────────┐
+     │                                      │ PostgreSQL │
+     │                                      │    (RDS)   │
+     │                                      └────────────┘
+     │                                            │
+     │                                            │ 7. INSERT user
+     │                                            │
+     │      8. Return user data                   │
+     │ ◄──────────────────────────────────────────┘
+     │
+     │ 9. Update state (Authenticated)
+     │ 10. Navigate to /home
+     ▼
+```
+
+### Consulta de Diario
+
+```
+┌─────────┐     1. GET /diary?userId=xxx    ┌────────────┐
+│ Flutter │ ──────────────────────────────► │  NestJS    │
+│   App   │                                 │  Backend   │
+└─────────┘                                 └────────────┘
+     │                                            │
+     │                                            │ 2. Verify auth
+     │                                            │
+     │                                            ▼
+     │                                      ┌────────────┐
+     │                                      │   Diary    │
+     │                                      │  Service   │
+     │                                      └────────────┘
+     │                                            │
+     │                                            │ 3. Query DB
+     │                                            │
+     │                                            ▼
+     │                                      ┌────────────┐
+     │                                      │ PostgreSQL │
+     │                                      └────────────┘
+     │                                            │
+     │      4. Return entries                     │
+     │ ◄──────────────────────────────────────────┘
+     │
+     │ 5. Update state (DiaryLoaded)
+     │ 6. Render UI
+     ▼
+```
+
+---
+
+## Seguridad
+
+### Autenticación
+
+**Método actual**: Token simple (Base64 del user ID)
+
+**Mejora recomendada**: JWT (JSON Web Tokens)
+
+```typescript
+// Generar JWT
+const token = jwt.sign(
+  { userId: user.id, email: user.email },
+  process.env.JWT_SECRET,
+  { expiresIn: '7d' }
+);
+
+// Verificar JWT
+const decoded = jwt.verify(token, process.env.JWT_SECRET);
+```
+
+### Validación de Datos
+
+**Backend (NestJS):**
+```typescript
+// DTO con class-validator
+export class RegisterDto {
+  @IsEmail()
+  email: string;
+
+  @MinLength(6)
+  password: string;
+
+  @Matches(/^\d{7,8}-[\dkK]$/)
+  rut: string;
+}
+```
+
+**Frontend (Flutter):**
+```dart
+// Validación en formularios
+validator: (value) {
+  if (value == null || value.isEmpty) {
+    return 'Campo requerido';
+  }
+  if (!RutValidator.validate(value)) {
+    return 'RUT inválido';
+  }
+  return null;
+}
+```
+
+### Protección de Rutas
+
+```typescript
+@Controller('users')
+@UseGuards(AuthGuard)
+export class UsersController {
+  @Get('profile')
+  getProfile(@Request() req) {
+    return req.user;
+  }
+}
+```
+
+---
+
+## Despliegue
+
+### Backend (NestJS)
+
+**Producción:**
+```powershell
+npm run build
+npm run start:prod
+```
+
+**Variables de entorno requeridas:**
+- `DB_HOST`
+- `DB_PORT`
+- `DB_USER`
+- `DB_PASSWORD`
+- `DB_NAME`
+- `PORT`
+
+**Recomendaciones:**
+- Usar PM2 para gestión de procesos
+- Configurar HTTPS con certificado SSL
+- Implementar rate limiting
+- Configurar CORS apropiadamente
+
+### Flutter App
+
+**Android:**
+```powershell
+flutter build apk --release
+# Output: build/app/outputs/flutter-apk/app-release.apk
+```
+
+**iOS:**
+```powershell
+flutter build ios --release
+```
+
+**Configuración de producción:**
+- Actualizar `apiBaseUrl` en `app_config.dart`
+- Configurar signing keys
+- Generar iconos y splash screens
+- Configurar permisos en AndroidManifest.xml / Info.plist
+
+---
+
+## Escalabilidad
+
+### Consideraciones
+
+**Backend:**
+- Implementar caché (Redis)
+- Separar servicios en microservicios si crece
+- Usar load balancer
+- Implementar message queue (RabbitMQ/Kafka)
+
+**Base de Datos:**
+- Índices en columnas frecuentemente consultadas
+- Particionamiento de tablas grandes
+- Read replicas para consultas
+- Connection pooling
+
+**Frontend:**
+- Lazy loading de features
+- Caché de imágenes
+- Paginación de listas largas
+- Optimización de builds
+
+---
+
+## Monitoreo y Logs
+
+### Backend
+
+```typescript
+// Logger de NestJS
+private readonly logger = new Logger(AuthService.name);
+
+this.logger.log('User registered successfully');
+this.logger.error('Failed to register user', error.stack);
+```
+
+### Frontend
+
+```dart
+// Logging en Flutter
+print('[AuthProvider] Login attempt for ${email}');
+debugPrint('[ERROR] ${error.toString()}');
+```
+
+**Recomendaciones:**
+- Implementar Sentry para error tracking
+- Usar Winston/Bunyan para logs estructurados
+- Configurar log levels (debug, info, warn, error)
+- Almacenar logs en servicio centralizado
+
+---
+
+## Testing
+
+### Backend
+
+```typescript
+// Unit test
+describe('AuthService', () => {
+  it('should register a new user', async () => {
+    const dto = { email: 'test@test.com', password: '123456', ... };
+    const result = await service.register(dto);
+    expect(result).toBeDefined();
+    expect(result.email).toBe(dto.email);
+  });
+});
+```
+
+### Frontend
+
+```dart
+// Widget test
+testWidgets('Login page shows email and password fields', (tester) async {
+  await tester.pumpWidget(const MaterialApp(home: LoginPage()));
+  
+  expect(find.byType(TextField), findsNWidgets(2));
+  expect(find.text('Email'), findsOneWidget);
+  expect(find.text('Contraseña'), findsOneWidget);
+});
+```
+
+---
+
+**Última actualización**: Diciembre 2025
