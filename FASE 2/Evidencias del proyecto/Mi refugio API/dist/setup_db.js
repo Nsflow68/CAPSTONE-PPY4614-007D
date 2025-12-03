@@ -15,9 +15,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const db_1 = __importDefault(require("./config/db"));
 const createTables = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
+        // Create Schema
+        yield db_1.default.query('CREATE SCHEMA IF NOT EXISTS app');
+        console.log('Esquema app verificado/creado.');
         // Users Table
         yield db_1.default.query(`
-            CREATE TABLE IF NOT EXISTS users (
+            CREATE TABLE IF NOT EXISTS app.users (
                 id SERIAL PRIMARY KEY,
                 username VARCHAR(50) UNIQUE NOT NULL,
                 password_hash VARCHAR(255) NOT NULL,
@@ -28,7 +31,7 @@ const createTables = () => __awaiter(void 0, void 0, void 0, function* () {
         console.log('Tabla users verificada/creada.');
         // Chatbot Responses Table
         yield db_1.default.query(`
-            CREATE TABLE IF NOT EXISTS chatbot_responses (
+            CREATE TABLE IF NOT EXISTS app.chatbot_responses (
                 id SERIAL PRIMARY KEY,
                 keyword VARCHAR(255) UNIQUE NOT NULL,
                 response TEXT NOT NULL
@@ -36,7 +39,7 @@ const createTables = () => __awaiter(void 0, void 0, void 0, function* () {
         `);
         console.log('Tabla chatbot_responses verificada/creada.');
         // Insert default admin if not exists
-        const adminCheck = yield db_1.default.query("SELECT * FROM users WHERE username = 'admin'");
+        const adminCheck = yield db_1.default.query('SELECT * FROM app.users WHERE username = $1', ['admin']);
         if (adminCheck.rows.length === 0) {
             // Note: In a real app, we should hash this password properly on the server side or send it hashed.
             // For now, I'll insert a placeholder or the hash used by the python app if I can replicate it.
@@ -50,7 +53,7 @@ const createTables = () => __awaiter(void 0, void 0, void 0, function* () {
             // I will implement the login endpoint to compare against this.
             // I'll use a placeholder hash for now.
             yield db_1.default.query(`
-                INSERT INTO users (username, password_hash, role)
+                INSERT INTO app.users (username, password_hash, role)
                 VALUES ('admin', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWrn3ILAWOi/lPa.LSK.X.0.0.0.0', 'admin')
             `);
             console.log('Usuario admin creado.');

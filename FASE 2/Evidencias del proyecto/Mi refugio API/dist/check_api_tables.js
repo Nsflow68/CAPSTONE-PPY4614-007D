@@ -12,18 +12,30 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = require("express");
-const db_1 = __importDefault(require("../config/db"));
-const router = (0, express_1.Router)();
-// List all resources
-router.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const db_1 = __importDefault(require("./config/db"));
+const checkTables = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const result = yield db_1.default.query('SELECT * FROM app."Resource" ORDER BY name');
-        res.json(result.rows);
+        const result = yield db_1.default.query(`
+            SELECT table_schema, table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = 'API'
+            ORDER BY table_name;
+        `);
+        console.log('Tablas encontradas en el esquema API:');
+        if (result.rows.length === 0) {
+            console.log('No se encontraron tablas en el esquema API.');
+        }
+        else {
+            result.rows.forEach(row => {
+                console.log(`${row.table_schema}.${row.table_name}`);
+            });
+        }
     }
     catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Error al obtener recursos' });
+        console.error('Error buscando tablas:', error);
     }
-}));
-exports.default = router;
+    finally {
+        yield db_1.default.end();
+    }
+});
+checkTables();

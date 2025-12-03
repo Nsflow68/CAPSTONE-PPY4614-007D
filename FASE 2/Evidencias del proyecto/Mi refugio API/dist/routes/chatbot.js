@@ -17,8 +17,17 @@ const db_1 = __importDefault(require("../config/db"));
 const router = (0, express_1.Router)();
 // List all entries
 router.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
-        const result = yield db_1.default.query('SELECT * FROM chatbot_responses ORDER BY keyword');
+        // Confirmar existencia de la tabla antes de consultar
+        const existsResult = yield db_1.default.query(`
+            SELECT to_regclass('chatbot_responses') AS regclass
+        `);
+        const regclass = (_a = existsResult.rows[0]) === null || _a === void 0 ? void 0 : _a.regclass;
+        if (!regclass) {
+            return res.json([]);
+        }
+        const result = yield db_1.default.query(`SELECT * FROM ${regclass} ORDER BY keyword`);
         res.json(result.rows);
     }
     catch (error) {

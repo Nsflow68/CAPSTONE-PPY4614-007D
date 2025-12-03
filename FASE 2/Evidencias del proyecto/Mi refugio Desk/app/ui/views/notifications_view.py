@@ -172,6 +172,11 @@ class NotificationsView(QWidget):
         backup_button.clicked.connect(self._create_backup)
 
         manual_layout.addWidget(backup_button)
+
+        api_backup_button = QPushButton("Descargar respaldo esquema 'app' (API)")
+        api_backup_button.setStyleSheet("background-color: #3b7ddd; color: white; padding: 10px;")
+        api_backup_button.clicked.connect(self._download_app_schema_backup)
+        manual_layout.addWidget(api_backup_button)
         layout.addWidget(manual_group)
 
         restore_group = QGroupBox("Restauración del Sistema")
@@ -263,9 +268,13 @@ class NotificationsView(QWidget):
         self.backup_list.clear()
         if not self._backup_dir.exists():
             return
-        backups = sorted(self._backup_dir.glob("backup_*.zip"), reverse=True)
+        backups = sorted(
+            list(self._backup_dir.glob("backup_*.zip")) + list(self._backup_dir.glob("app_schema_*.json")),
+            reverse=True,
+        )
         for backup in backups:
-            item = QListWidgetItem(f"{backup.name} ({backup.stat().st_size / (1024*1024):.1f} MB)")
+            size_mb = backup.stat().st_size / (1024 * 1024)
+            item = QListWidgetItem(f"{backup.name} ({size_mb:.1f} MB)")
             item.setData(Qt.UserRole, backup)
             self.backup_list.addItem(item)
 
@@ -292,6 +301,20 @@ class NotificationsView(QWidget):
             QMessageBox.information(self, "Restaurado", "Restauración completa. Reinicie la app.")
         except Exception as exc:
             QMessageBox.critical(self, "Error", f"No se pudo restaurar:\n{exc}")
+
+    def _download_app_schema_backup(self) -> None:
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        target_path = self._backup_dir / f"app_schema_{stamp}.json"
+        try:
+            payload = self._client.get_bytes("/maintenance/backup/app-schema")
+            target_path.write_bytes(payload)
+            QMessageBox.information(self, "Respaldo descargado", f"Guardado en:\n{target_path}")
+            self._append_log("Respaldo de esquema app descargado desde la API.")
+            self._reload_backups()
+        except ApiClientError as exc:
+            QMessageBox.critical(self, "Error de API", f"No se pudo obtener el respaldo:\n{exc}")
+        except OSError as exc:
+            QMessageBox.critical(self, "Error de escritura", f"No se pudo guardar el respaldo:\n{exc}")
 
 
 if __name__ == "__main__":

@@ -12,11 +12,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = require("express");
-const db_1 = __importDefault(require("../config/db"));
+const db_1 = __importDefault(require("./config/db"));
 const pbkdf2_1 = __importDefault(require("pbkdf2"));
-const router = (0, express_1.Router)();
-// Helper to verify Django password
 const verifyDjangoPassword = (password, djangoHash) => {
     const parts = djangoHash.split('$');
     if (parts.length !== 4)
@@ -29,37 +26,28 @@ const verifyDjangoPassword = (password, djangoHash) => {
     const derivedKeyBase64 = derivedKey.toString('base64');
     return derivedKeyBase64 === hash;
 };
-router.post('/login', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { username, password } = req.body;
+const testLogin = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        // Query Django's auth_user table
-        const result = yield db_1.default.query('SELECT * FROM web.auth_user WHERE username = $1', [username]);
+        console.log('Buscando usuarios en web.auth_user...');
+        const result = yield db_1.default.query('SELECT * FROM web.auth_user LIMIT 1');
         if (result.rows.length === 0) {
-            return res.status(401).json({ success: false, message: 'Credenciales inválidas' });
+            console.log('⚠️ No hay usuarios en web.auth_user para probar.');
+            return;
         }
         const user = result.rows[0];
-        // Verify password using Django's algorithm
-        const match = verifyDjangoPassword(password, user.password);
-        if (!match) {
-            return res.status(401).json({ success: false, message: 'Credenciales inválidas' });
-        }
-        // Check for admin/staff access
-        if (!user.is_staff && !user.is_superuser) {
-            return res.status(403).json({ success: false, message: 'Acceso denegado: Se requieren permisos de administrador' });
-        }
-        res.json({
-            success: true,
-            user: {
-                id: user.id,
-                username: user.username,
-                full_name: `${user.first_name} ${user.last_name}`.trim(),
-                role: user.is_superuser ? 'admin' : 'staff'
-            }
-        });
+        console.log(`Usuario encontrado: ${user.username}`);
+        console.log(`Hash: ${user.password.substring(0, 20)}...`);
+        console.log(`Es Staff: ${user.is_staff}`);
+        // Nota: No puedo probar la contraseña real porque no la sé, 
+        // pero puedo verificar que el algoritmo de hash funciona si tuviera la password.
+        // Por ahora, solo confirmo que puedo leer el usuario y su hash.
+        console.log('✅ Lectura de usuario exitosa.');
     }
     catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: 'Error del servidor' });
+        console.error('Error:', error);
     }
-}));
-exports.default = router;
+    finally {
+        yield db_1.default.end();
+    }
+});
+testLogin();

@@ -12,18 +12,28 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = require("express");
-const db_1 = __importDefault(require("../config/db"));
-const router = (0, express_1.Router)();
-// List all resources
-router.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const db_1 = __importDefault(require("./config/db"));
+const checkSchema = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const result = yield db_1.default.query('SELECT * FROM app."Resource" ORDER BY name');
-        res.json(result.rows);
+        // Check search_path
+        const pathRes = yield db_1.default.query('SHOW search_path');
+        console.log('Search Path:', pathRes.rows[0].search_path);
+        // Check columns of web.chatbot_responses
+        const result = yield db_1.default.query(`
+            SELECT column_name, data_type 
+            FROM information_schema.columns 
+            WHERE table_schema = 'web' AND table_name = 'chatbot_responses';
+        `);
+        console.log('Columnas de web.chatbot_responses:');
+        result.rows.forEach(row => {
+            console.log(`${row.column_name} (${row.data_type})`);
+        });
     }
     catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Error al obtener recursos' });
+        console.error('Error:', error);
     }
-}));
-exports.default = router;
+    finally {
+        yield db_1.default.end();
+    }
+});
+checkSchema();

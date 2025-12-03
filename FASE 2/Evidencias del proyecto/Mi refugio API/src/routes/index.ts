@@ -6,6 +6,7 @@ import userRoutes from './users';
 import resourceRoutes from './resources';
 import donationRoutes from './donations';
 import diaryRoutes from './diary';
+import maintenanceRoutes from './maintenance';
 
 const router = Router();
 
@@ -16,6 +17,7 @@ router.use('/users', userRoutes);
 router.use('/resources', resourceRoutes);
 router.use('/donations', donationRoutes);
 router.use('/diary', diaryRoutes);
+router.use('/maintenance', maintenanceRoutes);
 
 router.get('/health', async (req, res) => {
     try {

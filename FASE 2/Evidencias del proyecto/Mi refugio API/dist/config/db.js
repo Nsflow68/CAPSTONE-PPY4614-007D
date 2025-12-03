@@ -14,7 +14,8 @@ const pool = new pg_1.Pool({
     port: parseInt(process.env.DB_PORT || '5432'),
     ssl: {
         rejectUnauthorized: false
-    }
+    },
+    options: '-c search_path=app'
 });
 pool.on('connect', () => {
     console.log('Base de datos conectada exitosamente');

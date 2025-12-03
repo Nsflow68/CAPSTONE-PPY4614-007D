@@ -1,0 +1,1036 @@
+{
+  "schema": "app",
+  "generated_at": "2025-12-03T02:48:44.442Z",
+  "columns": {
+    "DiaryEntry": [
+      {
+        "column_name": "id",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null,
+        "ordinal_position": 1
+      },
+      {
+        "column_name": "title",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null,
+        "ordinal_position": 2
+      },
+      {
+        "column_name": "content",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null,
+        "ordinal_position": 3
+      },
+      {
+        "column_name": "mood",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null,
+        "ordinal_position": 4
+      },
+      {
+        "column_name": "score",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": null,
+        "ordinal_position": 5
+      },
+      {
+        "column_name": "moodText",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null,
+        "ordinal_position": 6
+      },
+      {
+        "column_name": "date",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": null,
+        "ordinal_position": 7
+      },
+      {
+        "column_name": "createdAt",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "CURRENT_TIMESTAMP",
+        "ordinal_position": 8
+      },
+      {
+        "column_name": "emotions",
+        "data_type": "ARRAY",
+        "is_nullable": "YES",
+        "column_default": null,
+        "ordinal_position": 9
+      },
+      {
+        "column_name": "tags",
+        "data_type": "ARRAY",
+        "is_nullable": "YES",
+        "column_default": null,
+        "ordinal_position": 10
+      },
+      {
+        "column_name": "userId",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null,
+        "ordinal_position": 11
+      },
+      {
+        "column_name": "updatedAt",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "now()",
+        "ordinal_position": 12
+      }
+    ],
+    "HydrationLog": [
+      {
+        "column_name": "id",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null,
+        "ordinal_position": 1
+      },
+      {
+        "column_name": "date",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": null,
+        "ordinal_position": 2
+      },
+      {
+        "column_name": "amountMl",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": null,
+        "ordinal_position": 3
+      },
+      {
+        "column_name": "createdAt",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "CURRENT_TIMESTAMP",
+        "ordinal_position": 4
+      },
+      {
+        "column_name": "userId",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null,
+        "ordinal_position": 5
+      }
+    ],
+    "Resource": [
+      {
+        "column_name": "id",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null,
+        "ordinal_position": 1
+      },
+      {
+        "column_name": "name",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null,
+        "ordinal_position": 2
+      },
+      {
+        "column_name": "description",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null,
+        "ordinal_position": 3
+      },
+      {
+        "column_name": "category",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null,
+        "ordinal_position": 4
+      },
+      {
+        "column_name": "coverage",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null,
+        "ordinal_position": 5
+      },
+      {
+        "column_name": "contactPhone",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null,
+        "ordinal_position": 6
+      },
+      {
+        "column_name": "contactEmail",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null,
+        "ordinal_position": 7
+      },
+      {
+        "column_name": "website",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null,
+        "ordinal_position": 8
+      },
+      {
+        "column_name": "region",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null,
+        "ordinal_position": 9
+      },
+      {
+        "column_name": "tags",
+        "data_type": "ARRAY",
+        "is_nullable": "YES",
+        "column_default": null,
+        "ordinal_position": 10
+      },
+      {
+        "column_name": "createdAt",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "CURRENT_TIMESTAMP",
+        "ordinal_position": 11
+      },
+      {
+        "column_name": "updatedAt",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": null,
+        "ordinal_position": 12
+      }
+    ],
+    "migrations": [
+      {
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": "nextval('migrations_id_seq'::regclass)",
+        "ordinal_position": 1
+      },
+      {
+        "column_name": "timestamp",
+        "data_type": "bigint",
+        "is_nullable": "NO",
+        "column_default": null,
+        "ordinal_position": 2
+      },
+      {
+        "column_name": "name",
+        "data_type": "character varying",
+        "is_nullable": "NO",
+        "column_default": null,
+        "ordinal_position": 3
+      }
+    ],
+    "users": [
+      {
+        "column_name": "id",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null,
+        "ordinal_position": 1
+      },
+      {
+        "column_name": "email",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null,
+        "ordinal_position": 2
+      },
+      {
+        "column_name": "name",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null,
+        "ordinal_position": 3
+      },
+      {
+        "column_name": "password",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null,
+        "ordinal_position": 4
+      },
+      {
+        "column_name": "avatarUrl",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null,
+        "ordinal_position": 5
+      },
+      {
+        "column_name": "role",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": "'member'::text",
+        "ordinal_position": 6
+      },
+      {
+        "column_name": "createdAt",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "CURRENT_TIMESTAMP",
+        "ordinal_position": 7
+      },
+      {
+        "column_name": "updatedAt",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": null,
+        "ordinal_position": 8
+      },
+      {
+        "column_name": "gender",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null,
+        "ordinal_position": 9
+      },
+      {
+        "column_name": "birthdate",
+        "data_type": "date",
+        "is_nullable": "YES",
+        "column_default": null,
+        "ordinal_position": 10
+      },
+      {
+        "column_name": "rut",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null,
+        "ordinal_position": 11
+      },
+      {
+        "column_name": "username",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null,
+        "ordinal_position": 12
+      },
+      {
+        "column_name": "birthDate",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "YES",
+        "column_default": null,
+        "ordinal_position": 13
+      },
+      {
+        "column_name": "external_id",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null,
+        "ordinal_position": 16
+      }
+    ]
+  },
+  "tables": {
+    "DiaryEntry": [
+      {
+        "id": "e9483651-4b2f-45cd-ab4c-016e9de5015a",
+        "title": "Pura penita",
+        "content": "Me siento triste pq la union se fue a la B :(",
+        "mood": "Triste",
+        "score": 2,
+        "moodText": "Sentiste triste con baja energía, recuerda darte espacio para cuidarte.",
+        "date": "2025-12-02T03:00:00.000Z",
+        "createdAt": "2025-12-02T18:34:24.585Z",
+        "emotions": [
+          "Nostalgia",
+          "Fatiga"
+        ],
+        "tags": [
+          "salud",
+          "relaciones"
+        ],
+        "userId": "23",
+        "updatedAt": "2025-12-02T18:34:24.584Z"
+      },
+      {
+        "id": "28d42ae9-f7b2-4451-b6c0-319f105fcc11",
+        "title": "Me siento cansado",
+        "content": "Despues de tanto trabajo funciona nuestro motor de inteligencia artificial",
+        "mood": "Contento",
+        "score": 10,
+        "moodText": "Viviste contento con mucha energía positiva.",
+        "date": "2025-12-02T03:00:00.000Z",
+        "createdAt": "2025-12-02T18:40:03.460Z",
+        "emotions": [
+          "Gratitud",
+          "Entusiasmo"
+        ],
+        "tags": [
+          "estudios"
+        ],
+        "userId": "23",
+        "updatedAt": "2025-12-02T18:40:03.460Z"
+      },
+      {
+        "id": "48c8a65b-448e-4216-8456-470f2b6e4928",
+        "title": "Me siento bien",
+        "content": "Hola, esto es una prueba de mi refugio",
+        "mood": "Contento",
+        "score": 10,
+        "moodText": "Viviste contento con mucha energía positiva.",
+        "date": "2025-12-02T03:00:00.000Z",
+        "createdAt": "2025-12-02T18:50:48.209Z",
+        "emotions": [
+          "Alegría"
+        ],
+        "tags": [
+          "estudios",
+          "logros",
+          "salud",
+          "trabajo",
+          "familia"
+        ],
+        "userId": "30",
+        "updatedAt": "2025-12-02T18:50:48.209Z"
+      },
+      {
+        "id": "da6046fb-941b-4e46-a974-f911df1ca891",
+        "title": "Hello",
+        "content": "Esto es una prueba de nuestra aplicacion, estoy feliz",
+        "mood": "Contento",
+        "score": 10,
+        "moodText": "Viviste contento con mucha energía positiva.",
+        "date": "2025-12-02T03:00:00.000Z",
+        "createdAt": "2025-12-02T20:03:06.732Z",
+        "emotions": [],
+        "tags": [
+          "estudios",
+          "logros",
+          "trabajo",
+          "relaciones"
+        ],
+        "userId": "30",
+        "updatedAt": "2025-12-02T20:03:06.731Z"
+      },
+      {
+        "id": "5ff80129-be78-44fe-920f-21015b465385",
+        "title": "Mal mal",
+        "content": "Me siento horre, me matare",
+        "mood": "Calma",
+        "score": 1,
+        "moodText": "Sentiste calma con baja energía, recuerda darte espacio para cuidarte.",
+        "date": "2025-12-02T03:00:00.000Z",
+        "createdAt": "2025-12-03T02:09:36.636Z",
+        "emotions": [
+          "Nostalgia",
+          "Fatiga"
+        ],
+        "tags": [],
+        "userId": "8b824605-7946-4b58-89f1-f7d36d1af520",
+        "updatedAt": "2025-12-03T02:09:36.636Z"
+      },
+      {
+        "id": "34496768-4db8-4040-827c-0522db3ea9c2",
+        "title": "Hola matias",
+        "content": "Ola esto es una prueeba",
+        "mood": "Agradecido",
+        "score": 10,
+        "moodText": "Viviste agradecido con mucha energía positiva.",
+        "date": "2025-12-03T03:00:00.000Z",
+        "createdAt": "2025-12-03T04:28:06.122Z",
+        "emotions": [],
+        "tags": [
+          "familia"
+        ],
+        "userId": "23",
+        "updatedAt": "2025-12-03T04:28:06.122Z"
+      }
+    ],
+    "HydrationLog": [],
+    "Resource": [],
+    "migrations": [
+      {
+        "id": 1,
+        "timestamp": "1733260000000",
+        "name": "FixUserSchema1733260000000"
+      },
+      {
+        "id": 2,
+        "timestamp": "1733270000000",
+        "name": "DropRegistrationNumber1733270000000"
+      },
+      {
+        "id": 3,
+        "timestamp": "1733270000000",
+        "name": "DropRegistrationNumber1733270000000"
+      }
+    ],
+    "users": [
+      {
+        "id": "4ee3c389-3c05-406b-b246-990c952977ec",
+        "email": "alambrito@nomail.local",
+        "name": "alambrito",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-03T01:44:06.623Z",
+        "updatedAt": "2025-12-03T03:02:11.205Z",
+        "gender": "Masculino",
+        "birthdate": "1980-01-10T03:00:00.000Z",
+        "rut": null,
+        "username": "alambri",
+        "birthDate": null,
+        "external_id": "4ee3c389-3c05-406b-b246-990c952977ec"
+      },
+      {
+        "id": "12",
+        "email": "anayshernandez@ug.uchile.cl",
+        "name": "Daikkhyun",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-02T07:27:41.867Z",
+        "updatedAt": "2025-12-03T03:03:37.303Z",
+        "gender": "Femenino",
+        "birthdate": "2001-11-01T03:00:00.000Z",
+        "rut": null,
+        "username": "Daikkhyun",
+        "birthDate": null,
+        "external_id": "12"
+      },
+      {
+        "id": "4",
+        "email": "anette.mancilla.a@gmail.com",
+        "name": "Carolina",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-02T07:27:42.437Z",
+        "updatedAt": "2025-12-03T03:04:14.951Z",
+        "gender": "Femenino",
+        "birthdate": "2002-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": "Carolina",
+        "birthDate": null,
+        "external_id": "4"
+      },
+      {
+        "id": "13",
+        "email": "benjaminnu.2005@gmail.com",
+        "name": "Benjamin",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-02T07:27:42.008Z",
+        "updatedAt": "2025-12-03T03:05:11.754Z",
+        "gender": "Masculino",
+        "birthdate": "2007-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": "Benjamin",
+        "birthDate": null,
+        "external_id": "13"
+      },
+      {
+        "id": "30",
+        "email": "est.vergara@duocuc.cl",
+        "name": "esteban",
+        "password": "pbkdf2_sha256$1000$arpYKxrwWmsQyGkf$KndVu2rmqq6l0jOe6OhiyaapTFaEV1XICxpq9+78ubs=",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-02T15:33:31.359Z",
+        "updatedAt": "2025-12-03T03:06:49.388Z",
+        "gender": "Masculino",
+        "birthdate": "2004-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": "est.vergara",
+        "birthDate": null,
+        "external_id": "30"
+      },
+      {
+        "id": "9598b6a1-231a-41b0-9428-e1eeeb0c2dc4",
+        "email": "franco@nomail.local",
+        "name": "franco SinApellido",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "member",
+        "createdAt": "2025-12-03T02:00:23.165Z",
+        "updatedAt": "2025-12-03T03:08:00.680Z",
+        "gender": "Masculino",
+        "birthdate": "2008-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": "frangog",
+        "birthDate": null,
+        "external_id": "9598b6a1-231a-41b0-9428-e1eeeb0c2dc4"
+      },
+      {
+        "id": "11",
+        "email": "gabrielperez3043@gmail.com",
+        "name": "",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-02T07:27:41.583Z",
+        "updatedAt": "2025-12-03T03:15:22.395Z",
+        "gender": "No binario",
+        "birthdate": "2004-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": "gabrielalbo",
+        "birthDate": null,
+        "external_id": "11"
+      },
+      {
+        "id": "7",
+        "email": "lfloresz69@gmail.com",
+        "name": "",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-02T07:27:42.576Z",
+        "updatedAt": "2025-12-03T03:17:08.094Z",
+        "gender": "Masculino",
+        "birthdate": "2000-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": "luis",
+        "birthDate": null,
+        "external_id": "7"
+      },
+      {
+        "id": "16",
+        "email": "ma.rubilarp@duocuc.cl",
+        "name": "wozzie",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "admin",
+        "createdAt": "2025-12-02T07:27:43.418Z",
+        "updatedAt": "2025-12-03T03:17:23.833Z",
+        "gender": "Masculino",
+        "birthdate": "2001-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": "wozzie",
+        "birthDate": null,
+        "external_id": "16"
+      },
+      {
+        "id": "9",
+        "email": "majo.pintopalma@gmail.com",
+        "name": "María José Pinto",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-02T07:27:42.856Z",
+        "updatedAt": "2025-12-03T03:17:41.817Z",
+        "gender": "Femenino",
+        "birthdate": "2004-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": "reinajaponesa",
+        "birthDate": null,
+        "external_id": "9"
+      },
+      {
+        "id": "10",
+        "email": "marcelito.chedar@gmail.com",
+        "name": "Marcelo Donoso",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-02T07:27:43.138Z",
+        "updatedAt": "2025-12-03T03:18:04.616Z",
+        "gender": "No binario",
+        "birthdate": "2001-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": "Telasoss",
+        "birthDate": null,
+        "external_id": "10"
+      },
+      {
+        "id": "5",
+        "email": "mateofn.20@gmail.com",
+        "name": "Mateo Flores",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-02T07:27:42.292Z",
+        "updatedAt": "2025-12-03T03:18:25.542Z",
+        "gender": "Masculino",
+        "birthdate": "2004-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": "mateofn",
+        "birthDate": null,
+        "external_id": "5"
+      },
+      {
+        "id": "21",
+        "email": "adminsito@gmail.com",
+        "name": "admin Desk",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "admin",
+        "createdAt": "2025-12-02T07:27:43.277Z",
+        "updatedAt": "2025-12-03T03:26:56.519Z",
+        "gender": "Femenino",
+        "birthdate": "2000-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": "admin",
+        "birthDate": null,
+        "external_id": "21"
+      },
+      {
+        "id": "57656052-5243-4319-bde3-8058c6484f80",
+        "email": "sqltest@nomail.local",
+        "name": "SQL Test",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-03T02:00:19.808Z",
+        "updatedAt": "2025-12-03T03:30:10.006Z",
+        "gender": "Masculino",
+        "birthdate": "1980-11-01T03:00:00.000Z",
+        "rut": null,
+        "username": "sqltestt",
+        "birthDate": null,
+        "external_id": "57656052-5243-4319-bde3-8058c6484f80"
+      },
+      {
+        "id": "15",
+        "email": "nicolasquizasmecanica@gmail.com",
+        "name": "Tofeshe",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-02T07:27:41.725Z",
+        "updatedAt": "2025-12-03T03:30:32.852Z",
+        "gender": "Masculino",
+        "birthdate": "2004-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": "Tofesh",
+        "birthDate": null,
+        "external_id": "15"
+      },
+      {
+        "id": "31",
+        "email": "test_1764653781685@example.com",
+        "name": "Test User",
+        "password": "pbkdf2_sha256$100000$pTetO+ea2wnACqbo$EiS1oJOgch8NRrizs3tYiDpXOo3BCnCusyzkPKZ2hqY=",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-02T05:36:22.890Z",
+        "updatedAt": "2025-12-03T03:31:29.248Z",
+        "gender": "Masculino",
+        "birthdate": "2002-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": null,
+        "birthDate": null,
+        "external_id": "31"
+      },
+      {
+        "id": "eeb88402-af13-4b68-aaf8-6c837b44a083",
+        "email": "kfv@gmail.com",
+        "name": "franco",
+        "password": "kako123",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-02T22:58:19.967Z",
+        "updatedAt": "2025-12-03T04:11:56.207Z",
+        "gender": "Masculino",
+        "birthdate": "2002-01-01T03:00:00.000Z",
+        "rut": "17923602-8",
+        "username": "francoccc",
+        "birthDate": "1999-09-14T00:00:00.000Z",
+        "external_id": "eeb88402-af13-4b68-aaf8-6c837b44a083"
+      },
+      {
+        "id": "f36ae10f-b4aa-41a1-a4c0-234e26f47cf6",
+        "email": "sqltest@test.com",
+        "name": "SQL Test",
+        "password": "test123",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-03T01:57:31.143Z",
+        "updatedAt": "2025-12-03T04:12:23.528Z",
+        "gender": "Masculino",
+        "birthdate": "2004-01-01T03:00:00.000Z",
+        "rut": "55555555-5",
+        "username": "sqltest",
+        "birthDate": null,
+        "external_id": "f36ae10f-b4aa-41a1-a4c0-234e26f47cf6"
+      },
+      {
+        "id": "8b824605-7946-4b58-89f1-f7d36d1af520",
+        "email": "davidgonz@gamil.com",
+        "name": "david",
+        "password": "david123",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-02T23:08:13.798Z",
+        "updatedAt": "2025-12-03T04:12:43.253Z",
+        "gender": "Masculino",
+        "birthdate": "2000-01-01T03:00:00.000Z",
+        "rut": "20640787-5",
+        "username": "davidgonz",
+        "birthDate": "2007-12-10T03:00:00.000Z",
+        "external_id": "8b824605-7946-4b58-89f1-f7d36d1af520"
+      },
+      {
+        "id": "50",
+        "email": "alan.gajardoooo@pror.duoc.cl",
+        "name": "alan.gajardo@profesor.duoc.cl SinApellido",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-02T07:27:42.997Z",
+        "updatedAt": "2025-12-03T04:13:06.604Z",
+        "gender": "Masculino",
+        "birthdate": "1999-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": "alan.gajardo@profesor.duoc.cl",
+        "birthDate": null,
+        "external_id": "2"
+      },
+      {
+        "id": "2",
+        "email": "mirefugio.chile@gmail.com",
+        "name": "Mi Refugio Chile",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-03T04:11:18.986Z",
+        "updatedAt": "2025-12-03T04:13:06.604Z",
+        "gender": "Masculino",
+        "birthdate": "1999-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": "admin_refugiocl",
+        "birthDate": null,
+        "external_id": "2"
+      },
+      {
+        "id": "276f14f1-233a-4c58-b095-006bca73ca24",
+        "email": "alan.gajardo@profesor.duoc.cl@nomail.local",
+        "name": "alan gajardo",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-03T00:33:55.965Z",
+        "updatedAt": "2025-12-03T03:00:28.358Z",
+        "gender": "Masculino",
+        "birthdate": "1980-12-10T03:00:00.000Z",
+        "rut": null,
+        "username": "alangajardoo",
+        "birthDate": null,
+        "external_id": "276f14f1-233a-4c58-b095-006bca73ca24"
+      },
+      {
+        "id": "14",
+        "email": "antoclarkv11@gmail.com",
+        "name": "antoclark_",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-02T07:27:42.150Z",
+        "updatedAt": "2025-12-03T03:04:44.203Z",
+        "gender": "Femenino",
+        "birthdate": "2006-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": "antoclark_",
+        "birthDate": null,
+        "external_id": "14"
+      },
+      {
+        "id": "26",
+        "email": "demo@mirefugio.cl",
+        "name": "Invitado Mi Refugio",
+        "password": "$2b$10$9GSinRwdxne0CXiNZToMtOWQUgMChRwsgGucqA8E3x8nOm5G11GrC",
+        "avatarUrl": null,
+        "role": "member",
+        "createdAt": "2025-12-01T22:48:00.383Z",
+        "updatedAt": "2025-12-03T03:06:27.950Z",
+        "gender": "Masculino",
+        "birthdate": "2000-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": "demo@mirefugio.cl",
+        "birthDate": null,
+        "external_id": "26"
+      },
+      {
+        "id": "8",
+        "email": "nacho.m.3588@gmail.com",
+        "name": "Ignacio Salas",
+        "password": "$2b$10$LndQHR4ktAcz6niJS4fixe04jXP6bTUglR2cZJq..Wl6/vMmUNMdG",
+        "avatarUrl": null,
+        "role": "member",
+        "createdAt": "2025-12-01T22:33:40.691Z",
+        "updatedAt": "2025-12-03T03:29:15.478Z",
+        "gender": "Masculino",
+        "birthdate": "2002-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": "nacho.m.",
+        "birthDate": null,
+        "external_id": "8"
+      },
+      {
+        "id": "bd76dd47-b438-401b-8726-5ceff31b408f",
+        "email": "usuario1@nomail.local",
+        "name": "Matias Rubilar",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "admin",
+        "createdAt": "2025-12-03T00:29:31.196Z",
+        "updatedAt": "2025-12-03T03:31:40.970Z",
+        "gender": "Masculino",
+        "birthdate": "2002-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": "usuario1",
+        "birthDate": null,
+        "external_id": "bd76dd47-b438-401b-8726-5ceff31b408f"
+      },
+      {
+        "id": "45",
+        "email": "francooo@nomail.local",
+        "name": "franco SinApellido",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-03T04:06:39.452Z",
+        "updatedAt": "2025-12-03T04:06:39.452Z",
+        "gender": "Masculino",
+        "birthdate": "2009-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": "franco_1",
+        "birthDate": null,
+        "external_id": "45"
+      },
+      {
+        "id": "43",
+        "email": "francooooo@nomail.local",
+        "name": "franco SinApellido",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "admin",
+        "createdAt": "2025-12-03T04:06:39.597Z",
+        "updatedAt": "2025-12-03T04:06:39.597Z",
+        "gender": "Masculino",
+        "birthdate": "1999-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": "franco",
+        "birthDate": null,
+        "external_id": "43"
+      },
+      {
+        "id": "46",
+        "email": "sqltestooo@nomail.local",
+        "name": "SQL Test",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-03T04:06:39.739Z",
+        "updatedAt": "2025-12-03T04:06:39.739Z",
+        "gender": "Masculino",
+        "birthdate": "2000-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": "sqltest_3",
+        "birthDate": null,
+        "external_id": "46"
+      },
+      {
+        "id": "49",
+        "email": "francoo@nomail.local",
+        "name": "franco SinApellido",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-03T04:06:40.201Z",
+        "updatedAt": "2025-12-03T04:06:40.201Z",
+        "gender": "Masculino",
+        "birthdate": "2000-01-20T03:00:00.000Z",
+        "rut": null,
+        "username": "franco_3",
+        "birthDate": null,
+        "external_id": "49"
+      },
+      {
+        "id": "b922ffe5-bcbb-4dde-a5e5-f7698f85d6a6",
+        "email": "juanita@gmail.com",
+        "name": "juan",
+        "password": "juan123",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-03T01:08:35.288Z",
+        "updatedAt": "2025-12-03T04:11:20.821Z",
+        "gender": "Masculino",
+        "birthdate": "2007-12-10T03:00:00.000Z",
+        "rut": "14608777-9",
+        "username": "juanita",
+        "birthDate": null,
+        "external_id": "b922ffe5-bcbb-4dde-a5e5-f7698f85d6a6"
+      },
+      {
+        "id": "25b8dd88-a94d-4b56-9d33-4b8cea86293d",
+        "email": "alan.gajardo@profesor.duoc.cl",
+        "name": "alambrito SinApellido",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-03T04:06:40.058Z",
+        "updatedAt": "2025-12-03T04:13:30.078Z",
+        "gender": "Masculino",
+        "birthdate": "2001-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": "alambrito",
+        "birthDate": null,
+        "external_id": "25b8dd88-a94d-4b56-9d33-4b8cea86293d"
+      },
+      {
+        "id": "23",
+        "email": "is.veloz@duocuc.cl",
+        "name": "isaias",
+        "password": "isveloz",
+        "avatarUrl": null,
+        "role": "admin",
+        "createdAt": "2025-12-02T15:50:02.985Z",
+        "updatedAt": "2025-12-03T03:16:30.647Z",
+        "gender": "Masculino",
+        "birthdate": "2002-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": "is.veloz",
+        "birthDate": null,
+        "external_id": "23"
+      },
+      {
+        "id": "20",
+        "email": "pi.salas@gmail.com",
+        "name": "PepitoEspadaLoca",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-02T07:27:42.717Z",
+        "updatedAt": "2025-12-03T05:00:10.073Z",
+        "gender": "Masculino",
+        "birthdate": "2001-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": "PepitoEspadaLoca",
+        "birthDate": null,
+        "external_id": "20"
+      },
+      {
+        "id": "1d86d724-9f55-44a6-96e7-cb30809aa979",
+        "email": "pedroengeaalr@gmail.com",
+        "name": "predo enlge",
+        "password": "SYNC",
+        "avatarUrl": null,
+        "role": "user",
+        "createdAt": "2025-12-03T05:37:48.413Z",
+        "updatedAt": "2025-12-03T05:37:48.413Z",
+        "gender": "Masculino",
+        "birthdate": "2000-01-01T03:00:00.000Z",
+        "rut": null,
+        "username": "pedrosotoengel",
+        "birthDate": null,
+        "external_id": "1d86d724-9f55-44a6-96e7-cb30809aa979"
+      }
+    ]
+  }
+}

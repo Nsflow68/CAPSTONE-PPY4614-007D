@@ -53,6 +53,20 @@ class ApiClient:
     def delete(self, path: str) -> ApiResponse:
         return self._request("DELETE", path)
 
+    def get_bytes(self, path: str) -> bytes:
+        """Recupera un recurso binario sin intentar parsear JSON (útil para descargas)."""
+        url = f"{self.base_url}/{path.lstrip('/')}"
+        try:
+            response = self._session.get(url, timeout=self.timeout)
+        except requests.RequestException as exc:
+            raise ApiClientError(f"No se pudo conectar con la API: {exc}") from exc
+
+        if not response.ok:
+            detail = self._extract_error_message(response)
+            raise ApiClientError(detail, status_code=response.status_code)
+
+        return response.content
+
     # ------------------------------------------------------------------ #
     # Internos
     # ------------------------------------------------------------------ #

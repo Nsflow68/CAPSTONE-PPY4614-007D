@@ -469,9 +469,9 @@ router.post("/", async (req, res) => {
                 firstName,
                 lastName,
                 safeEmail,
+                externalId,
                 isSuperuser,
                 isStaff,
-                externalId,
                 gender || null,
                 birthdayValue,
             ]
