@@ -58,7 +58,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
        ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(state.message)),
       );
-    } else if (state is Authenticated && mounted) {
+    } else if (state is AuthAuthenticated && mounted) {
       // Registro exitoso - navegar al home
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
