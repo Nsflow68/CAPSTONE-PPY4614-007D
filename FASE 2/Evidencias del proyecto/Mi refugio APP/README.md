@@ -1,22 +1,22 @@
-# Mi Refugio App 🛡️
+# Mi Refugio App
 
 **Bienestar Emocional en tu Bolsillo**
 
-"Mi Refugio" es una aplicación móvil diseñada para apoyar el bienestar emocional de los usuarios, proporcionando herramientas de registro diario, seguimiento de hábitos saludables (hidratación, nutrición, mindfulness) y un asistente virtual (Refu) basado en IA para contención emocional.
+"Mi Refugio" es una aplicacion movil diseñada para apoyar el bienestar emocional de los usuarios, proporcionando herramientas de registro diario, seguimiento de habitos saludables (hidratacion, nutricion, mindfulness) y un asistente virtual (Refu) basado en IA para contencion emocional.
 
 ---
 
-## 🏗️ Arquitectura General
+## Arquitectura General
 
 El sistema se compone de tres pilares principales:
 
-1.  **Frontend Móvil (Flutter)**: Aplicación multiplataforma (Android/iOS) con diseño Material 3.
-2.  **Backend (NestJS)**: API RESTful que gestiona usuarios, autenticación y persistencia de datos.
-3.  **IA / LLM (Ollama)**: Módulo de inteligencia artificial local para el chatbot "Refu".
+1.  **Frontend Movil (Flutter)**: Aplicacion multiplataforma (Android/iOS) con diseño Material 3.
+2.  **Backend (NestJS)**: API RESTful que gestiona usuarios, autenticacion y persistencia de datos.
+3.  **IA / LLM (Ollama)**: Modulo de inteligencia artificial local para el chatbot "Refu".
 
 ---
 
-## 🚀 Requisitos Mínimos (Windows)
+## Requisitos Minimos (Windows)
 
 - **OS**: Windows 10/11 (64-bit).
 - **RAM**: 8GB (16GB recomendado para emuladores).
@@ -25,9 +25,9 @@ El sistema se compone de tres pilares principales:
 
 ---
 
-## ⚡ Instalación Rápida
+## Instalacion Rapida
 
-Para una guía detallada paso a paso, consulta [INSTALL_WINDOWS.md](./INSTALL_WINDOWS.md).
+Para una guia detallada paso a paso, consulta [INSTALL_WINDOWS.md](./INSTALL_WINDOWS.md).
 
 1.  **Clonar Repositorio**:
     ```powershell
@@ -37,7 +37,7 @@ Para una guía detallada paso a paso, consulta [INSTALL_WINDOWS.md](./INSTALL_WI
 
 2.  **Backend**:
     ```powershell
-    cd backend_real
+    cd flutter/backend/nest
     npm install
     # Configurar .env (ver INSTALL_WINDOWS.md)
     npm run start:dev
@@ -45,15 +45,16 @@ Para una guía detallada paso a paso, consulta [INSTALL_WINDOWS.md](./INSTALL_WI
 
 3.  **Frontend**:
     ```powershell
-    cd ../flutter
+    cd ../..
+    cd flutter
     flutter pub get
     flutter run
     ```
 
 ---
 
-## 📚 Documentación Adicional
+## Documentacion Adicional
 
-- [Guía de Instalación en Windows](./INSTALL_WINDOWS.md)
-- [Guía de Contribución](./CONTRIBUTING.md)
-- [Arquitectura Técnica](./docs/ARQUITECTURA.md)
+- [Guia de Instalacion en Windows](./INSTALL_WINDOWS.md)
+- [Guia de Contribucion](./CONTRIBUTING.md)
+- [Arquitectura Tecnica](./docs/ARQUITECTURA.md)
