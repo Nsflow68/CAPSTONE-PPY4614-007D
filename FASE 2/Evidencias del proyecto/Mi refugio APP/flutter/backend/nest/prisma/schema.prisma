@@ -1,6 +1,3 @@
-// Prisma schema for Mi Refugio NestJS backend.
-// Defines the initial PostgreSQL data model to mirror the FastAPI domain.
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,99 +7,280 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String        @id @default(uuid())
-  email     String        @unique
-  name      String
-  password  String
-  avatarUrl String?
-  role      String        @default("member")
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+model contact_messages {
+  id         String   @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  user_id    String?  @db.Uuid
+  name       String
+  email      String
+  subject    String?
+  message    String
+  status     String   @default("new")
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  users      users?   @relation(fields: [user_id], references: [id], onUpdate: NoAction)
 
-  diaryEntries  DiaryEntry[]
-  hydrationLogs HydrationLog[]
+  @@index([status])
+  @@index([user_id], map: "contact_messages_user_idx")
 }
 
-model DiaryEntry {
-  id        String   @id @default(uuid())
-  title     String
-  content   String
-  mood      String
-  score     Int
-  moodText  String?
-  date      DateTime
-  createdAt DateTime  @default(now())
-  emotions  String[]
-  tags      String[]
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String
+model diary_entries {
+  id         String   @id(map: "PK_45cc0613be17fab8a954db677a0") @default(dbgenerated("public.uuid_generate_v4()")) @db.Uuid
+  title      String   @db.VarChar(160)
+  mood       String   @db.VarChar(80)
+  createdAt  DateTime @db.Timestamptz(6)
+  body       String
+  words      Int      @default(0)
+  location   String?  @db.VarChar(140)
+  photo_url  String?  @db.VarChar(280)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+  userId     String   @db.Uuid
+  mood_score Int?     @db.SmallInt
+  tags       String[]
+  users      users    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_c8a2d9f5fb78615e2dbb28a3cd0")
 }
 
-model HydrationLog {
-  id        String   @id @default(uuid())
-  date      DateTime
-  amountMl  Int
-  createdAt DateTime @default(now())
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String
+model donation_receipts {
+  id          String    @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  donation_id String    @db.Uuid
+  receipt_no  String?
+  storage_url String?
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  donations   donations @relation(fields: [donation_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
-model Resource {
-  id            String   @id @default(uuid())
-  name          String
-  description   String
-  category      String
-  coverage      String?
-  contactPhone  String?
-  contactEmail  String?
-  website       String?
-  region        String?
-  tags          String[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model donations {
+  id                 String             @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  donor_id           String?            @db.Uuid
+  amount             Decimal            @db.Decimal(12, 2)
+  currency           String             @default("CLP")
+  provider           String?
+  provider_charge_id String?
+  status             String             @default("pending")
+  created_at         DateTime           @default(now()) @db.Timestamptz(6)
+  paid_at            DateTime?          @db.Timestamptz(6)
+  donation_receipts  donation_receipts[]
+  donors             donors?            @relation(fields: [donor_id], references: [id], onUpdate: NoAction)
+
+  @@index([created_at], map: "donations_created_idx")
+  @@index([status])
 }
 
-model Refuge {
-  id          String   @id @default(uuid())
-  name        String
+model donors {
+  id         String      @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  user_id    String?     @db.Uuid
+  full_name  String?
+  email      String?     @db.VarChar(160)
+  created_at DateTime    @default(now()) @db.Timestamptz(6)
+  donations  donations[]
+  users      users?      @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+
+  @@index([email])
+}
+
+model emotion_catalog {
+  id           Int            @id @default(autoincrement()) @db.SmallInt
+  name         String         @unique
+  emotion_logs emotion_logs[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model emotion_logs {
+  id              String          @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  user_id         String          @db.Uuid
+  emotion_id      Int             @db.SmallInt
+  intensity       Int?            @db.SmallInt
+  notes           String?
+  logged_at       DateTime        @default(now()) @db.Timestamptz(6)
+  created_at      DateTime        @default(now()) @db.Timestamptz(6)
+  emotion_catalog emotion_catalog @relation(fields: [emotion_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users           users           @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id, logged_at(sort: Desc)], map: "emotion_logs_user_time_idx")
+}
+
+model etl_runs {
+  id             String    @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  job_name       String
+  started_at     DateTime  @default(now()) @db.Timestamptz(6)
+  ended_at       DateTime? @db.Timestamptz(6)
+  status         String    @default("running")
+  rows_processed BigInt?   @default(0)
+  notes          String?
+
+  @@index([job_name, started_at(sort: Desc)], map: "etl_runs_job_time_idx")
+}
+
+model meal_items {
+  id        String   @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  meal_id   String   @db.Uuid
+  food_name String
+  quantity  Decimal? @db.Decimal(10, 2)
+  unit      String?
+  kcals_est Int?
+  meals     meals    @relation(fields: [meal_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([meal_id], map: "meal_items_meal_idx")
+}
+
+model meals {
+  id         String       @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  user_id    String       @db.Uuid
+  meal_type  String
+  calories   Int?
+  notes      String?
+  eaten_at   DateTime     @default(now()) @db.Timestamptz(6)
+  created_at DateTime     @default(now()) @db.Timestamptz(6)
+  meal_items meal_items[]
+  users      users        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id, eaten_at(sort: Desc)], map: "meals_user_time_idx")
+}
+
+model reports {
+  id           String   @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  title        String
+  report_type  String
+  generated_by String?  @db.Uuid
+  storage_url  String?
+  params_json  Json?
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  users        users?   @relation(fields: [generated_by], references: [id], onUpdate: NoAction)
+
+  @@index([report_type, created_at(sort: Desc)], map: "reports_type_time_idx")
+}
+
+model resources {
+  id          String   @id(map: "PK_632484ab9dff41bba94f9b7c85e") @default(dbgenerated("public.uuid_generate_v4()")) @db.Uuid
+  title       String   @db.VarChar(160)
+  subtitle    String   @db.VarChar(180)
   description String
-  address     String
-  phone       String?
-  email       String?
-  website     String?
-  capacity    Int      @default(0)
-  occupied    Int      @default(0)
-  region      String
-  commune     String?
-  latitude    Float?
-  longitude   Float?
-  services    String[]
-  imageUrl    String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  adoptions   Adoption[]
+  category    String   @db.VarChar(80)
+  asset       String?  @db.VarChar(300)
+  image_url   String?  @db.VarChar(400)
+  contact     String?  @db.VarChar(80)
+  email       String?  @db.VarChar(120)
+  phone       String?  @db.VarChar(80)
+  website     String?  @db.VarChar(200)
+  tags        String?
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @db.Timestamptz(6)
 }
 
-model Adoption {
-  id          String   @id @default(uuid())
-  petName     String
-  petType     String
-  petBreed    String?
-  petAge      Int?
-  petGender   String?
-  description String
-  imageUrl    String?
-  status      String   @default("available")
-  adoptedBy   String?
-  adoptedAt   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model users {
+  id                      String                    @id(map: "PK_a3ffb1c0c8416b9fc6f907b7433") @default(dbgenerated("public.uuid_generate_v4()")) @db.Uuid
+  name                    String                    @db.VarChar(140)
+  email                   String                    @unique(map: "IDX_97672ac88f789774dd47f7c8be") @db.VarChar(160)
+  password_hash           String                    @db.VarChar(120)
+  avatar_url              String?                   @db.VarChar(300)
+  reset_token_hash        String?                   @db.VarChar(180)
+  reset_token_expires_at  DateTime?                 @db.Timestamptz(6)
+  created_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  display_name            String?
+  status                  String?                   @default("active")
+  birth_date              DateTime?                 @db.Date
+  gender                  String?                   @db.VarChar(20)
+  rut                     String?                   @unique @db.VarChar(20)
+  contact_messages        contact_messages[]
+  diary_entries           diary_entries[]
+  donors                  donors[]
+  emotion_logs            emotion_logs[]
+  hydration_logs          hydration_logs[]
+  meals                   meals[]
+  reports                 reports[]
+  user_rewards            user_rewards?
+  user_activity_metrics   user_activity_metrics[]
+  chatbot_interactions    chatbot_interactions[]
+  user_roles              user_roles?
+  user_sessions           user_sessions[]
+}
 
-  refuge      Refuge   @relation(fields: [refugeId], references: [id], onDelete: Cascade)
-  refugeId    String
+model hydration_logs {
+  id         String   @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  user_id    String   @db.Uuid
+  date       String   @db.VarChar(10)
+  amount_ml  Int
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  users      users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id, date], map: "hydration_logs_user_date_idx")
+}
+
+model user_rewards {
+  id               String   @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  user_id          String   @unique @db.Uuid
+  points           Int      @default(0)
+  current_streak   Int      @default(0)
+  unlocked_mascots String[]
+  updated_at       DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  users            users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+// Analytics tables for Desk dashboard
+model user_activity_metrics {
+  id                           String   @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  user_id                      String   @db.Uuid
+  date                         String   @db.VarChar(10)
+  login_count                  Int      @default(0)
+  diary_entries_count          Int      @default(0)
+  chatbot_interactions_count   Int      @default(0)
+  session_duration_minutes     Int      @default(0)
+  created_at                   DateTime @default(now()) @db.Timestamptz(6)
+  users                        users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, date])
+  @@index([user_id, date], map: "user_activity_metrics_user_date_idx")
+  @@index([date], map: "user_activity_metrics_date_idx")
+}
+
+model chatbot_interactions {
+  id         String    @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  user_id    String    @db.Uuid
+  message    String
+  response   String
+  sentiment  String?   @db.VarChar(50)
+  rating     Int?      @db.SmallInt
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id, created_at(sort: Desc)], map: "chatbot_interactions_user_time_idx")
+}
+
+model user_roles {
+  id          String   @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  user_id     String   @unique @db.Uuid
+  role        String   @default("User") @db.VarChar(50)
+  assigned_at DateTime @default(now()) @db.Timestamptz(6)
+  users       users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([role], map: "user_roles_role_idx")
+}
+
+model daily_metrics {
+  id                          String    @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  date                        String    @unique @db.VarChar(10)
+  total_users                 Int       @default(0)
+  active_users                Int       @default(0)
+  inactive_users              Int       @default(0)
+  new_users                   Int       @default(0)
+  total_diary_entries         Int       @default(0)
+  total_chatbot_interactions  Int       @default(0)
+  avg_session_duration        Decimal?  @db.Decimal(10, 2)
+  created_at                  DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([date(sort: Desc)], map: "daily_metrics_date_idx")
+}
+
+model user_sessions {
+  id               String    @id @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  user_id          String    @db.Uuid
+  started_at       DateTime  @default(now()) @db.Timestamptz(6)
+  ended_at         DateTime? @db.Timestamptz(6)
+  duration_minutes Int?
+  device_type      String?   @db.VarChar(50)
+  ip_address       String?   @db.VarChar(45)
+  users            users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id, started_at(sort: Desc)], map: "user_sessions_user_time_idx")
 }
