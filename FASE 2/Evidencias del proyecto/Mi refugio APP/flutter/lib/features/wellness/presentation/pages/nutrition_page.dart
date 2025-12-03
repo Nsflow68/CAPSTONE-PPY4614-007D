@@ -7,7 +7,6 @@ import 'package:mi_refugio_app/shared/constants/app_shadows.dart';
 import 'package:mi_refugio_app/shared/models/nutrition_daily_summary.dart';
 import 'package:mi_refugio_app/shared/models/nutrition_log.dart';
 import 'package:mi_refugio_app/shared/data/food_database.dart';
-import 'package:mi_refugio_app/core/services/notification_service.dart';
 
 class NutritionPage extends ConsumerWidget {
   const NutritionPage({super.key});
@@ -427,7 +426,7 @@ class _AddMealSheetState extends State<_AddMealSheet> {
             ),
             const SizedBox(height: 24),
             DropdownButtonFormField<String>(
-              value: _selectedType,
+              initialValue: _selectedType,
               decoration: const InputDecoration(
                 labelText: 'Tipo de comida',
                 border: OutlineInputBorder(
@@ -444,7 +443,7 @@ class _AddMealSheetState extends State<_AddMealSheet> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<FoodItem>(
-              value: _selectedFood,
+              initialValue: _selectedFood,
               decoration: const InputDecoration(
                 labelText: 'Seleccionar alimento (opcional)',
                 border: OutlineInputBorder(

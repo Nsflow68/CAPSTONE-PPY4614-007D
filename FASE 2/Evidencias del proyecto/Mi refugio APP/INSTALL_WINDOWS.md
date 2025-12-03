@@ -1,4 +1,4 @@
-# Guía de Instalación en Windows 🪟
+# Guía de Instalación en Windows
 
 Esta guía detalla paso a paso cómo configurar el entorno de desarrollo para **Mi Refugio App** en Windows.
 

@@ -1,11 +1,10 @@
-﻿// ignore_for_file: prefer_single_quotes
+// ignore_for_file: prefer_single_quotes
 import "package:flutter/material.dart";
 import "package:mi_refugio_app/shared/constants/app_colors.dart";
 import "package:mi_refugio_app/shared/constants/app_gradients.dart";
 import "package:mi_refugio_app/shared/constants/app_shadows.dart";
 import "package:mi_refugio_app/shared/data/mental_health_resources.dart";
 import "package:mi_refugio_app/shared/models/resource_item.dart";
-import "package:url_launcher/url_launcher.dart";
 
 class ResourcesPage extends StatefulWidget {
   const ResourcesPage({super.key});
