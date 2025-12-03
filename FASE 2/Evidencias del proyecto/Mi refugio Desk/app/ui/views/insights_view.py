@@ -75,6 +75,7 @@ class InsightsView(QWidget):
         self.btn_temporal = QPushButton("Análisis Temporal") # NUEVA PESTAÑA
         self.btn_riesgo = QPushButton("Alertas de Riesgo")
         self.btn_correlacion = QPushButton("Correlación de Datos")
+        self._tab_buttons = [self.btn_emocional, self.btn_temporal, self.btn_riesgo, self.btn_correlacion]
         
         # Estilo de los botones de submenú
         button_style = """
@@ -99,6 +100,8 @@ class InsightsView(QWidget):
         self.btn_temporal.setCheckable(True)
         self.btn_riesgo.setCheckable(True)
         self.btn_correlacion.setCheckable(True)
+        for btn in self._tab_buttons:
+            btn.setAutoExclusive(True)
 
         tabs_layout.addWidget(self.btn_emocional)
         tabs_layout.addWidget(self.btn_temporal)
@@ -119,12 +122,18 @@ class InsightsView(QWidget):
         self.stacked_widget.addWidget(self.create_correlacion_view())
         
         # Conectar botones a las vistas internas
-        self.btn_emocional.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(0))
-        self.btn_temporal.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(1))
-        self.btn_riesgo.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(2))
-        self.btn_correlacion.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(3))
+        self.btn_emocional.clicked.connect(lambda: self._select_tab(0))
+        self.btn_temporal.clicked.connect(lambda: self._select_tab(1))
+        self.btn_riesgo.clicked.connect(lambda: self._select_tab(2))
+        self.btn_correlacion.clicked.connect(lambda: self._select_tab(3))
         
-        self.btn_emocional.setChecked(True)
+        self._select_tab(0)
+
+    def _select_tab(self, index: int) -> None:
+        """Cambia la vista y marca sólo el botón activo."""
+        self.stacked_widget.setCurrentIndex(index)
+        for i, btn in enumerate(self._tab_buttons):
+            btn.setChecked(i == index)
 
     def _extract_emotion(self, row):
         emotions = row.get("emotions")
@@ -201,12 +210,11 @@ class InsightsView(QWidget):
     # ----------------------------------------------------------------------
     def create_emocional_view(self):
         view = QWidget()
-        layout = QHBoxLayout(view)
+        layout = QVBoxLayout(view)
         
-        # --- Columna Izquierda: Filtros (UX Mejorada) ---
+        # --- Filtros en fila superior ---
         filters_group = QGroupBox("Filtros de Segmentación")
-        filters_layout = QVBoxLayout(filters_group)
-        filters_group.setMaximumWidth(250)
+        filters_layout = QHBoxLayout(filters_group)
         
         filters_layout.addWidget(QLabel("<strong>Género:</strong>"))
         self.gender_filter = QComboBox()
@@ -220,11 +228,11 @@ class InsightsView(QWidget):
         age_values = [str(a) for a in sorted(self.df['age'].dropna().unique())]
         self.age_filter.addItems(age_values)
         filters_layout.addWidget(self.age_filter)
-        
-        filters_layout.addStretch(1) # Relleno para que los filtros no se peguen arriba
+
+        filters_layout.addStretch()
         layout.addWidget(filters_group)
 
-        # --- Columna Derecha: Gráficos (Scrollable) ---
+        # --- Gráficos con scroll ocupando el ancho ---
         self.charts_container_emocional = QWidget()
         self.charts_layout_emocional = QVBoxLayout(self.charts_container_emocional)
         
