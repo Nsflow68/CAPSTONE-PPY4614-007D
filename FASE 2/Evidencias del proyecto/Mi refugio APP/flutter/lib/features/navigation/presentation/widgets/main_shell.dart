@@ -31,8 +31,8 @@ class MainShell extends StatelessWidget {
         label: 'Diario',
       ),
       const _NavItem(
-        icon: Icons.spa_outlined,
-        selectedIcon: Icons.spa_rounded,
+        icon: Icons.volunteer_activism_outlined,
+        selectedIcon: Icons.volunteer_activism_rounded,
         label: 'Bienestar',
       ),
       const _NavItem(
