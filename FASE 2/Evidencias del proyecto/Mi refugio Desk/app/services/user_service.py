@@ -1,7 +1,7 @@
 """Servicio para gestionar usuarios vía API."""
 from __future__ import annotations
 
-from typing import List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 import pandas as pd
 
@@ -83,6 +83,11 @@ class UserService:
 
     def delete_user(self, user_id: str) -> None:
         self._client.delete(f"/users/{user_id}")
+
+    def sync_users(self) -> Mapping[str, Any] | Any:
+        """Sincroniza usuarios entre esquemas llamando al endpoint dedicado."""
+        response = self._client.post("/users/sync", {})
+        return response.data
 
     # ------------------------------------------------------------------ #
     # Helpers

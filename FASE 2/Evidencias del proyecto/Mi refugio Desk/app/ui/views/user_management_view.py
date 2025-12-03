@@ -1,5 +1,5 @@
 from itertools import cycle, islice
-from typing import Optional, Set
+from typing import Mapping, Optional, Set
 
 import pandas as pd
 import seaborn as sns
@@ -147,6 +147,7 @@ class UserManagementView(QWidget):
 
         # Botones de CRUD (Mejorados visualmente)
         crud_buttons_layout = QHBoxLayout()
+        self.sync_btn = QPushButton("🔄 Sincronizar usuarios")
         self.add_btn = QPushButton("➕ Agregar Usuario")        
         self.modify_btn = QPushButton("Modificar")
         self.delete_btn = QPushButton("Eliminar")
@@ -162,15 +163,18 @@ class UserManagementView(QWidget):
             }
         """)
         self.modify_btn.setMinimumWidth(120)
+        self.sync_btn.setStyleSheet("background-color: #2196f3; color: white; padding: 10px 14px; border-radius: 6px;")
         self.add_btn.setStyleSheet("background-color: #4caf50; color: white; padding: 10px 14px; border-radius: 6px;")
         self.delete_btn.setStyleSheet("background-color: #e74c3c; color: white; padding: 10px 14px; border-radius: 6px;")
         self.modify_btn.setEnabled(False)
         self.delete_btn.setEnabled(False)
         
+        self.sync_btn.clicked.connect(self._sync_users)
         self.add_btn.clicked.connect(self.add_user)
         self.modify_btn.clicked.connect(self.modify_user)
         self.delete_btn.clicked.connect(self.delete_user)
 
+        crud_buttons_layout.addWidget(self.sync_btn)
         crud_buttons_layout.addStretch()
         crud_buttons_layout.addWidget(self.add_btn)
         crud_buttons_layout.addWidget(self.modify_btn)
@@ -212,6 +216,43 @@ class UserManagementView(QWidget):
             self.user_data['Email'] = self.user_data['Email'].fillna(self.user_data['Usuario'])
         self._remove_current_user_from_dataset()
         self._sync_user_views()
+
+    def _sync_users(self) -> None:
+        reply = QMessageBox.question(
+            self,
+            "Sincronizar usuarios",
+            "Esto sincronizará usuarios entre la API (web) y la app.\n\n¿Deseas continuar?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if reply != QMessageBox.Yes:
+            return
+
+        self.sync_btn.setEnabled(False)
+        try:
+            result = self._user_service.sync_users()
+        except ApiClientError as exc:
+            QMessageBox.critical(self, "Error de sincronización", str(exc))
+            return
+        except Exception as exc:
+            QMessageBox.critical(self, "Error inesperado", str(exc))
+            return
+        finally:
+            self.sync_btn.setEnabled(True)
+
+        summary_lines = []
+        if isinstance(result, Mapping):
+            synced = result.get("synced")
+            if synced is not None:
+                summary_lines.append(f"Usuarios sincronizados: {synced}")
+            details = result.get("details")
+            if isinstance(details, list):
+                summary_lines.append(f"Acciones aplicadas: {len(details)}")
+        if not summary_lines:
+            summary_lines.append("Sincronización completada correctamente.")
+
+        QMessageBox.information(self, "Sincronización completada", "\n".join(summary_lines))
+        self._load_users_from_api()
 
     def _remove_current_user_from_dataset(self) -> None:
         """Oculta al usuario autenticado de la lista."""
