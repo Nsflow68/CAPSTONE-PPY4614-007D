@@ -24,9 +24,10 @@ from PyQt5.QtWidgets import (
     QGroupBox,
     QGridLayout,
     QInputDialog,
+    QDateEdit,
 )
 from PyQt5.QtWidgets import QAbstractItemView
-from PyQt5.QtCore import Qt, QAbstractTableModel, QVariant
+from PyQt5.QtCore import Qt, QAbstractTableModel, QVariant, QDate
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
@@ -45,16 +46,16 @@ class UserManagementView(QWidget):
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.user_data = pd.DataFrame(columns=USER_COLUMNS)
+        self.user_data = pd.DataFrame(columns=USER_COLUMNS + ["_id_internal"])
         self.activity_data = pd.DataFrame()
         self.filtered_activity_data = pd.DataFrame()
-        self._filtered_user_ids: Set[int] = set()
+        self._filtered_user_ids: Set[str] = set()
 
         self.role_data = pd.DataFrame({
-            'Rol': ['Admin', 'Moderador', 'Usuario'],
-            'Permiso: Edición': ['Sí', 'No', 'No'],
-            'Permiso: Reportes': ['Sí', 'Sí', 'No'],
-            'Descripción': ['Control total', 'Moderar contenido', 'Acceso básico']
+            'Rol': ['Admin', 'Moderador', 'Member', 'Usuario'],
+            'Permiso: Edición': ['Sí', 'No', 'No', 'No'],
+            'Permiso: Reportes': ['Sí', 'Sí', 'No', 'No'],
+            'Descripción': ['Control total', 'Moderar contenido', 'Acceso básico (app)', 'Acceso básico']
         })
 
         # Pestañas de submenú
@@ -122,7 +123,7 @@ class UserManagementView(QWidget):
         search_filter_group = QGroupBox("Búsqueda y Filtros Rápidos")
         search_layout = QHBoxLayout(search_filter_group)
         self.search_bar = QLineEdit()
-        self.search_bar.setPlaceholderText("Buscar por Usuario, Nombre, ID o Rol...")
+        self.search_bar.setPlaceholderText("Buscar por Usuario, Nombre, Email o Rol...")
         self.search_bar.textChanged.connect(self.filter_users)
         
         self.status_filter_combo = QComboBox()
@@ -206,13 +207,46 @@ class UserManagementView(QWidget):
             QMessageBox.critical(self, title, str(exc))
             return
 
-        self.user_data = df if not df.empty else pd.DataFrame(columns=USER_COLUMNS)
-        self._ensure_current_user_in_dataset()
+        self.user_data = df if not df.empty else pd.DataFrame(columns=USER_COLUMNS + ["_id_internal"])
+        if 'Email' in self.user_data and 'Usuario' in self.user_data:
+            self.user_data['Email'] = self.user_data['Email'].fillna(self.user_data['Usuario'])
+        self._remove_current_user_from_dataset()
         self._sync_user_views()
+
+    def _remove_current_user_from_dataset(self) -> None:
+        """Oculta al usuario autenticado de la lista."""
+        if not self._current_user or self.user_data.empty:
+            return
+
+        username = (self._current_user.username or "").strip()
+        email = (getattr(self._current_user, "email", None) or "").strip().lower()
+
+        mask = pd.Series([False] * len(self.user_data))
+        if 'Usuario' in self.user_data:
+            mask = mask | (self.user_data['Usuario'].astype(str).str.strip() == username)
+        if 'Email' in self.user_data and email:
+            mask = mask | (self.user_data['Email'].astype(str).str.lower() == email)
+
+        if mask.any():
+            to_remove_ids = set(
+                self.user_data.loc[mask, 'Email']
+                    .fillna(self.user_data.loc[mask, 'Usuario'])
+                    .astype(str)
+                    .tolist()
+            )
+            self.user_data = self.user_data.loc[~mask].reset_index(drop=True)
+            if hasattr(self, '_filtered_user_ids') and isinstance(self._filtered_user_ids, set):
+                self._filtered_user_ids = self._filtered_user_ids - to_remove_ids
 
     def _sync_user_views(self) -> None:
         if hasattr(self, 'table_model'):
             self.table_model.set_data(self.user_data)
+        if hasattr(self, 'table_view') and '_id_internal' in self.user_data:
+            try:
+                col_idx = self.user_data.columns.get_loc('_id_internal')
+                self.table_view.setColumnHidden(col_idx, True)
+            except Exception:
+                pass
 
         if hasattr(self, 'user_list'):
             self.user_list.clear()
@@ -251,7 +285,7 @@ class UserManagementView(QWidget):
         length = len(self.user_data)
         login_counts = list(islice(cycle(sample_login_counts), length))
         chatbot_sessions = list(islice(cycle(sample_chatbot_sessions), length))
-        ids_series = self.user_data['ID'].fillna(0).astype(int)
+        ids_series = self.user_data['Email'].fillna(self.user_data['Usuario']).astype(str)
         self.activity_data = pd.DataFrame({
             'user_id': ids_series,
             'login_count': login_counts,
@@ -269,8 +303,7 @@ class UserManagementView(QWidget):
         if not self.user_data[self.user_data['Usuario'] == username].empty:
             return None
 
-        existing_ids = self.user_data['ID'].dropna()
-        new_id = int(existing_ids.max() + 1) if not existing_ids.empty else 1
+        safe_email = getattr(self._current_user, "email", None) or f"{username}@nomail.local"
         display_name = self._current_user.full_name or username
         raw_role = (self._current_user.role or '').strip().lower()
         if raw_role == 'admin':
@@ -281,22 +314,26 @@ class UserManagementView(QWidget):
             role_value = 'Admin'
 
         new_row = {
-            'ID': new_id,
+            'Email': safe_email,
             'Usuario': username,
             'Nombre': display_name,
             'Género': 'No especificado',
             'Edad': pd.NA,
+            'Fecha Nacimiento': '',
             'Rol': role_value,
             'Estado': 'Activo',
             'Contraseña': "********" if self._current_user.password_hash else "",
+            '_id_internal': getattr(self._current_user, "external_id", None)
+                             or getattr(self._current_user, "id", None)
+                             or username,
         }
         new_df = pd.DataFrame([new_row])[self.user_data.columns]
         self.user_data = pd.concat([self.user_data, new_df], ignore_index=True)
 
         if hasattr(self, '_filtered_user_ids'):
-            self._filtered_user_ids.add(new_id)
+            self._filtered_user_ids.add(safe_email)
 
-        return new_id
+        return safe_email
 
     def set_current_user(self, user: Optional[UserRecord]) -> None:
         self._current_user = user
@@ -308,6 +345,7 @@ class UserManagementView(QWidget):
             self.user_data.columns,
             roles=self.role_data['Rol'].tolist(),
             gender_options=['Masculino', 'Femenino', 'No binario'],
+            show_birthdate=True,
             require_password=True,
         )
         if dialog.exec_() == QDialog.Accepted:
@@ -322,6 +360,9 @@ class UserManagementView(QWidget):
                     password=password_plain,
                     full_name=new_user_data.get('Nombre'),
                     role=new_user_data.get('Rol', 'Usuario'),
+                    email=new_user_data.get('Email'),
+                    gender=new_user_data.get('Género'),
+                    birthdate=new_user_data.get('Fecha Nacimiento'),
                 )
             except ApiClientError as exc:
                 QMessageBox.critical(self, "Error al crear usuario", str(exc))
@@ -346,6 +387,7 @@ class UserManagementView(QWidget):
             current_data,
             self.role_data['Rol'].tolist(),
             ['Masculino', 'Femenino', 'No binario'],
+            show_birthdate=True,
         )
 
         if dialog.exec_() != QDialog.Accepted:
@@ -373,17 +415,58 @@ class UserManagementView(QWidget):
         if reply != QMessageBox.Yes:
             return
 
+        # Preparar payload solo con cambios reales para evitar llamadas vacías
+        def clean(value):
+            if isinstance(value, str):
+                value = value.strip()
+                return value if value != "" else None
+            return value
+
+        payload_kwargs = {}
+        new_username = clean(modified_data.get('Usuario'))
+        new_full_name = clean(modified_data.get('Nombre'))
+        new_role = clean(modified_data.get('Rol'))
+        new_status = clean(modified_data.get('Estado'))
+        new_email = clean(modified_data.get('Email'))
+        new_gender = clean(modified_data.get('Género'))
+        new_birthdate = clean(modified_data.get('Fecha Nacimiento'))
+
+        if new_username and new_username != current_data.get('Usuario'):
+            payload_kwargs["username"] = new_username
+        if new_full_name and new_full_name != current_data.get('Nombre'):
+            payload_kwargs["full_name"] = new_full_name
+        if new_role and new_role != current_data.get('Rol'):
+            payload_kwargs["role"] = new_role
+        if new_status and new_status != current_data.get('Estado'):
+            payload_kwargs["status"] = new_status
+        if new_email and new_email != current_data.get('Email'):
+            payload_kwargs["email"] = new_email
+        if new_gender and new_gender != current_data.get('Género'):
+            payload_kwargs["gender"] = new_gender
+        if new_birthdate and new_birthdate != current_data.get('Fecha Nacimiento'):
+            payload_kwargs["birthdate"] = new_birthdate
+
+        if password_plain:
+            payload_kwargs["password"] = password_plain
+
+        if not payload_kwargs:
+            QMessageBox.information(
+                self,
+                "Sin cambios",
+                "No se enviaron modificaciones porque los valores están vacíos o son iguales a los actuales."
+            )
+            return
+
         try:
             self._user_service.update_user(
-                int(current_data['ID']),
-                username=modified_data.get('Usuario'),
-                full_name=modified_data.get('Nombre'),
-                role=modified_data.get('Rol'),
-                status=modified_data.get('Estado'),
-                password=password_plain or None,
+                str(current_data.get('_id_internal') or current_data.get('Email') or current_data.get('Usuario')),
+                **payload_kwargs,
             )
         except ApiClientError as exc:
-            QMessageBox.critical(self, "Error al modificar", str(exc))
+            reason = str(exc)
+            if getattr(exc, "status_code", None):
+                reason = f"[HTTP {exc.status_code}] {reason}"
+            QMessageBox.critical(self, "Error al modificar", reason)
             return
 
         QMessageBox.information(self, "Éxito", "Usuario modificado correctamente.")
@@ -407,9 +490,10 @@ class UserManagementView(QWidget):
 
         if reply == QMessageBox.Yes:
             row_index_in_filtered_df = selected_index.row()
-            user_id_to_delete = self.table_model._data.iloc[row_index_in_filtered_df]['ID']
+            row_data = self.table_model._data.iloc[row_index_in_filtered_df]
+            user_id_to_delete = str(row_data.get('_id_internal') or row_data.get('Email') or row_data.get('Usuario'))
             try:
-                self._user_service.delete_user(int(user_id_to_delete))
+                self._user_service.delete_user(user_id_to_delete)
             except ApiClientError as exc:
                 QMessageBox.critical(self, "Error al eliminar", str(exc))
                 return
@@ -477,12 +561,13 @@ class UserManagementView(QWidget):
         selected_user_item = self.user_list.currentItem()
         selected_role = self.role_combo_assign.currentText()
         if selected_user_item:
-            user_name = selected_user_item.text()
-            row = self.user_data[self.user_data['Nombre'] == user_name]
-            if row.empty or 'ID' not in row.columns:
+            user_email = selected_user_item.data(Qt.UserRole)
+            row = self.user_data[self.user_data['Email'] == user_email]
+            if row.empty:
                 QMessageBox.warning(self, "Advertencia", "No se pudo determinar el usuario seleccionado.")
                 return
-            user_id = int(row.iloc[0]['ID'])
+            user_id = str(row.iloc[0].get('_id_internal') or row.iloc[0]['Email'])
+            user_name = row.iloc[0]['Nombre']
             try:
                 self._user_service.update_user(user_id, role=selected_role)
             except ApiClientError as exc:
@@ -526,7 +611,7 @@ class UserManagementView(QWidget):
         search_layout = QHBoxLayout()
         search_layout.addWidget(QLabel("Buscar:"))
         self.user_filter_search = QLineEdit()
-        self.user_filter_search.setPlaceholderText("Nombre o ID...")
+        self.user_filter_search.setPlaceholderText("Nombre o Email...")
         self.user_filter_search.textChanged.connect(self._filter_user_list_widget)
         search_layout.addWidget(self.user_filter_search)
         filter_layout.addLayout(search_layout)
@@ -607,7 +692,7 @@ class UserManagementView(QWidget):
         if not hasattr(self, 'user_filter_list'):
             return
         current_search = self.user_filter_search.text() if hasattr(self, 'user_filter_search') else ""
-        selected_ids: Set[int] = set()
+        selected_ids: Set[str] = set()
         if self.user_filter_list.count():
             for index in range(self.user_filter_list.count()):
                 item = self.user_filter_list.item(index)
@@ -617,14 +702,16 @@ class UserManagementView(QWidget):
         self.user_filter_list.blockSignals(True)
         self.user_filter_list.clear()
 
-        for _, row in self.user_data[['ID', 'Nombre']].sort_values('Nombre').iterrows():
-            display = f"{row['Nombre']} (ID {row['ID']})"
+        for _, row in self.user_data[['Email', 'Nombre', 'Usuario']].sort_values('Nombre').iterrows():
+            email_value = row['Email'] if pd.notna(row['Email']) else row.get('Usuario', '')
+            email_str = str(email_value)
+            display = f"{row['Nombre']} ({email_str})"
             item = QListWidgetItem(display)
-            item.setData(Qt.UserRole, int(row['ID']))
+            item.setData(Qt.UserRole, email_str)
             if selected_ids:
-                item.setSelected(row['ID'] in selected_ids)
+                item.setSelected(email_str in selected_ids)
             else:
-                should_select = bool(getattr(self, '_filtered_user_ids', set(self.user_data['ID'])))
+                should_select = bool(getattr(self, '_filtered_user_ids', set(self.user_data['Email'])))
                 item.setSelected(should_select)
             self.user_filter_list.addItem(item)
 
@@ -697,9 +784,9 @@ class UserManagementView(QWidget):
             ax.axis('off')
             ax.text(0.5, 0.5, "Sin datos para mostrar", ha='center', va='center', fontsize=12)
         else:
-            merged = data.merge(self.user_data[['ID', 'Nombre']], left_on='user_id', right_on='ID', how='left')
+            merged = data.merge(self.user_data[['Email', 'Nombre']], left_on='user_id', right_on='Email', how='left')
             merged['Etiqueta'] = merged['Nombre'].fillna(merged['user_id'].astype(str))
-            sns.barplot(x='Etiqueta', y='login_count', data=merged, ax=ax, palette='viridis')
+            sns.barplot(x='Etiqueta', y='login_count', hue='Etiqueta', data=merged, ax=ax, palette='viridis', legend=False)
             ax.set_title("Frecuencia de Inicio de Sesión")
             ax.set_xlabel("Usuario")
             ax.set_ylabel("Inicios de sesión")
@@ -716,9 +803,9 @@ class UserManagementView(QWidget):
             ax.axis('off')
             ax.text(0.5, 0.5, "Sin datos para mostrar", ha='center', va='center', fontsize=12)
         else:
-            merged = data.merge(self.user_data[['ID', 'Nombre']], left_on='user_id', right_on='ID', how='left')
+            merged = data.merge(self.user_data[['Email', 'Nombre']], left_on='user_id', right_on='Email', how='left')
             merged['Etiqueta'] = merged['Nombre'].fillna(merged['user_id'].astype(str))
-            sns.barplot(x='Etiqueta', y='chatbot_sessions', data=merged, ax=ax, palette='plasma')
+            sns.barplot(x='Etiqueta', y='chatbot_sessions', hue='Etiqueta', data=merged, ax=ax, palette='plasma', legend=False)
             ax.set_title("Uso del Chatbot por Usuario")
             ax.set_xlabel("Usuario")
             ax.set_ylabel("Sesiones con chatbot")
@@ -734,7 +821,7 @@ class UserManagementView(QWidget):
             ax.axis('off')
             ax.text(0.5, 0.5, "Sin usuarios seleccionados", ha='center', va='center', fontsize=12)
         else:
-            filtered_users = self.user_data[self.user_data['ID'].isin(self._filtered_user_ids)]
+            filtered_users = self.user_data[self.user_data['Email'].isin(self._filtered_user_ids)]
             role_counts = filtered_users['Rol'].value_counts()
             if role_counts.empty:
                 ax.axis('off')
@@ -755,7 +842,7 @@ class UserManagementView(QWidget):
             inactive_users = 0
             avg_logins = 0.0
         else:
-            filtered_users = self.user_data[self.user_data['ID'].isin(self._filtered_user_ids)]
+            filtered_users = self.user_data[self.user_data['Email'].isin(self._filtered_user_ids)]
             total_users = len(filtered_users)
             inactive_users = len(filtered_users[filtered_users['Estado'] == 'Inactivo'])
             avg_logins = self.filtered_activity_data['login_count'].mean() if not self.filtered_activity_data.empty else 0.0
@@ -764,11 +851,11 @@ class UserManagementView(QWidget):
         self.inactive_users_label.setText(f"Usuarios Inactivos: <strong>{inactive_users}</strong>")
         self.avg_logins_label.setText(f"Promedio de Inicios de Sesión: <strong>{avg_logins:.1f}</strong>")
 
-    def _add_activity_record(self, user_id: int) -> None:
+    def _add_activity_record(self, user_id: str) -> None:
         default_row = {'user_id': user_id, 'login_count': 0, 'chatbot_sessions': 0}
         self.activity_data = pd.concat([self.activity_data, pd.DataFrame([default_row])], ignore_index=True)
 
-    def _remove_activity_record(self, user_id: int) -> None:
+    def _remove_activity_record(self, user_id: str) -> None:
         self.activity_data = self.activity_data[self.activity_data['user_id'] != user_id].reset_index(drop=True)
 
 # --- Clases Auxiliares ---
@@ -812,27 +899,35 @@ class UserDialog(QDialog):
         data=None,
         roles=None,
         gender_options=None,
+        show_birthdate: bool = False,
         require_password: bool = False,
     ):
         super().__init__()
         self.setWindowTitle(title)
-        base_data = data.copy() if data else {h: '' for h in headers if h not in {'ID', 'Estado'}}
+        base_data = data.copy() if data else {h: '' for h in headers if h not in {'Estado'}}
         if 'Contraseña' in base_data:
             base_data['Contraseña'] = ''
         self.data = base_data
         self.inputs = {}
         self._password_input: Optional[QLineEdit] = None
         self._require_password = require_password
+        self._show_birthdate = show_birthdate
 
         if not data:
-            self.data['Rol'] = roles[0] if roles else ''
+            default_role = 'Member' if roles and 'Member' in roles else (roles[0] if roles else '')
+            self.data['Rol'] = default_role
             self.data['Género'] = gender_options[0] if gender_options else ''
             self.data['Estado'] = 'Activo'
+            self.data['Fecha Nacimiento'] = ''
 
         form_layout = QFormLayout()
 
         for header in headers:
-            if header == 'ID':
+            if header in {'ID', '_id_internal'}:
+                continue
+            if header == 'Edad':
+                continue  # La edad se calcula a partir de la fecha de nacimiento
+            if header == 'Fecha Nacimiento' and not self._show_birthdate:
                 continue
 
             label = QLabel(header)
@@ -859,6 +954,16 @@ class UserDialog(QDialog):
                 placeholder = "Contraseña (requerida)" if self._require_password else "Nueva contraseña (opcional)"
                 input_widget.setPlaceholderText(placeholder)
                 self._password_input = input_widget
+            elif header == 'Fecha Nacimiento':
+                input_widget = QDateEdit()
+                input_widget.setCalendarPopup(True)
+                input_widget.setDisplayFormat("yyyy-MM-dd")
+                try:
+                    current_date = QDate.fromString(str(self.data.get(header, '')), "yyyy-MM-dd")
+                    if current_date.isValid():
+                        input_widget.setDate(current_date)
+                except Exception:
+                    pass
 
             self.inputs[header] = input_widget
             form_layout.addRow(label, input_widget)
@@ -890,4 +995,6 @@ class UserDialog(QDialog):
                     data[header] = value
             elif isinstance(input_widget, QComboBox):
                 data[header] = input_widget.currentText()
+            elif isinstance(input_widget, QDateEdit):
+                data[header] = input_widget.date().toString("yyyy-MM-dd")
         return data

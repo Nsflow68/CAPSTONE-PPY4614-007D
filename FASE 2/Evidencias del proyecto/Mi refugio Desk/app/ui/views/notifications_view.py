@@ -16,7 +16,6 @@ from PyQt5.QtWidgets import (
     QGroupBox,
     QLineEdit,
     QStackedWidget,
-    QRadioButton,
     QGridLayout,
     QScrollArea,
     QListWidget,
@@ -26,6 +25,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt
 
 from app.config import get_database_path, DATA_DIR
+    ############################
 from app.services.api_client import ApiClient, ApiClientError
 
 
@@ -40,12 +40,14 @@ class NotificationsView(QWidget):
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
 
-        # Pestañas de submenú (estilo unificado)
+        # --------------------------
+        # SOLO 2 PESTAÑAS
+        # --------------------------
         tabs_layout = QHBoxLayout()
-        self.btn_notifications = QPushButton("Notificaciones")
+
         self.btn_status = QPushButton("Estado y Mantenimiento")
         self.btn_backup = QPushButton("Copias de Seguridad")
-        self._tab_buttons = [self.btn_notifications, self.btn_status, self.btn_backup]
+        self._tab_buttons = [self.btn_status, self.btn_backup]
 
         button_style = """
             QPushButton {
@@ -65,22 +67,19 @@ class NotificationsView(QWidget):
             btn.setCheckable(True)
             btn.setAutoExclusive(True)
 
-        tabs_layout.addWidget(self.btn_notifications)
         tabs_layout.addWidget(self.btn_status)
         tabs_layout.addWidget(self.btn_backup)
         tabs_layout.addStretch()
         main_layout.addLayout(tabs_layout)
 
-        # Contenedor de paneles dinámicos
+        # Contenedor dinámico de vistas
         self.stacked_widget = QStackedWidget()
         main_layout.addWidget(self.stacked_widget)
 
-        # Vistas internas
-        self.notifications_view = self.create_notifications_view()
+        # --- SOLO 2 VISTAS ---
         self.status_view = self.create_status_view()
         self.backup_view = self.create_backup_view()
 
-        self.stacked_widget.addWidget(self.notifications_view)
         self.stacked_widget.addWidget(self.status_view)
         self.stacked_widget.addWidget(self.backup_view)
 
@@ -90,69 +89,14 @@ class NotificationsView(QWidget):
         self._select_tab(0)
 
     # ----------------------------------------------------------------------
-    # --- Panel 1: Notificaciones (Mejorado) ---
-    # ----------------------------------------------------------------------
-    def create_notifications_view(self):
-        view = QWidget()
-        layout = QHBoxLayout(view)
-        layout.setContentsMargins(10, 10, 10, 10)
-        
-        # --- Columna Izquierda: Creación de Mensajes ---
-        editor_group = QGroupBox("Redacción de Notificación Push")
-        editor_layout = QVBoxLayout(editor_group)
-        
-        editor_layout.addWidget(QLabel("<strong>Tipo de Mensaje:</strong>"))
-        self.msg_type_combo = QRadioButton("Alerta Urgente")
-        self.msg_type_combo.setChecked(True)
-        editor_layout.addWidget(self.msg_type_combo)
-
-        editor_layout.addWidget(QLabel("<strong>Título (Máx. 50 Caracteres):</strong>"))
-        title_input = QLineEdit()
-        title_input.setPlaceholderText("Ej: ¡Nueva Actualización Disponible!")
-        editor_layout.addWidget(title_input)
-        
-        editor_layout.addWidget(QLabel("<strong>Mensaje Detallado:</strong>"))
-        message_input = QTextEdit()
-        message_input.setPlaceholderText("Escribe el contenido completo del mensaje aquí...")
-        message_input.setMinimumHeight(150)
-        editor_layout.addWidget(message_input)
-        
-        layout.addWidget(editor_group, 2) # Ocupa 2/3 del espacio
-        
-        # --- Columna Derecha: Opciones de Envío y Segmentación ---
-        target_group = QGroupBox("Opciones de Envío")
-        target_layout = QVBoxLayout(target_group)
-        
-        target_layout.addWidget(QLabel("<strong>Segmentación de Destino:</strong>"))
-        self.target_all = QRadioButton("Todos los Usuarios (Default)")
-        self.target_admin = QRadioButton("Solo Administradores")
-        self.target_specific = QRadioButton("Usuarios con Rol 'Moderador'")
-        
-        self.target_all.setChecked(True)
-        
-        target_layout.addWidget(self.target_all)
-        target_layout.addWidget(self.target_admin)
-        target_layout.addWidget(self.target_specific)
-        
-        target_layout.addStretch()
-        
-        send_button = QPushButton("🚀 Enviar Notificación Ahora")
-        send_button.setStyleSheet("background-color: #A28FC9; color: white; padding: 10px;")
-        target_layout.addWidget(send_button)
-        
-        layout.addWidget(target_group, 1) # Ocupa 1/3 del espacio
-        
-        return view
-
-    # ----------------------------------------------------------------------
-    # --- Panel 2: Estado y Mantenimiento (Mejorado) ---
+    # --- Panel 1: Estado y Mantenimiento ---
     # ----------------------------------------------------------------------
     def create_status_view(self):
         view = QWidget()
         layout = QVBoxLayout(view)
         layout.setContentsMargins(10, 10, 10, 10)
         
-        # --- Panel de Métricas (GridLayout) ---
+        # --- Panel de Métricas ---
         metrics_group = QGroupBox("Panel de Métricas del Sistema")
         metrics_layout = QGridLayout(metrics_group)
         metrics_layout.setVerticalSpacing(10)
@@ -178,17 +122,16 @@ class NotificationsView(QWidget):
 
         layout.addWidget(metrics_group)
 
-        # --- Panel de Tareas de Mantenimiento ---
+        # --- Panel de Mantenimiento ---
         maint_group = QGroupBox("Tareas de Mantenimiento")
         maint_layout = QVBoxLayout(maint_group)
-        maint_layout.setSpacing(10)
 
         self.maint_checkbox = QCheckBox("Modo mantenimiento activo")
         self.maint_checkbox.stateChanged.connect(self._toggle_maintenance)
 
         plan_btn = QPushButton("Programar mantenimiento")
         plan_btn.setStyleSheet("padding: 6px 10px;")
-        plan_btn.clicked.connect(lambda: self._append_log("Mantenimiento programado para esta noche."))
+        plan_btn.clicked.connect(lambda: self._append_log("Mantenimiento programado."))
 
         optimize_btn = QPushButton("Optimizar base de datos")
         optimize_btn.setStyleSheet("padding: 6px 10px;")
@@ -198,7 +141,7 @@ class NotificationsView(QWidget):
         maint_layout.addWidget(plan_btn)
         maint_layout.addWidget(optimize_btn)
 
-        # Log de operaciones
+        # Log
         self.maint_log = QTextEdit()
         self.maint_log.setReadOnly(True)
         self.maint_log.setMinimumHeight(120)
@@ -212,19 +155,18 @@ class NotificationsView(QWidget):
         return view
 
     # ----------------------------------------------------------------------
-    # --- Panel 3: Copias de Seguridad (Mejorado) ---
+    # --- Panel 2: Copias de Seguridad ---
     # ----------------------------------------------------------------------
     def create_backup_view(self):
         view = QWidget()
         layout = QVBoxLayout(view)
         layout.setContentsMargins(10, 10, 10, 10)
         
-        # --- Panel de Acciones Manuales ---
-        manual_group = QGroupBox("Ejecución Manual de Copia de Seguridad")
+        manual_group = QGroupBox("Ejecución Manual de Copias de Seguridad")
         manual_layout = QVBoxLayout(manual_group)
         
-        manual_layout.addWidget(QLabel("Presione para generar una copia de seguridad inmediata de la Base de Datos y Archivos del Sistema."))
-        
+        manual_layout.addWidget(QLabel("Genera una copia de seguridad inmediata."))
+
         backup_button = QPushButton("Realizar Copia de Seguridad Ahora 💾")
         backup_button.setStyleSheet("background-color: #5cb85c; color: white; padding: 12px;")
         backup_button.clicked.connect(self._create_backup)
@@ -232,72 +174,70 @@ class NotificationsView(QWidget):
         manual_layout.addWidget(backup_button)
         layout.addWidget(manual_group)
 
-        # --- Panel de Restauración ---
         restore_group = QGroupBox("Restauración del Sistema")
         restore_layout = QVBoxLayout(restore_group)
         
-        restore_layout.addWidget(QLabel("<strong>Seleccionar Copia de Seguridad:</strong>"))
-        
-        # Simulación de un listado de backups
+        restore_layout.addWidget(QLabel("<strong>Seleccionar copia de seguridad:</strong>"))
+
         self.backup_list = QListWidget()
         self.backup_list.setMaximumHeight(150)
         restore_layout.addWidget(self.backup_list)
 
-        restore_layout.addWidget(QLabel("⚠️ <span style='color: red;'>¡ADVERTENCIA! La restauración sobrescribirá los datos actuales.</span>"))
+        restore_layout.addWidget(
+            QLabel("⚠️ <span style='color: red;'>Restaurar sobrescribirá los datos actuales.</span>")
+        )
 
-        restore_button = QPushButton("Restaurar desde Copia de Seguridad ↩️")
+        restore_button = QPushButton("Restaurar desde copia ↩️")
         restore_button.setStyleSheet("background-color: #d9534f; color: white; padding: 12px;")
         restore_button.clicked.connect(self._restore_backup)
 
         restore_layout.addWidget(restore_button)
         layout.addWidget(restore_group)
-        
+
         layout.addStretch()
         self._reload_backups()
         return view
 
     # ------------------------------------------------------------------ #
-    # Tabs helpers
+    # Tabs
     # ------------------------------------------------------------------ #
     def _select_tab(self, index: int) -> None:
         self.stacked_widget.setCurrentIndex(index)
-        for i, button in enumerate(self._tab_buttons):
-            button.blockSignals(True)
-            button.setChecked(i == index)
-            button.blockSignals(False)
+        for i, btn in enumerate(self._tab_buttons):
+            btn.blockSignals(True)
+            btn.setChecked(i == index)
+            btn.blockSignals(False)
 
     # ------------------------------------------------------------------ #
-    # Estado y mantenimiento
+    # Estado / mantenimiento
     # ------------------------------------------------------------------ #
     def _refresh_status(self) -> None:
         try:
             response = self._client.get("/health")
             db_time = response.data.get("db_time", "—")
-            self.lbl_server_status.setText("<span style='color: green; font-weight: bold;'>🟢 OK</span>")
-            self.lbl_db_perf.setText(f"DB OK (hora: {db_time})")
+            self.lbl_server_status.setText("<span style='color: green;'>🟢 OK</span>")
+            self.lbl_db_perf.setText(f"DB OK ({db_time})")
         except ApiClientError:
-            self.lbl_server_status.setText("<span style='color: red; font-weight: bold;'>🔴 CAÍDO</span>")
+            self.lbl_server_status.setText("<span style='color: red;'>🔴 CAÍDO</span>")
             self.lbl_db_perf.setText("DB sin respuesta")
 
-        # Valores simulados locales
         self.lbl_storage.setText("50% (500 GB / 1 TB)")
         self.lbl_users.setText("1.250")
 
     def _toggle_maintenance(self) -> None:
-        self._maintenance_active = self.maint_checkbox.isChecked()
-        state = "activado" if self._maintenance_active else "desactivado"
+        state = "activado" if self.maint_checkbox.isChecked() else "desactivado"
         self._append_log(f"Modo mantenimiento {state}.")
 
     def _run_optimization(self) -> None:
-        self._append_log("Optimización de base de datos iniciada...")
-        self._append_log("Optimización completada sin errores.")
+        self._append_log("Optimizando base de datos...")
+        self._append_log("Optimización completa.")
 
-    def _append_log(self, message: str) -> None:
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.maint_log.append(f"[{timestamp}] {message}")
+    def _append_log(self, msg: str) -> None:
+        ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.maint_log.append(f"[{ts}] {msg}")
 
     # ------------------------------------------------------------------ #
-    # Backups
+    # Copias de seguridad
     # ------------------------------------------------------------------ #
     def _create_backup(self) -> None:
         db_path = get_database_path()
@@ -313,9 +253,10 @@ class NotificationsView(QWidget):
                     for child in DATA_DIR.rglob("*"):
                         if child.is_file() and child.name != backup_name:
                             zipf.write(child, arcname=child.relative_to(DATA_DIR.parent))
-            QMessageBox.information(self, "Copia de seguridad", f"Copia creada:\n{backup_path}")
+
+            QMessageBox.information(self, "Copia creada", f"{backup_path}")
             self._reload_backups()
-        except Exception as exc:  # pragma: no cover - visual only
+        except Exception as exc:
             QMessageBox.critical(self, "Error", f"No se pudo crear la copia:\n{exc}")
 
     def _reload_backups(self) -> None:
@@ -331,34 +272,35 @@ class NotificationsView(QWidget):
     def _restore_backup(self) -> None:
         selected = self.backup_list.currentItem()
         if not selected:
-            QMessageBox.warning(self, "Restauración", "Seleccione una copia de seguridad.")
+            QMessageBox.warning(self, "Restauración", "Seleccione un backup.")
             return
+
         backup_path: Path = selected.data(Qt.UserRole)
         confirm = QMessageBox.question(
             self,
             "Confirmar restauración",
-            f"Restaurar sobrescribirá datos actuales.\n¿Restaurar {backup_path.name}?",
+            f"¿Restaurar {backup_path.name}?",
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
         )
         if confirm != QMessageBox.Yes:
             return
+
         try:
             with ZipFile(backup_path, "r") as zipf:
                 zipf.extractall(DATA_DIR.parent)
-            QMessageBox.information(self, "Restauración", "Restauración completada. Reinicie la app.")
-        except Exception as exc:  # pragma: no cover - visual only
+            QMessageBox.information(self, "Restaurado", "Restauración completa. Reinicie la app.")
+        except Exception as exc:
             QMessageBox.critical(self, "Error", f"No se pudo restaurar:\n{exc}")
 
 
-# Bloque de ejecución de prueba (opcional, para ejecutar el archivo solo)
-if __name__ == "__main__":  # pragma: no cover - manual test helper
+if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication
     import sys
 
     app = QApplication(sys.argv)
     window = NotificationsView()
-    window.setWindowTitle("Sistema de Operaciones y Mantenimiento")
+    window.setWindowTitle("Mantenimiento y Copias de Seguridad")
     window.resize(800, 600)
     window.show()
     sys.exit(app.exec_())

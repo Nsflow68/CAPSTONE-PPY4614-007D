@@ -8,7 +8,8 @@ import pandas as pd
 from app.models.user import UserRecord
 from app.services.api_client import ApiClient
 
-USER_COLUMNS = ["ID", "Usuario", "Nombre", "Género", "Edad", "Rol", "Estado", "Contraseña"]
+USER_COLUMNS = ["Email", "Usuario", "Nombre", "Género", "Edad", "Rol", "Estado", "Contraseña", "Fecha Nacimiento"]
+
 
 
 class UserService:
@@ -28,12 +29,16 @@ class UserService:
     def list_users_dataframe(self) -> pd.DataFrame:
         return self._to_dataframe(self.list_users())
 
-    def create_user(self, *, username: str, password: str, full_name: Optional[str], role: str) -> UserRecord:
+    def create_user(self, *, username: str, password: str, full_name: Optional[str], role: str, email: Optional[str] = None, gender: Optional[str] = None, birthdate: Optional[str] = None) -> UserRecord:
         payload = {
             "username": username,
             "password": password,
             "full_name": full_name,
             "role": self._normalise_role(role),
+            "email": email,
+            "gender": gender,
+            "birthday": birthdate,
+            "birthdate": birthdate,
         }
         response = self._client.post("/users", payload)
         data = response.data
@@ -43,33 +48,57 @@ class UserService:
 
     def update_user(
         self,
-        user_id: int,
+        user_id: str,
         *,
         username: Optional[str] = None,
         full_name: Optional[str] = None,
         role: Optional[str] = None,
         password: Optional[str] = None,
         status: Optional[str] = None,
+        email: Optional[str] = None,
+        gender: Optional[str] = None,
+        birthdate: Optional[str] = None,
     ) -> UserRecord:
+        # No enviar password si viene vacío (no se actualiza)
+        password_to_send = password.strip() if isinstance(password, str) else password
+        if password_to_send == "":
+            password_to_send = None
+
         payload = {k: v for k, v in {
             "username": username,
             "full_name": full_name,
             "role": self._normalise_role(role) if role else None,
-            "password": password,
+            "password": password_to_send,
             "status": status,
+            "email": email,
+            "gender": gender,
+            "birthday": birthdate,
+            "birthdate": birthdate,
         }.items() if v is not None}
         response = self._client.put(f"/users/{user_id}", payload)
         data = response.data
         if isinstance(data, Mapping):
             return self._to_record(data)
-        return UserRecord(id=user_id, username=username or "", full_name=full_name, role=role or "user")
+        return UserRecord(id=user_id, external_id=user_id, username=username or "", full_name=full_name, role=role or "user")
 
-    def delete_user(self, user_id: int) -> None:
+    def delete_user(self, user_id: str) -> None:
         self._client.delete(f"/users/{user_id}")
 
     # ------------------------------------------------------------------ #
     # Helpers
     # ------------------------------------------------------------------ #
+    @staticmethod
+    def _format_date(value: Optional[str]) -> str:
+        if not value:
+            return ""
+        try:
+            dt = pd.to_datetime(value, errors="coerce")
+            if pd.isna(dt):
+                return str(value)
+            return dt.strftime("%d/%m/%Y")
+        except Exception:
+            return str(value)
+
     @staticmethod
     def _to_record(item: Mapping[str, object]) -> UserRecord:
         # Mapear roles provenientes de flags booleans (Django)
@@ -83,13 +112,18 @@ class UserService:
         if "is_active" in item:
             status_value = "Activo" if item.get("is_active") else "Inactivo"
 
+        external_id = item.get("external_id") or item.get("id")
+
         return UserRecord(
-            id=item.get("id"),
+            id=external_id,
+            external_id=external_id,
             username=item.get("username") or item.get("email") or "",
             full_name=item.get("full_name") or item.get("name"),
+            email=item.get("email"),
             role=role_value or "user",
             password_hash=item.get("password_hash") or item.get("password"),
             gender=item.get("gender"),
+            birthdate=item.get("birthday") or item.get("birthdate"),
             age=item.get("age"),
             status=status_value,
         )
@@ -97,20 +131,37 @@ class UserService:
     @staticmethod
     def _to_dataframe(users: List[UserRecord]) -> pd.DataFrame:
         records = []
-        for user in users:
+        for idx, user in enumerate(users, start=1):
+            email = user.email or ""
+            age_value = user.age
+            birthdate_val = getattr(user, "birthdate", None) if hasattr(user, "birthdate") else None
+            if (age_value is None or age_value == "") and birthdate_val:
+                try:
+                    age_value = pd.to_datetime("today").year - pd.to_datetime(birthdate_val).year
+                except Exception:
+                    age_value = ""
+            formatted_birthdate = UserService._format_date(birthdate_val)
+            password_display = "Contraseña hasheada" if user.password_hash else ""
+            internal_id = getattr(user, "external_id", None) or getattr(user, "id", None) or str(idx)
             records.append(
                 {
-                    "ID": user.id,
+                    "Email": email,
                     "Usuario": user.username,
                     "Nombre": user.full_name or user.username,
                     "Género": user.gender or "No especificado",
-                    "Edad": user.age or "",
+                    "Edad": age_value or "",
                     "Rol": UserService._format_role(user.role),
                     "Estado": user.status or "Activo",
-                    "Contraseña": "********" if user.password_hash else "",
+                    "Contraseña": password_display,
+                    "Fecha Nacimiento": formatted_birthdate,
+                    "_id_internal": str(internal_id),  # ID oculto (uuid o fallback)
                 }
             )
-        return pd.DataFrame.from_records(records, columns=USER_COLUMNS)
+        df = pd.DataFrame.from_records(records)
+        if "Email" not in df:
+            df.insert(0, "Email", "")
+        return df
+
 
     @staticmethod
     def _format_role(role: Optional[str]) -> str:
@@ -130,4 +181,6 @@ class UserService:
             return "admin"
         if raw in {"staff", "moderador", "moderator"}:
             return "staff"
+        if raw in {"member", "miembro"}:
+            return "member"
         return "user"

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -12,10 +13,17 @@ from PyQt5.QtWidgets import (
     QGridLayout,
     QGroupBox,
     QHBoxLayout,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
+    QLineEdit,
     QLabel,
+    QPlainTextEdit,
     QPushButton,
     QScrollArea,
     QStackedWidget,
+    QTableWidget,
+    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
@@ -23,7 +31,10 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from wordcloud import WordCloud
 
-from app.config import DATA_DIR
+from app.services.api_client import ApiClientError
+from app.services.diary_service import DiaryService
+from app.services.risk_service import RiskDetector
+from app.database.repositories.risk_repository import RiskRepository
 
 # Se necesita esta línea si el DataFrame tiene variables no numéricas para el gráfico de correlación
 pd.options.mode.chained_assignment = None  # default='warn'
@@ -35,23 +46,34 @@ class InsightsView(QWidget):
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         
-        # --- Carga de Datos ---
-        data_path = DATA_DIR / "emotion_data.csv"
-        if not data_path.exists():
+        # --- Carga de Datos desde API ---
+        self.diary_service = DiaryService()
+        self.risk_repo = RiskRepository()
+        self.risk_detector = RiskDetector(self.risk_repo)
+        try:
+            self.df = self.diary_service.list_entries()
+        except ApiClientError as exc:
             main_layout.addWidget(
-                QLabel("Error: Archivo 'emotion_data.csv' no encontrado.", alignment=Qt.AlignCenter)
+                QLabel(f"Error al cargar datos del diario: {exc}", alignment=Qt.AlignCenter)
             )
             self.df = None
             return
 
-        self.df = pd.read_csv(data_path)
-        self.df["timestamp"] = pd.to_datetime(self.df["timestamp"])
+        if self.df is None or self.df.empty:
+            main_layout.addWidget(
+                QLabel("No hay datos de diario disponibles.", alignment=Qt.AlignCenter)
+            )
+            return
+
+        # Normalización de campos esperados por los gráficos
+        self._normalize_dataframe()
+        self._run_risk_detection()
 
         # Pestañas de submenú (con el nuevo apartado)
         tabs_layout = QHBoxLayout()
         self.btn_emocional = QPushButton("Análisis Emocional")
         self.btn_temporal = QPushButton("Análisis Temporal") # NUEVA PESTAÑA
-        self.btn_palabras = QPushButton("Palabras Clave")
+        self.btn_riesgo = QPushButton("Alertas de Riesgo")
         self.btn_correlacion = QPushButton("Correlación de Datos")
         
         # Estilo de los botones de submenú
@@ -70,17 +92,17 @@ class InsightsView(QWidget):
         """
         self.btn_emocional.setStyleSheet(button_style)
         self.btn_temporal.setStyleSheet(button_style)
-        self.btn_palabras.setStyleSheet(button_style)
+        self.btn_riesgo.setStyleSheet(button_style)
         self.btn_correlacion.setStyleSheet(button_style)
         
         self.btn_emocional.setCheckable(True)
         self.btn_temporal.setCheckable(True)
-        self.btn_palabras.setCheckable(True)
+        self.btn_riesgo.setCheckable(True)
         self.btn_correlacion.setCheckable(True)
 
         tabs_layout.addWidget(self.btn_emocional)
         tabs_layout.addWidget(self.btn_temporal)
-        tabs_layout.addWidget(self.btn_palabras)
+        tabs_layout.addWidget(self.btn_riesgo)
         tabs_layout.addWidget(self.btn_correlacion)
         tabs_layout.addStretch()
         
@@ -93,16 +115,86 @@ class InsightsView(QWidget):
         # Vistas internas
         self.stacked_widget.addWidget(self.create_emocional_view())
         self.stacked_widget.addWidget(self.create_temporal_view()) # NUEVA VISTA
-        self.stacked_widget.addWidget(self.create_palabras_clave_view())
+        self.stacked_widget.addWidget(self.create_risk_alerts_view())
         self.stacked_widget.addWidget(self.create_correlacion_view())
         
         # Conectar botones a las vistas internas
         self.btn_emocional.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(0))
         self.btn_temporal.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(1))
-        self.btn_palabras.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(2))
+        self.btn_riesgo.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(2))
         self.btn_correlacion.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(3))
         
         self.btn_emocional.setChecked(True)
+
+    def _extract_emotion(self, row):
+        emotions = row.get("emotions")
+        if isinstance(emotions, (list, tuple)) and emotions:
+            return emotions[0]
+
+        mood = row.get("mood")
+        if isinstance(mood, str) and mood.strip():
+            return mood
+
+        mood_text = row.get("moodText")
+        if isinstance(mood_text, str) and mood_text.strip():
+            return mood_text
+
+        return "Sin dato"
+
+    def _normalize_dataframe(self):
+        """Asegura columnas claves y valores por defecto para que los gráficos no fallen."""
+        # Timestamp base
+        self.df["timestamp"] = pd.to_datetime(
+            self.df.get("date").fillna(self.df.get("createdAt")),
+            errors="coerce"
+        )
+        self.df["timestamp"] = self.df["timestamp"].fillna(pd.Timestamp.now())
+
+        # Texto y user_id (email preferente)
+        self.df["text_entry"] = self.df.get("content", "").fillna("").astype(str)
+        self.df["user_id"] = self.df.get("userEmail").fillna(self.df.get("userId")).astype(str)
+
+        # Emoción principal
+        self.df["emotion"] = self.df.apply(self._extract_emotion, axis=1)
+
+        # Género
+        if "gender" in self.df:
+            gender_series = self.df["gender"]
+        else:
+            gender_series = pd.Series(["No especificado"] * len(self.df))
+        self.df["gender"] = gender_series.fillna("No especificado").replace("", "No especificado").astype(str)
+
+        # Edad (usa age directo o calcula desde birthdate/birthDate)
+        age_series = pd.to_numeric(self.df.get("age"), errors="coerce") if "age" in self.df else pd.Series([pd.NA] * len(self.df))
+        birthdate_series = pd.to_datetime(self.df.get("birthdate").fillna(self.df.get("birthDate")), errors="coerce") if ("birthdate" in self.df or "birthDate" in self.df) else pd.Series([pd.NaT] * len(self.df))
+        missing_age_mask = age_series.isna() & birthdate_series.notna()
+        if missing_age_mask.any():
+            computed_age = (pd.Timestamp.now().normalize() - birthdate_series[missing_age_mask]).dt.days // 365
+            age_series.loc[missing_age_mask] = computed_age
+        age_series = age_series.fillna(pd.NA)
+        # Mantener numérico donde existe, pero evitar -1; usar Int64 para permitir nulos
+        self.df["age"] = age_series.astype("Int64")
+
+        # Actividad (score)
+        self.df["activity_level"] = pd.to_numeric(self.df.get("score"), errors="coerce").fillna(0)
+
+        # Tags y emotions siempre como listas
+        if "tags" not in self.df:
+            self.df["tags"] = [[] for _ in range(len(self.df))]
+        else:
+            self.df["tags"] = self.df["tags"].apply(lambda v: v if isinstance(v, (list, tuple)) else [])
+        if "emotions" not in self.df:
+            self.df["emotions"] = [[] for _ in range(len(self.df))]
+        else:
+            self.df["emotions"] = self.df["emotions"].apply(lambda v: v if isinstance(v, (list, tuple)) else [])
+
+    def _run_risk_detection(self):
+        """Analiza todas las entradas con las palabras de riesgo locales."""
+        try:
+            self.alerts_df = self.risk_detector.analyze_entries(self.df)
+        except Exception:
+            self.alerts_df = pd.DataFrame()
+        self.keywords_df = self.risk_detector.get_keywords()
 
     # ----------------------------------------------------------------------
     # --- Panel 1: Análisis Emocional Global (Mejorado) ---
@@ -125,7 +217,8 @@ class InsightsView(QWidget):
         filters_layout.addWidget(QLabel("<strong>Edad:</strong>"))
         self.age_filter = QComboBox()
         self.age_filter.addItem("Todas las edades")
-        self.age_filter.addItems(sorted(self.df['age'].unique().astype(str)))
+        age_values = [str(a) for a in sorted(self.df['age'].dropna().unique())]
+        self.age_filter.addItems(age_values)
         filters_layout.addWidget(self.age_filter)
         
         filters_layout.addStretch(1) # Relleno para que los filtros no se peguen arriba
@@ -210,6 +303,9 @@ class InsightsView(QWidget):
         return view
 
     def update_temporal_charts(self):
+        if self.df is None or self.df.empty:
+            self.charts_layout_temporal.addWidget(QLabel("No hay datos para esta selección.", alignment=Qt.AlignCenter))
+            return
         for i in reversed(range(self.charts_layout_temporal.count())):
             widget = self.charts_layout_temporal.itemAt(i).widget()
             if widget: widget.setParent(None)
@@ -229,61 +325,202 @@ class InsightsView(QWidget):
     # ----------------------------------------------------------------------
     # --- Panel 3: Análisis de Sentimiento y Palabras Clave (Mejorado) ---
     # ----------------------------------------------------------------------
-    def create_palabras_clave_view(self):
+    def create_risk_alerts_view(self):
         view = QWidget()
-        layout = QHBoxLayout(view)
-        
-        # --- Columna Izquierda: Filtros ---
-        filters_group = QGroupBox("Filtro por Emoción")
-        filters_layout = QVBoxLayout(filters_group)
-        filters_group.setMaximumWidth(250)
+        layout = QVBoxLayout(view)
 
-        filters_layout.addWidget(QLabel("<strong>Emoción a Analizar:</strong>"))
-        self.emotion_filter = QComboBox()
-        self.emotion_filter.addItem("Todas las emociones")
-        self.emotion_filter.addItems(self.df['emotion'].unique())
-        filters_layout.addWidget(self.emotion_filter)
-        
-        filters_layout.addStretch(1)
-        layout.addWidget(filters_group)
-        
-        # --- Columna Derecha: Gráficos (Scrollable) ---
-        self.charts_container_palabras = QWidget()
-        self.charts_layout_palabras = QVBoxLayout(self.charts_container_palabras)
-        
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setWidget(self.charts_container_palabras)
-        layout.addWidget(scroll_area)
-        
-        self.emotion_filter.currentIndexChanged.connect(self.update_palabras_clave_charts)
-        
-        self.update_palabras_clave_charts()
+        # Filtros y acciones
+        filters_box = QGroupBox("Filtros y Acciones")
+        filters_layout = QHBoxLayout(filters_box)
+
+        self.level_filter = QComboBox()
+        self.level_filter.addItem("Todos los niveles")
+        self.level_filter.addItems(["Alto", "Medio"])
+        self.level_filter.currentIndexChanged.connect(self._refresh_alerts_table)
+        filters_layout.addWidget(QLabel("Nivel:"))
+        filters_layout.addWidget(self.level_filter)
+
+        self.user_filter = QLineEdit()
+        self.user_filter.setPlaceholderText("Filtrar por usuario/email...")
+        self.user_filter.textChanged.connect(self._refresh_alerts_table)
+        filters_layout.addWidget(QLabel("Usuario/Email:"))
+        filters_layout.addWidget(self.user_filter)
+
+        self.reanalyze_btn = QPushButton("Actualizar análisis")
+        self.reanalyze_btn.clicked.connect(self._on_reanalyze)
+        filters_layout.addWidget(self.reanalyze_btn)
+
+        self.view_text_btn = QPushButton("Ver texto completo")
+        self.view_text_btn.clicked.connect(self._on_view_full_text)
+        filters_layout.addWidget(self.view_text_btn)
+
+        filters_layout.addStretch()
+        layout.addWidget(filters_box)
+
+        # Tabla de alertas
+        self.alerts_table = QTableWidget()
+        self.alerts_table.setColumnCount(6)
+        self.alerts_table.setHorizontalHeaderLabels(["Usuario", "Email", "Palabra Detectada", "Nivel", "Fecha", "Vista previa"])
+        self.alerts_table.setSortingEnabled(True)
+        layout.addWidget(self.alerts_table)
+
+        # Gestión de palabras clave
+        keywords_box = QGroupBox("Palabras clave de riesgo")
+        keywords_layout = QVBoxLayout(keywords_box)
+        self.keywords_table = QTableWidget()
+        self.keywords_table.setColumnCount(2)
+        self.keywords_table.setHorizontalHeaderLabels(["Palabra/Frase", "Nivel"])
+        keywords_layout.addWidget(self.keywords_table)
+
+        buttons_layout = QHBoxLayout()
+        self.add_keyword_btn = QPushButton("Agregar")
+        self.edit_keyword_btn = QPushButton("Editar")
+        self.delete_keyword_btn = QPushButton("Eliminar")
+        self.add_keyword_btn.clicked.connect(self._on_add_keyword)
+        self.edit_keyword_btn.clicked.connect(self._on_edit_keyword)
+        self.delete_keyword_btn.clicked.connect(self._on_delete_keyword)
+        buttons_layout.addWidget(self.add_keyword_btn)
+        buttons_layout.addWidget(self.edit_keyword_btn)
+        buttons_layout.addWidget(self.delete_keyword_btn)
+        buttons_layout.addStretch()
+        keywords_layout.addLayout(buttons_layout)
+
+        layout.addWidget(keywords_box)
+
+        self._refresh_keywords_table()
+        self._refresh_alerts_table()
         return view
 
-    def update_palabras_clave_charts(self):
-        # ... (Lógica de filtrado) ...
-        for i in reversed(range(self.charts_layout_palabras.count())):
-            widget = self.charts_layout_palabras.itemAt(i).widget()
-            if widget: widget.setParent(None)
+    def _filter_alerts_df(self) -> pd.DataFrame:
+        df = self.alerts_df.copy() if hasattr(self, "alerts_df") else pd.DataFrame()
+        if not df.empty:
+            df["email"] = df["email"].fillna("").astype(str)
+            df["usuario"] = df["usuario"].fillna("").astype(str)
+        level = self.level_filter.currentText()
+        if level != "Todos los niveles" and not df.empty:
+            df = df[df["nivel"] == level]
+        user_text = self.user_filter.text().strip().lower()
+        if user_text and not df.empty:
+            df = df[df["email"].str.lower().str.contains(user_text) | df["usuario"].str.lower().str.contains(user_text)]
+        return df
 
-        filtered_df = self.df.copy()
-        selected_emotion = self.emotion_filter.currentText()
-        if selected_emotion != "Todas las emociones":
-            filtered_df = filtered_df[filtered_df['emotion'] == selected_emotion]
-            
-        if filtered_df.empty:
-            self.charts_layout_palabras.addWidget(QLabel("No hay datos para esta selección.", alignment=Qt.AlignCenter))
+    def _refresh_alerts_table(self):
+        df = self._filter_alerts_df()
+        self.alerts_table.setRowCount(0)
+        if df.empty:
             return
-        
-        # Muestra la nube de palabras y el gráfico de barras uno al lado del otro
-        charts_grid = QWidget()
-        grid_layout = QGridLayout(charts_grid)
-        
-        self.add_chart_widget(grid_layout, "Frecuencia de Palabras Clave (Top 10)", self.create_keyword_bar_chart, filtered_df, row=0, col=0)
-        self.add_chart_widget(grid_layout, f"Nube de Palabras para '{selected_emotion}'", self.create_word_cloud, filtered_df, row=0, col=1)
+        self.alerts_table.setRowCount(len(df))
+        for row_idx, (_, row) in enumerate(df.iterrows()):
+            values = [
+                row.get("usuario", ""),
+                row.get("email", ""),
+                row.get("palabra", ""),
+                row.get("nivel", ""),
+                row.get("fecha", ""),
+                row.get("preview", ""),
+            ]
+            for col_idx, value in enumerate(values):
+                item = QTableWidgetItem(str(value))
+                self.alerts_table.setItem(row_idx, col_idx, item)
+        self.alerts_table.resizeColumnsToContents()
 
-        self.charts_layout_palabras.addWidget(charts_grid)
+    def _refresh_keywords_table(self):
+        self.keywords_df = self.risk_detector.get_keywords()
+        df = self.keywords_df
+        self.keywords_table.setRowCount(0)
+        if df.empty:
+            return
+        self.keywords_table.setRowCount(len(df))
+        for row_idx, (_, row) in enumerate(df.iterrows()):
+            self.keywords_table.setItem(row_idx, 0, QTableWidgetItem(str(row["phrase"])))
+            self.keywords_table.setItem(row_idx, 1, QTableWidgetItem(str(row["risk_level"])))
+        self.keywords_table.resizeColumnsToContents()
+
+    def _get_selected_keyword_id(self) -> Optional[int]:
+        selected = self.keywords_table.currentRow()
+        if selected < 0 or self.keywords_df.empty:
+            return None
+        try:
+            return int(self.keywords_df.iloc[selected]["id"])
+        except Exception:
+            return None
+
+    def _show_keyword_dialog(self, title: str, phrase: str = "", level: str = "Medio") -> Optional[tuple]:
+        dialog = QDialog(self)
+        dialog.setWindowTitle(title)
+        form = QFormLayout(dialog)
+        phrase_input = QLineEdit(phrase)
+        level_combo = QComboBox()
+        level_combo.addItems(["Alto", "Medio"])
+        level_combo.setCurrentText(level)
+        form.addRow("Palabra/Frase:", phrase_input)
+        form.addRow("Nivel de Riesgo:", level_combo)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        form.addWidget(buttons)
+        if dialog.exec_() == QDialog.Accepted:
+            return phrase_input.text().strip(), level_combo.currentText()
+        return None
+
+    def _on_add_keyword(self):
+        result = self._show_keyword_dialog("Agregar palabra clave")
+        if not result:
+            return
+        phrase, level = result
+        if self.risk_detector.add_or_update_keyword(phrase, level):
+            self._refresh_keywords_table()
+            self._on_reanalyze()
+
+    def _on_edit_keyword(self):
+        keyword_id = self._get_selected_keyword_id()
+        if keyword_id is None:
+            return
+        row = self.keywords_df[self.keywords_df["id"] == keyword_id].iloc[0]
+        result = self._show_keyword_dialog("Editar palabra clave", phrase=row["phrase"], level=row["risk_level"])
+        if not result:
+            return
+        phrase, level = result
+        if self.risk_detector.add_or_update_keyword(phrase, level, keyword_id=keyword_id):
+            self._refresh_keywords_table()
+            self._on_reanalyze()
+
+    def _on_delete_keyword(self):
+        keyword_id = self._get_selected_keyword_id()
+        if keyword_id is None:
+            return
+        if self.risk_detector.delete_keyword(keyword_id):
+            self._refresh_keywords_table()
+            self._on_reanalyze()
+
+    def _on_reanalyze(self):
+        self.risk_repo.clear_alerts()
+        self._run_risk_detection()
+        self._refresh_alerts_table()
+
+    def _on_view_full_text(self):
+        row_idx = self.alerts_table.currentRow()
+        if row_idx < 0:
+            return
+        df = self._filter_alerts_df()
+        if df.empty or row_idx >= len(df):
+            return
+        row = df.iloc[row_idx]
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Texto completo de la entrada")
+        layout = QVBoxLayout(dialog)
+        layout.addWidget(QLabel(f"Usuario: {row.get('usuario', '')} | Email: {row.get('email', '')}"))
+        text_area = QPlainTextEdit()
+        text_area.setPlainText(row.get("texto", ""))
+        text_area.setReadOnly(True)
+        layout.addWidget(text_area)
+        buttons = QDialogButtonBox(QDialogButtonBox.Close)
+        buttons.rejected.connect(dialog.reject)
+        buttons.accepted.connect(dialog.accept)
+        layout.addWidget(buttons)
+        dialog.resize(600, 400)
+        dialog.exec_()
 
     # ----------------------------------------------------------------------
     # --- Panel 4: Correlación de Datos (Mejorado) ---
@@ -335,6 +572,9 @@ class InsightsView(QWidget):
     
     # --- Lógica de Correlación (Mejorada) ---
     def update_correlation_chart(self):
+        if self.df is None or self.df.empty:
+            self.chart_layout.addWidget(QLabel("No hay datos para correlacionar."))
+            return
         # Limpiar el área del gráfico
         for i in reversed(range(self.chart_layout.count())):
             widget = self.chart_layout.itemAt(i).widget()
@@ -386,17 +626,35 @@ class InsightsView(QWidget):
     def create_bar_plot_view(self, x_var, y_var, df):
         fig = Figure(figsize=(10, 8))
         ax = fig.add_subplot(111)
-        
-        # Para evitar el error de plotear dos categóricas directamente
-        if df[y_var].dtype in ['int64', 'float64']:
-            sns.barplot(x=x_var, y=y_var, data=df, ax=ax)
+        df_clean = df.dropna(subset=[x_var, y_var]).copy()
+
+        from pandas.api.types import is_numeric_dtype
+
+        x_is_num = is_numeric_dtype(df_clean[x_var])
+        y_is_num = is_numeric_dtype(df_clean[y_var])
+
+        if y_is_num and not x_is_num:
+            # Promedio de y por categoría x
+            pivot = df_clean.groupby(x_var)[y_var].mean()
+            pivot.plot(kind='bar', ax=ax, color="#7aa6c2", legend=False)
+            ax.set_ylabel(f'Promedio de {y_var.capitalize()}')
+        elif x_is_num and not y_is_num:
+            # Promedio de x por categoría y
+            pivot = df_clean.groupby(y_var)[x_var].mean()
+            pivot.plot(kind='bar', ax=ax, color="#7aa6c2", legend=False)
+            ax.set_ylabel(f'Promedio de {x_var.capitalize()}')
+            ax.set_xlabel(y_var.capitalize())
+        elif x_is_num and y_is_num:
+            # Ambos numéricos: usar barplot directo
+            sns.barplot(x=x_var, y=y_var, data=df_clean, ax=ax)
             ax.set_ylabel(f'Promedio de {y_var.capitalize()}')
         else:
-            # Gráfico de barras apilado (stacked bar chart) para dos categóricas
-            pivot_table = pd.crosstab(df[x_var], df[y_var])
+            # Ambas categóricas: conteo apilado
+            pivot_table = pd.crosstab(df_clean[x_var], df_clean[y_var])
+            pivot_table = pivot_table.apply(pd.to_numeric, errors="coerce").fillna(0)
             pivot_table.plot(kind='bar', stacked=True, ax=ax, colormap='Spectral')
             ax.set_ylabel('Conteo')
-        
+
         ax.set_title(f'Distribución de {y_var.capitalize()} por {x_var.capitalize()}')
         ax.set_xlabel(x_var.capitalize())
         ax.tick_params(axis='x', rotation=45)

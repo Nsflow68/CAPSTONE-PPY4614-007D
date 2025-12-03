@@ -6,7 +6,17 @@ const router = Router();
 // List all entries
 router.get('/', async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM chatbot_responses ORDER BY keyword');
+        // Confirmar existencia de la tabla antes de consultar
+        const existsResult = await pool.query(`
+            SELECT to_regclass('chatbot_responses') AS regclass
+        `);
+        const regclass = existsResult.rows[0]?.regclass;
+
+        if (!regclass) {
+            return res.json([]);
+        }
+
+        const result = await pool.query(`SELECT * FROM ${regclass} ORDER BY keyword`);
         res.json(result.rows);
     } catch (error) {
         console.error(error);

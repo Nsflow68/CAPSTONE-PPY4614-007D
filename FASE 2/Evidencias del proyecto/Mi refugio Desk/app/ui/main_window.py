@@ -15,7 +15,6 @@ from PyQt5.QtWidgets import (
 )
 
 from app.models.user import UserRecord
-from app.ui.views.content_view import ContentView
 from app.ui.views.donations_view import DonationsView
 from app.ui.views.insights_view import InsightsView
 from app.ui.views.notifications_view import NotificationsView
@@ -99,9 +98,8 @@ class MainWindow(QMainWindow):
         button_texts = (
             "Gestión de Usuarios",
             "Insights y Estadísticas",
-            "Gestión de Contenido y Chatbot",
             "Donaciones",
-            "Notificaciones y Mantenimiento",
+            "Mantenimiento",
             "Exportación de Datos",
         )
         for text in button_texts:
@@ -122,7 +120,6 @@ class MainWindow(QMainWindow):
         self._user_management_view = UserManagementView(current_user=self._current_user)
         self._stack.addWidget(self._user_management_view)
         self._stack.addWidget(InsightsView())
-        self._stack.addWidget(ContentView())
         self._stack.addWidget(DonationsView())
         self._stack.addWidget(NotificationsView())
         self._stack.addWidget(ReportsView())

@@ -5,6 +5,7 @@ import chatbotRoutes from './chatbot';
 import userRoutes from './users';
 import resourceRoutes from './resources';
 import donationRoutes from './donations';
+import diaryRoutes from './diary';
 
 const router = Router();
 
@@ -14,6 +15,7 @@ router.use('/chatbot', chatbotRoutes);
 router.use('/users', userRoutes);
 router.use('/resources', resourceRoutes);
 router.use('/donations', donationRoutes);
+router.use('/diary', diaryRoutes);
 
 router.get('/health', async (req, res) => {
     try {
