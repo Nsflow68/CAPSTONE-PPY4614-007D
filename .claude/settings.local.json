@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir 'C:\\Users\\veloz\\Desktop\\visuales MR\\enviar MR' /s /b)",
+      "Bash(test:*)",
+      "Bash(flutter doctor:*)",
+      "Bash(python clean_docs.py:*)",
+      "Bash(flutter pub get:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(dir:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

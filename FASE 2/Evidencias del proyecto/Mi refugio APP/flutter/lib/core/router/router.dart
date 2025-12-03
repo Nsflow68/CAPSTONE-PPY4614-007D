@@ -18,11 +18,11 @@ import '../../features/diary/presentation/pages/diary_page.dart';
 import '../../features/diary/presentation/pages/diary_entry_form_page.dart';
 import '../../features/chatbot/presentation/pages/chatbot_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
-import '../../features/resources/presentation/pages/resources_page.dart';
 import '../../features/rewards/presentation/pages/rewards_page.dart';
 import '../../features/wellness/presentation/pages/hydration_page.dart';
 import '../../features/wellness/presentation/pages/mindfulness_page.dart';
 import '../../features/wellness/presentation/pages/nutrition_page.dart';
+import '../../features/wellness/presentation/pages/wellness_page.dart';
 
 /// Provider del router principal de la aplicación.
 ///
@@ -73,33 +73,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       StatefulShellRoute.indexedStack(
         builder: (context, state, nav) => MainShell(navigationShell: nav),
         branches: [
-          // INICIO
+          // 1. INICIO
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: '/home',
                 builder: (_, __) => const HomePage(),
                 routes: [
-                  GoRoute(
-                    path: 'mindfulness',
-                    builder: (_, __) => const MindfulnessPage(),
-                  ),
-                  GoRoute(
-                    path: 'nutrition',
-                    builder: (_, __) => const NutritionPage(),
-                  ),
-                  GoRoute(
-                    path: 'hydration',
-                    builder: (_, __) => const HydrationPage(),
-                  ),
-                  GoRoute(
-                    path: 'resources',
-                    builder: (_, __) => const ResourcesPage(),
-                  ),
-                  GoRoute(
-                    path: 'rewards',
-                    builder: (_, __) => const RewardsPage(),
-                  ),
                   GoRoute(
                     path: 'chatbot',
                     builder: (_, __) => const ChatbotPage(),
@@ -109,7 +89,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
 
-          // DIARIO
+          // 2. DIARIO
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -125,17 +105,41 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
 
-          // CHATBOT (tab directo)
+          // 3. BIENESTAR (Wellness)
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/chatbot',
-                builder: (_, __) => const ChatbotPage(),
+                path: '/wellness',
+                builder: (_, __) => const WellnessPage(),
+                routes: [
+                  GoRoute(
+                    path: 'nutrition',
+                    builder: (_, __) => const NutritionPage(),
+                  ),
+                  GoRoute(
+                    path: 'hydration',
+                    builder: (_, __) => const HydrationPage(),
+                  ),
+                  GoRoute(
+                    path: 'mindfulness',
+                    builder: (_, __) => const MindfulnessPage(),
+                  ),
+                ],
               ),
             ],
           ),
 
-          // PERFIL
+          // 4. RECOMPENSAS (Progreso)
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/rewards',
+                builder: (_, __) => const RewardsPage(),
+              ),
+            ],
+          ),
+
+          // 5. PERFIL
           StatefulShellBranch(
             routes: [
               GoRoute(

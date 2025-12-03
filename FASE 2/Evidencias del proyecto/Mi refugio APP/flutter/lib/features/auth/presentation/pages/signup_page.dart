@@ -3,9 +3,11 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mi_refugio_app/shared/constants/app_colors.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mi_refugio_app/features/auth/application/auth_provider.dart';
 import 'package:mi_refugio_app/features/auth/application/auth_state.dart';
+import 'package:mi_refugio_app/shared/utils/rut_validator.dart';
+import 'package:mi_refugio_app/shared/utils/rut_input_formatter.dart';
+import 'package:flutter/services.dart';
 
 class SignUpPage extends ConsumerStatefulWidget {
   const SignUpPage({super.key});
@@ -20,6 +22,10 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
+  final _rutCtrl = TextEditingController();
+
+  DateTime? _birthDate;
+  String? _gender;
 
   bool _obscure1 = true;
   bool _obscure2 = true;
@@ -30,6 +36,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     _confirmCtrl.dispose();
+    _rutCtrl.dispose();
     super.dispose();
   }
 
@@ -37,19 +44,58 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     
     await ref.read(authProvider.notifier).register(
-      username: _emailCtrl.text.split('@')[0], // Use part of email as username
+      username: _emailCtrl.text.split('@')[0],
       email: _emailCtrl.text,
       password: _passwordCtrl.text,
       fullName: _nameCtrl.text,
+      rut: _rutCtrl.text,
+      birthDate: _birthDate,
+      gender: _gender,
     );
     
-    // AuthNotifier handles state and navigation (via router listening to auth state)
-    // But we can check for errors
     final state = ref.read(authProvider);
     if (state is AuthError && mounted) {
        ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(state.message)),
       );
+    } else if (state is Authenticated && mounted) {
+      // Registro exitoso - navegar al home
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('¡Registro exitoso! Bienvenido a Mi Refugio'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      // Navegar al home después de un breve delay para que se vea el mensaje
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed('/home');
+        }
+      });
+    }
+  }
+
+  Future<void> _selectDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)), // ~18 years ago
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              onSurface: AppColors.textPrimary,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() => _birthDate = picked);
     }
   }
 
@@ -66,11 +112,10 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
       ),
       body: Stack(
         children: [
-          // Background Gradient
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [AppColors.background, Color(0xFFE1F5FE)], // Light Blue tint
+                colors: [AppColors.background, Color(0xFFE1F5FE)],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -83,7 +128,6 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   children: [
-                    // Header with Logo
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -101,7 +145,6 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                         'assets/images/branding/logo.svg',
                         height: 60,
                         width: 60,
-                        // Fallback icon if asset missing
                         placeholderBuilder: (_) => const Icon(Icons.person_add_rounded, size: 40, color: AppColors.primary),
                       ),
                     ),
@@ -124,7 +167,6 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                     ),
                     const SizedBox(height: 32),
 
-                    // Form Card
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
@@ -152,6 +194,114 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                                   (v == null || v.isEmpty) ? 'Ingresa tu nombre' : null,
                             ),
                             const SizedBox(height: 16),
+                            
+                            // RUT Field
+                            _LabeledField(
+                              label: 'RUT (con guion)',
+                              controller: _rutCtrl,
+                              hintText: '12.345.678-9',
+                              icon: Icons.badge_outlined,
+                              inputFormatters: [RutInputFormatter()],
+                              onChanged: (v) {
+                                // Optional: Auto-format RUT as user types
+                                // For now, just validation
+                              },
+                              validator: (v) {
+                                if (v == null || v.isEmpty) return 'Ingresa tu RUT';
+                                if (!RutValidator.validate(v)) return 'RUT inválido';
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Birth Date & Gender Row
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Fecha Nacimiento',
+                                        style: theme.textTheme.bodyMedium?.copyWith(
+                                          color: AppColors.textSecondary, 
+                                          fontWeight: FontWeight.w600
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      InkWell(
+                                        onTap: _selectDate,
+                                        borderRadius: BorderRadius.circular(16),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFF5F7FA),
+                                            borderRadius: BorderRadius.circular(16),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.calendar_today_outlined, color: AppColors.primary, size: 20),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                _birthDate == null 
+                                                  ? 'Seleccionar' 
+                                                  : '${_birthDate!.day}/${_birthDate!.month}/${_birthDate!.year}',
+                                                style: TextStyle(
+                                                  color: _birthDate == null ? Colors.grey[600] : AppColors.textPrimary,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Género',
+                                        style: theme.textTheme.bodyMedium?.copyWith(
+                                          color: AppColors.textSecondary, 
+                                          fontWeight: FontWeight.w600
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF5F7FA),
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                        child: DropdownButtonHideUnderline(
+                                          child: DropdownButton<String>(
+                                            value: _gender,
+                                            hint: Row(
+                                              children: [
+                                                Icon(Icons.wc_outlined, color: AppColors.primary, size: 20),
+                                                const SizedBox(width: 8),
+                                                Text('Elegir', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+                                              ],
+                                            ),
+                                            isExpanded: true,
+                                            items: ['Masculino', 'Femenino', 'Otro', 'Prefiero no decir']
+                                                .map((g) => DropdownMenuItem(value: g, child: Text(g)))
+                                                .toList(),
+                                            onChanged: (v) => setState(() => _gender = v),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+
                             _LabeledField(
                               label: 'Correo electrónico',
                               controller: _emailCtrl,
@@ -317,6 +467,9 @@ class _LabeledField extends StatelessWidget {
     this.suffix,
     this.validator,
     this.icon,
+    this.hintText,
+    this.onChanged,
+    this.inputFormatters,
   });
 
   final String label;
@@ -326,6 +479,9 @@ class _LabeledField extends StatelessWidget {
   final Widget? suffix;
   final String? Function(String?)? validator;
   final IconData? icon;
+  final String? hintText;
+  final void Function(String)? onChanged;
+  final List<TextInputFormatter>? inputFormatters;
 
   @override
   Widget build(BuildContext context) {
@@ -344,6 +500,8 @@ class _LabeledField extends StatelessWidget {
           keyboardType: keyboardType,
           obscureText: obscureText,
           validator: validator,
+          onChanged: onChanged,
+          inputFormatters: inputFormatters,
           style: const TextStyle(fontWeight: FontWeight.w500),
           decoration: InputDecoration(
             filled: true,
@@ -352,6 +510,8 @@ class _LabeledField extends StatelessWidget {
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             prefixIcon: icon != null ? Icon(icon, color: AppColors.primary) : null,
             suffixIcon: suffix,
+            hintText: hintText,
+            hintStyle: TextStyle(color: Colors.grey[400]),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide.none,

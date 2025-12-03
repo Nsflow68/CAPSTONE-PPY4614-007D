@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mi_refugio_app/core/services/api_service.dart';
 import 'package:mi_refugio_app/shared/models/hydration_daily_intake.dart';
 
 final hydrationRepositoryProvider = Provider<HydrationRepository>((ref) {
@@ -8,43 +11,43 @@ final hydrationRepositoryProvider = Provider<HydrationRepository>((ref) {
 });
 
 class HydrationRepository {
-  HydrationRepository() {
-    final now = DateTime.now();
-    for (var i = 0; i < 7; i++) {
-      final date = DateUtils.dateOnly(now.subtract(Duration(days: 6 - i)));
-      _entries.add(
-        HydrationDailyIntake(
-          date: date,
-          dateLabel: DateFormat('EEE', 'es').format(date),
-          totalMl: 1400 + (i * 150),
-          goalMl: 2000,
-        ),
-      );
+  final ApiService _apiService = ApiService.instance;
+
+  Future<List<HydrationDailyIntake>> fetchWeeklyIntake() async {
+    try {
+      final response = await _apiService.getRaw('/hydration/weekly');
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((item) {
+          final date = DateTime.parse(item['date']);
+          return HydrationDailyIntake(
+            date: date,
+            dateLabel: DateFormat('EEE', 'es').format(date),
+            totalMl: (item['totalMl'] as num).toDouble(),
+            goalMl: (item['goalMl'] as num).toDouble(),
+          );
+        }).toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Error fetching hydration: $e');
+      return [];
     }
   }
 
-  final List<HydrationDailyIntake> _entries = [];
-
-  Future<List<HydrationDailyIntake>> fetchWeeklyIntake() async {
-    await Future<void>.delayed(const Duration(milliseconds: 250));
-    return List.unmodifiable(_entries);
-  }
-
   Future<void> registerIntake({required DateTime date, required int ml}) async {
-    await Future<void>.delayed(const Duration(milliseconds: 200));
-    final target = _entries.indexWhere((item) => item.date == date);
-    if (target == -1) {
-      _entries.add(
-        HydrationDailyIntake(
-          date: date,
-          dateLabel: DateFormat('EEE', 'es').format(date),
-          totalMl: ml.toDouble(),
-          goalMl: 2000,
-        ),
+    try {
+      await _apiService.postRaw(
+        '/hydration',
+        body: jsonEncode({
+          'date': DateFormat('yyyy-MM-dd').format(date),
+          'amountMl': ml,
+        }),
       );
-    } else {
-      final current = _entries[target];
-      _entries[target] = current.copyWith(totalMl: current.totalMl + ml);
+    } catch (e) {
+      debugPrint('Error registering intake: $e');
+      rethrow;
     }
   }
 }

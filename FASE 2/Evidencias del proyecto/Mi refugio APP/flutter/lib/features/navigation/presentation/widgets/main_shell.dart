@@ -31,12 +31,17 @@ class MainShell extends StatelessWidget {
         label: 'Diario',
       ),
       const _NavItem(
-        icon: Icons.smart_toy_outlined,
-        selectedIcon: Icons.smart_toy_rounded,
-        label: 'ChatBot',
+        icon: Icons.spa_outlined,
+        selectedIcon: Icons.spa_rounded,
+        label: 'Bienestar',
       ),
       const _NavItem(
-        icon: Icons.person_outline_rounded,
+        icon: Icons.emoji_events_outlined,
+        selectedIcon: Icons.emoji_events_rounded,
+        label: 'Progreso',
+      ),
+      const _NavItem(
+        icon: Icons.person_outlined,
         selectedIcon: Icons.person_rounded,
         label: 'Perfil',
       ),

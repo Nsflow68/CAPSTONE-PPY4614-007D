@@ -1,44 +1,59 @@
-# Mi Refugio – Guia de trabajo (Fase 2)
+# Mi Refugio App 🛡️
 
-Contexto rapido del repositorio de evidencias. Usa este archivo para arrancar backend y app, y saber que cambios ya estan listos.
+**Bienestar Emocional en tu Bolsillo**
 
-## Que hay aqui
-- `flutter/` app Flutter principal (Riverpod + GoRouter).
-- `backend/nest/` Backend NestJS + Prisma + PostgreSQL (RDS).
-- `GUIA_USUARIO.md` recorrido funcional y plan operativo.
-- `docs/` Documentacion tecnica y de API.
+"Mi Refugio" es una aplicación móvil diseñada para apoyar el bienestar emocional de los usuarios, proporcionando herramientas de registro diario, seguimiento de hábitos saludables (hidratación, nutrición, mindfulness) y un asistente virtual (Refu) basado en IA para contención emocional.
 
-## Cambios mas recientes (app)
-- **Auth**: Login con Google funcional, Registro de usuarios con validacion, Login con credenciales. Redireccion automatica al Home.
-- **Diary**: Estados con Result/Failure y vistas Empty/Error dedicadas. UI consumiendo el estado del notifier.
-- **Chatbot**: Pantalla redisenada (burbujas, prompts rapidos, banner de error, lista de mensajes persiste).
-- **Theming y branding**: Nuevo sistema de colores (AppColors), ThemeData armonizado, splash nativo.
+---
 
-## Estado de backend
-- **NestJS (Principal)**: Corriendo en puerto 3001.
-- **Modulos**: Auth (Google + Credenciales), Users, Diary, Chatbot (Ollama/Mock), Health.
-- **Base de Datos**: PostgreSQL en AWS RDS.
+## 🏗️ Arquitectura General
 
-## Como ejecutar
+El sistema se compone de tres pilares principales:
 
-### Backend NestJS
-```powershell
-cd "FASE 2/Evidencias del proyecto/Mi refugio APP/backend/nest"
-npm install
-# Asegurate de tener el .env configurado
-npm run start:dev      # expone http://localhost:3001/api
-```
+1.  **Frontend Móvil (Flutter)**: Aplicación multiplataforma (Android/iOS) con diseño Material 3.
+2.  **Backend (NestJS)**: API RESTful que gestiona usuarios, autenticación y persistencia de datos.
+3.  **IA / LLM (Ollama)**: Módulo de inteligencia artificial local para el chatbot "Refu".
 
-### App Flutter
-```powershell
-cd "FASE 2/Evidencias del proyecto/Mi refugio APP/flutter"
-flutter pub get
-flutter run -d emulator-5554
-```
-Nota: La app ya esta configurada para conectar a `http://10.0.2.2:3001/api` por defecto.
+---
 
-## Documentacion a consultar
-- `docs/api_mobile.md` Documentacion de endpoints.
-- `GUIA_USUARIO.md` recorrido funcional.
+## 🚀 Requisitos Mínimos (Windows)
 
-Mantener este README actualizado al cierre de cada entrega. 
+- **OS**: Windows 10/11 (64-bit).
+- **RAM**: 8GB (16GB recomendado para emuladores).
+- **Espacio**: 10GB libres.
+- **Herramientas**: Git, Flutter SDK, Android Studio, Node.js.
+
+---
+
+## ⚡ Instalación Rápida
+
+Para una guía detallada paso a paso, consulta [INSTALL_WINDOWS.md](./INSTALL_WINDOWS.md).
+
+1.  **Clonar Repositorio**:
+    ```powershell
+    git clone https://github.com/Nsflow68/CAPSTONE-PPY4614-007D.git
+    cd "CAPSTONE-PPY4614-007D/FASE 2/Evidencias del proyecto/Mi refugio APP"
+    ```
+
+2.  **Backend**:
+    ```powershell
+    cd backend_real
+    npm install
+    # Configurar .env (ver INSTALL_WINDOWS.md)
+    npm run start:dev
+    ```
+
+3.  **Frontend**:
+    ```powershell
+    cd ../flutter
+    flutter pub get
+    flutter run
+    ```
+
+---
+
+## 📚 Documentación Adicional
+
+- [Guía de Instalación en Windows](./INSTALL_WINDOWS.md)
+- [Guía de Contribución](./CONTRIBUTING.md)
+- [Arquitectura Técnica](./docs/ARQUITECTURA.md)

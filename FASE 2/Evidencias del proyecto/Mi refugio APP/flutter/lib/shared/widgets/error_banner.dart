@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:mi_refugio_app/core/theme/app_theme.dart';
 import 'package:mi_refugio_app/shared/constants/app_colors.dart';
 
 /// Widget reutilizable para mostrar errores de forma consistente.
@@ -30,7 +29,7 @@ class ErrorBanner extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.danger.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: AppColors.danger.withValues(alpha: 0.3),
           width: 1,
