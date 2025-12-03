@@ -20,29 +20,31 @@ class MindfulnessPage extends ConsumerWidget {
     final sessionsAsync = ref.watch(mindfulnessSessionsProvider);
     final summaryAsync = ref.watch(mindfulnessSummaryProvider);
 
-    return DecoratedBox(
-      decoration: const BoxDecoration(gradient: AppGradients.softBackground),
-      child: Scaffold(
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: const Text('Mindfulness'),
-          actions: [
-            IconButton(
-              tooltip: 'Programar recomendaciones',
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Muy pronto podrás programar recordatorios personalizados.',
-                    ),
+        elevation: 0,
+        title: const Text('Mindfulness'),
+        actions: [
+          IconButton(
+            tooltip: 'Programar recomendaciones',
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Muy pronto podrás programar recordatorios personalizados.',
                   ),
-                );
-              },
-              icon: const Icon(Icons.auto_awesome_rounded),
-            ),
-          ],
-        ),
-        body: SafeArea(
+                ),
+              );
+            },
+            icon: const Icon(Icons.auto_awesome_rounded),
+          ),
+        ],
+      ),
+      body: Container(
+        decoration: const BoxDecoration(gradient: AppGradients.softBackground),
+        child: SafeArea(
           child: RefreshIndicator(
             onRefresh: () async {
               ref

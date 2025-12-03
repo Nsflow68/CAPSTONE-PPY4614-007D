@@ -45,6 +45,9 @@ flutter:
     - assets/images/mascot/
     - assets/images/icons/
     - assets/images/mental_health/
+    - assets/images/iconos/
+    - assets/images/mascota/
+    - assets/images/logo/
     - assets/videos/
     - assets/audio/
 

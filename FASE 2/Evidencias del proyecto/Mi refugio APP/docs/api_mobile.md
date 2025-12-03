@@ -65,6 +65,30 @@ Inicio de sesión.
 }
 ```
 
+### POST /auth/google-login
+Inicio de sesión con Google.
+
+**Body:**
+```json
+{
+  "token": "google_id_token"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "user": {
+    "id": "uuid",
+    "username": "usuario@gmail.com",
+    "full_name": "Juan Pérez",
+    "role": "user"
+  },
+  "token": "base64_token"
+}
+```
+
 ---
 
 ## Refuges Module

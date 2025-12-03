@@ -23,20 +23,10 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 
 import 'package:mi_refugio_app/core/services/theme_controller.dart';
-
-
-
 import 'package:mi_refugio_app/l10n/app_localizations.dart';
-
-
-
 import 'package:mi_refugio_app/shared/constants/app_colors.dart';
-
-
-
+import 'package:mi_refugio_app/shared/constants/app_assets.dart';
 import 'package:mi_refugio_app/shared/constants/app_shadows.dart';
-
-
 
 
 
@@ -168,10 +158,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
 
 
+    print('LOGIN PAGE: Login button pressed');
     await ref
-
         .read(authProvider.notifier)
-
         .login(_email.text.trim(), _password.text);
 
   }
@@ -250,15 +239,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
 
 
-  Future<void> _handleGuest() async {
 
-    if (_isGoogleLoading) return;
-
-
-
-    await ref.read(authProvider.notifier).loginAsGuest();
-
-  }
 
 
 
@@ -411,711 +392,332 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
 
                         crossAxisAlignment: CrossAxisAlignment.stretch,
-
-
-
                         children: [
-
                           Expanded(
-
-                            flex: isWide ? 3 : 0,
-
-
-
-                            child: _HeroPanel(
-
-                              quote: _quotes[_quoteIndex],
-
-
-
-                              onGuideTap: () => context.go('/guide'),
-
-                            ),
-
-                          ),
-
-
-
-                          SizedBox(
-
-                            width: isWide ? 40 : 0,
-
-
-
-                            height: isWide ? 0 : 32,
-
-                          ),
-
-
-
-                          Expanded(
-
                             flex: 2,
-
-
-
                             child: Align(
-
                               alignment: Alignment.center,
-
-
-
                               child: _LoginCard(
-
                                 strings: strings,
-
-
-
                                 theme: theme,
-
-
-
                                 isDarkMode: isDarkMode,
-
-
-
                                 onToggleTheme: () => ref
-
                                     .read(themeModeProvider.notifier)
-
                                     .toggle(),
-
-
-
                                 formKey: _formKey,
-
-
-
                                 emailController: _email,
-
-
-
                                 passwordController: _password,
-
-
-
                                 obscurePassword: _obscurePassword,
-
-
-
                                 onTogglePassword: () => setState(
-
                                   () => _obscurePassword = !_obscurePassword,
-
                                 ),
-
-
-
                                 isLoading: isLoading,
-
-
-
                                 isGoogleLoading: _isGoogleLoading,
-
-
-
                                 onCredentialsLogin: _handleCredentialsLogin,
-
-
-
                                 onForgotPassword: _goToForgotPassword,
-
-
-
                                 onSignUp: _goToSignUp,
-
-
-
                                 onGoogleLogin: _handleGoogleLogin,
 
-
-
-                                onGuestLogin: _handleGuest,
-
-
-
                                 isCompact: layout.isCompact,
-
                               ),
-
                             ),
-
                           ),
-
                         ],
-
                       ),
-
                     ),
-
                   );
-
                 },
-
               ),
-
             ),
-
           ),
-
         ],
-
       ),
-
     );
-
   }
 
 }
+
+
 
 
 
 class _LoginCard extends StatelessWidget {
-
   const _LoginCard({
-
     required this.strings,
-
     required this.theme,
-
     required this.isDarkMode,
-
     required this.onToggleTheme,
-
     required this.formKey,
-
     required this.emailController,
-
     required this.passwordController,
-
     required this.obscurePassword,
-
     required this.onTogglePassword,
-
     required this.isLoading,
-
     required this.isGoogleLoading,
-
     required this.onCredentialsLogin,
-
     required this.onForgotPassword,
-
     required this.onSignUp,
-
     required this.onGoogleLogin,
 
-    required this.onGuestLogin,
-
     required this.isCompact,
-
   });
 
-
-
   final AppLocalizations strings;
-
   final ThemeData theme;
-
   final bool isDarkMode;
-
   final VoidCallback onToggleTheme;
-
   final GlobalKey<FormState> formKey;
-
   final TextEditingController emailController;
-
   final TextEditingController passwordController;
-
   final bool obscurePassword;
-
   final VoidCallback onTogglePassword;
-
   final bool isLoading;
-
   final bool isGoogleLoading;
-
   final VoidCallback onCredentialsLogin;
-
   final VoidCallback onForgotPassword;
-
   final VoidCallback onSignUp;
-
   final VoidCallback onGoogleLogin;
-
-  final VoidCallback onGuestLogin;
 
   final bool isCompact;
 
-
-
-  bool get _isBusy => isLoading || isGoogleLoading;
-
   @override
-
   Widget build(BuildContext context) {
-
-    InputDecoration decoration({
-
-      required String label,
-
-      String? hint,
-
-      IconData? icon,
-
-      Widget? suffixIcon,
-
-    }) {
-
-      return InputDecoration(
-
-        labelText: label,
-
-        hintText: hint,
-
-        prefixIcon: icon != null ? Icon(icon) : null,
-
-        suffixIcon: suffixIcon,
-
-      );
-
-    }
-
-
-
-    final cardPadding = EdgeInsets.all(isCompact ? 20 : 28);
-
-    final titleSpacing = isCompact ? 12.0 : 20.0;
-
-
-
-    return TweenAnimationBuilder<double>(
-
-      tween: Tween(begin: 0.97, end: 1),
-
-      duration: const Duration(milliseconds: 420),
-
-      curve: Curves.easeOutBack,
-
-      builder: (context, scale, child) =>
-
-          Transform.scale(scale: scale, child: child),
-
-      child: AnimatedContainer(
-
-        duration: const Duration(milliseconds: 450),
-
-        curve: Curves.easeOutCubic,
-
-        padding: cardPadding,
-
-        decoration: BoxDecoration(
-
-          color: theme.colorScheme.surface,
-
-          borderRadius: BorderRadius.circular(30),
-
-          boxShadow: AppShadows.soft,
-
-        ),
-
-        child: LayoutBuilder(
-
-          builder: (context, constraints) {
-
-            return SingleChildScrollView(
-
-              padding: EdgeInsets.zero,
-
-              child: ConstrainedBox(
-
-                constraints: BoxConstraints(minWidth: constraints.maxWidth),
-
-                child: Form(
-
-                  key: formKey,
-
-                  child: Column(
-
-                    mainAxisSize: MainAxisSize.min,
-
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-
-                    children: [
-
-                      Center(
-
-                        child: Container(
-
-                          height: 120,
-
-                          width: 120,
-
-                          padding: const EdgeInsets.all(18),
-
-                          decoration: BoxDecoration(
-
-                            shape: BoxShape.circle,
-
-                            gradient: const LinearGradient(
-
-                              colors: [AppColors.primary, AppColors.tertiary],
-
-                              begin: Alignment.topLeft,
-
-                              end: Alignment.bottomRight,
-
-                            ),
-
-                            boxShadow: AppShadows.soft,
-
-                          ),
-
-                          child: SvgPicture.asset(
-
-                            'assets/images/mascot/pose2b.svg',
-
-                            fit: BoxFit.contain,
-
-                          ),
-
+    return Card(
+      elevation: 8,
+      shadowColor: AppShadows.soft[0].color,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: EdgeInsets.all(isCompact ? 24 : 32),
+        child: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header with Mascot and Title
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Logo Icon (Heart/Home)
+                        SvgPicture.asset(
+                          'assets/images/branding/logo.svg', // Assuming this is the heart/home icon
+                          height: 40,
                         ),
-
-                      ),
-
-                      SizedBox(height: titleSpacing),
-
-                      Text(
-
-                        strings.loginWelcomeTitle,
-
-                        textAlign: TextAlign.center,
-
-                        style: theme.textTheme.headlineMedium?.copyWith(
-
-                          fontWeight: FontWeight.w800,
-
-                          color: theme.colorScheme.onSurface,
-
-                          letterSpacing: -0.3,
-
+                        const SizedBox(height: 16),
+                        Text(
+                          'Bienvenido a Mi Refugio',
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
-
-                      ),
-
-                      SizedBox(height: isCompact ? 6 : 10),
-
-                      Text(
-
-                        strings.loginWelcomeSubtitle,
-
-                        textAlign: TextAlign.center,
-
-                        style: theme.textTheme.bodyLarge?.copyWith(
-
-                          color: AppColors.textSecondary,
-
-                          height: 1.45,
-
+                        const SizedBox(height: 8),
+                        Text(
+                          'Tu espacio seguro para cuidar tu bienestar emocional.',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
                         ),
-
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      TextFormField(
-
-                        controller: emailController,
-
-                        keyboardType: TextInputType.emailAddress,
-
-                        textInputAction: TextInputAction.next,
-
-                        decoration: decoration(
-
-                          label: strings.loginEmailLabel,
-
-                          hint: strings.loginEmailHint,
-
-                          icon: Icons.mail_outline_rounded,
-
-                        ),
-
-                        validator: (value) {
-
-                          if (value == null || value.isEmpty) {
-
-                            return strings.loginEmailEmptyError;
-
-                          }
-
-                          if (!value.contains('@')) {
-
-                            return strings.loginEmailInvalidError;
-
-                          }
-
-                          return null;
-
-                        },
-
-                      ),
-
-                      const SizedBox(height: 14),
-
-                      TextFormField(
-
-                        controller: passwordController,
-
-                        obscureText: obscurePassword,
-
-                        textInputAction: TextInputAction.done,
-
-                        onFieldSubmitted: (_) => onCredentialsLogin(),
-
-                        decoration: decoration(
-
-                          label: strings.loginPasswordLabel,
-
-                          icon: Icons.lock_outline_rounded,
-
-                          suffixIcon: IconButton(
-
-                            icon: Icon(
-
-                              obscurePassword
-
-                                  ? Icons.visibility_outlined
-
-                                  : Icons.visibility_off_outlined,
-
-                            ),
-
-                            onPressed: onTogglePassword,
-
-                          ),
-
-                        ),
-
-                        validator: (value) {
-
-                          if (value == null || value.isEmpty) {
-
-                            return strings.loginPasswordEmptyError;
-
-                          }
-
-                          return null;
-
-                        },
-
-                      ),
-
-                      const SizedBox(height: 6),
-
-                      Wrap(
-                        alignment: WrapAlignment.spaceBetween,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        runSpacing: 6,
-                        spacing: 8,
-                        children: [
-                          TextButton(
-                            onPressed: _isBusy ? null : onForgotPassword,
-                            child: Text(strings.loginForgotPassword),
-                          ),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.dark_mode_rounded,
-                                color: AppColors.textSecondary,
-                              ),
-                              const SizedBox(width: 6),
-                              Switch(
-                                value: isDarkMode,
-                                onChanged: (_) => onToggleTheme(),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      SizedBox(
-
-                        height: 54,
-
-                        child: FilledButton(
-
-                          onPressed: _isBusy ? null : onCredentialsLogin,
-
-                          style: FilledButton.styleFrom(
-
-                            backgroundColor: AppColors.tertiary,
-
-                            foregroundColor: Colors.white,
-
-                            shape: RoundedRectangleBorder(
-
-                              borderRadius: BorderRadius.circular(16),
-
-                            ),
-
-                          ),
-
-                          child: isLoading
-
-                              ? const SizedBox(
-
-                                  width: 20,
-
-                                  height: 20,
-
-                                  child: CircularProgressIndicator(
-
-                                    strokeWidth: 2.4,
-
-                                    color: Colors.white,
-
-                                  ),
-
-                                )
-
-                              : Text(
-
-                                  strings.loginPrimaryButton,
-
-                                  style: theme.textTheme.titleMedium
-
-                                      ?.copyWith(color: Colors.white),
-
-                                ),
-
-                        ),
-
-                      ),
-
-                      const SizedBox(height: 14),
-
-                      _SocialDivider(label: strings.loginSocialDivider),
-
-                      const SizedBox(height: 14),
-
-                      OutlinedButton.icon(
-
-                        onPressed: _isBusy ? null : onGoogleLogin,
-
-                        icon: isGoogleLoading
-
-                            ? const SizedBox(
-
-                                width: 20,
-
-                                height: 20,
-
-                                child: CircularProgressIndicator(
-
-                                  strokeWidth: 2.3,
-
-                                ),
-
-                              )
-
-                            : SvgPicture.asset(
-
-                                'assets/icons/google_logo.svg',
-
-                                width: 20,
-
-                                height: 20,
-
-                                semanticsLabel: 'Google',
-
-                              ),
-
-                        label: Text(strings.loginGoogleButton),
-
-                        style: OutlinedButton.styleFrom(
-
-                          minimumSize: const Size.fromHeight(52),
-
-                          shape: RoundedRectangleBorder(
-
-                            borderRadius: BorderRadius.circular(16),
-
-                          ),
-
-                        ),
-
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      OutlinedButton.icon(
-
-                        onPressed: _isBusy ? null : onGuestLogin,
-
-                        icon: const Icon(Icons.shield_moon_outlined),
-
-                        style: OutlinedButton.styleFrom(
-
-                          minimumSize: const Size.fromHeight(52),
-
-                          shape: RoundedRectangleBorder(
-
-                            borderRadius: BorderRadius.circular(16),
-
-                          ),
-
-                        ),
-
-                        label: Text(strings.loginContinueGuest),
-
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      Wrap(
-                        alignment: WrapAlignment.center,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        spacing: 6,
-                        runSpacing: 4,
-                        children: [
-                          Text(
-                            strings.loginNoAccountQuestion,
-                            textAlign: TextAlign.center,
-                          ),
-                          TextButton(
-                            onPressed: _isBusy ? null : onSignUp,
-                            child: Text(strings.loginRegisterAction),
-                          ),
-                        ],
-                      ),
-                    ],
-
+                      ],
+                    ),
                   ),
-
+                  // Brain Mascot
+                  SizedBox(
+                    width: 100,
+                    height: 100,
+                    child: SvgPicture.asset(
+                      'assets/images/mascot/Pose 1.svg', // Waving pose
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+              
+              // Email Input
+              TextFormField(
+                controller: emailController,
+                decoration: InputDecoration(
+                  labelText: 'Correo electrónico', // Hardcoded to match screenshot for now, or use strings
+                  // prefixIcon: const Icon(Icons.email_outlined), // Screenshot doesn't show icon inside? Or maybe it does.
+                  // Screenshot shows clean rounded input. Let's keep it simple.
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 ),
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return strings.loginEmailEmptyError;
+                  }
+                  if (!value.contains('@')) {
+                    return strings.loginEmailInvalidError;
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              
+              // Password Input
+              TextFormField(
+                controller: passwordController,
+                obscureText: obscurePassword,
+                decoration: InputDecoration(
+                  labelText: 'Contraseña',
+                  // prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    onPressed: onTogglePassword,
+                    icon: Icon(
+                      obscurePassword
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return strings.loginPasswordEmptyError;
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              
+              // Forgot Password
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: onForgotPassword,
+                  child: Text(
+                    '¿Olvidaste tu contraseña?',
+                    style: TextStyle(color: theme.colorScheme.primary),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Login Button
+              FilledButton(
+                onPressed: isLoading ? null : onCredentialsLogin,
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF7E57C2), // Purple from screenshot
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'Iniciar sesión',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Guest Button
+              /*
+              OutlinedButton(
+                onPressed: onGuestLogin,
+                ...
+              */
 
+              // Google Login Button
+              const SizedBox(height: 16),
+              OutlinedButton(
+                onPressed: isGoogleLoading ? null : onGoogleLogin,
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  side: BorderSide(color: Colors.grey.shade300),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: isGoogleLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SvgPicture.asset(
+                            'assets/images/iconos/google_logo.svg',
+                            height: 24,
+                            width: 24,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Continuar con Google',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
               ),
 
-            );
+              const SizedBox(height: 32),
 
-          },
-
+              // Create Account Section
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '¿No tienes cuenta?',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: onSignUp,
+                    child: Text(
+                      'Regístrate',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-
       ),
-
     );
-
   }
-
 }
-
-
-
-
 
 class _HeroPanel extends StatelessWidget {
   const _HeroPanel({required this.quote, required this.onGuideTap});
@@ -1164,7 +766,7 @@ class _HeroPanel extends StatelessWidget {
                     quote,
                     key: ValueKey(quote),
                     style: theme.textTheme.titleLarge?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: Colors.white.withOpacity(0.9),
                       height: 1.4,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1174,7 +776,7 @@ class _HeroPanel extends StatelessWidget {
                 FilledButton(
                   onPressed: onGuideTap,
                   style: FilledButton.styleFrom(
-                    backgroundColor: Colors.white.withValues(alpha: 0.18),
+                    backgroundColor: Colors.white.withOpacity(0.18),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 18,
@@ -1195,7 +797,7 @@ class _HeroPanel extends StatelessWidget {
             child: Container(
               height: 140,
               width: 110,
-              color: Colors.white.withValues(alpha: 0.12),
+              color: Colors.white.withOpacity(0.12),
               child: Center(
                 child: SvgPicture.asset(
                   'assets/images/mascot/pose3.svg',
@@ -1278,49 +880,21 @@ class _LoginAtmosphere extends StatelessWidget {
 
 
   Widget _blurCircle(Color color, double size) {
-
     return Container(
-
       width: size,
-
-
-
       height: size,
-
-
-
       decoration: BoxDecoration(
-
         shape: BoxShape.circle,
-
-
-
-        color: color.withValues(alpha: 0.55),
-
-
-
+        color: color.withOpacity(0.55),
         boxShadow: [
-
           BoxShadow(
-
-            color: color.withValues(alpha: 0.4),
-
-
-
+            color: color.withOpacity(0.4),
             blurRadius: 120,
-
-
-
             spreadRadius: 30,
-
           ),
-
         ],
-
       ),
-
     );
-
   }
 
 }
@@ -1328,63 +902,30 @@ class _LoginAtmosphere extends StatelessWidget {
 
 
 class _SocialDivider extends StatelessWidget {
-
   const _SocialDivider({required this.label});
-
-
 
   final String label;
 
-
-
   @override
-
   Widget build(BuildContext context) {
-
     final theme = Theme.of(context);
 
-
-
     return Row(
-
       children: [
-
-        Expanded(child: Divider(color: Colors.black.withValues(alpha: 0.08))),
-
-
-
+        const Expanded(child: Divider(color: Colors.black12)),
         Padding(
-
           padding: const EdgeInsets.symmetric(horizontal: 12),
-
-
-
           child: Text(
-
             label,
-
-
-
             style: theme.textTheme.bodyMedium?.copyWith(
-
-              color: AppColors.textSecondary.withValues(alpha: 0.8),
-
+              color: Colors.grey,
             ),
-
           ),
-
         ),
-
-
-
-        Expanded(child: Divider(color: Colors.black.withValues(alpha: 0.08))),
-
+        const Expanded(child: Divider(color: Colors.black12)),
       ],
-
     );
-
   }
-
 }
 
 

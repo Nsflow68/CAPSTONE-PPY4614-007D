@@ -21,11 +21,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final AuthRepository _repository;
 
   Future<void> login(String email, String password) async {
+    print('AUTH PROVIDER: login called with $email');
     state = const AuthLoading();
+    print('AUTH PROVIDER: calling repository');
     final result = await _repository.loginWithCredentials(
       email: email,
       password: password,
     );
+    print('AUTH PROVIDER: repository returned');
     _handleResult(result);
   }
 
@@ -35,15 +38,47 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _handleResult(result);
   }
 
-  Future<void> loginAsGuest() async {
+  Future<void> register({
+    required String username,
+    required String email,
+    required String password,
+    required String fullName,
+  }) async {
     state = const AuthLoading();
-    final result = await _repository.loginAsGuest();
-    _handleResult(result);
+    final result = await _repository.register(
+      username: username,
+      email: email,
+      password: password,
+      fullName: fullName,
+    );
+    
+    // If registration is success, we might want to auto-login
+    result.when(
+      success: (user) async {
+         // Auto login
+         await login(email, password); // Use email/username as credential
+      },
+      failure: (failure) => state = AuthError(failure.readableMessage()),
+    );
   }
 
   Future<void> logout() async {
     await _repository.logout();
     state = const AuthInitial();
+  }
+
+  Future<void> checkAuthStatus() async {
+    final isAuth = await _repository.isAuthenticated();
+    if (isAuth) {
+      final user = await _repository.getCurrentUser();
+      if (user != null) {
+        state = AuthAuthenticated(user);
+      } else {
+        state = const AuthInitial();
+      }
+    } else {
+      state = const AuthInitial();
+    }
   }
 
   void _handleResult(Result<AuthUser, AuthFailure> result) {
