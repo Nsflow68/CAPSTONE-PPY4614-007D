@@ -7,8 +7,8 @@
       <div class="card-body p-4 p-md-5">
         {% if ok %}
           <div class="alert alert-success">
-            <h4 class="alert-heading">¡Gracias por tu donación!</h4>
-            <p>Tu pago fue autorizado.</p>
+            <h4 class="alert-heading">Gracias por tu donacion</h4>
+            <p class="mb-0">Tu pago fue autorizado.</p>
           </div>
           <div class="row g-3">
             <div class="col-md-6">
@@ -20,8 +20,8 @@
             </div>
             <div class="col-md-6">
               <ul class="list-group">
-                <li class="list-group-item d-flex justify-content-between"><span>Código autorización</span><strong>{{ result.authorization_code }}</strong></li>
-                <li class="list-group-item d-flex justify-content-between"><span>Método</span><strong>{{ result.payment_type_code }}</strong></li>
+                <li class="list-group-item d-flex justify-content-between"><span>Codigo autorizacion</span><strong>{{ result.authorization_code }}</strong></li>
+                <li class="list-group-item d-flex justify-content-between"><span>Metodo</span><strong>{{ result.payment_type_code }}</strong></li>
                 <li class="list-group-item d-flex justify-content-between"><span>Cuotas</span><strong>{{ result.installments_number|default:"-" }}</strong></li>
               </ul>
             </div>
@@ -29,15 +29,15 @@
         {% elif aborted %}
           <div class="alert alert-warning">
             <h4 class="alert-heading">Pago cancelado</h4>
-            <p>No se realizó el cobro. Puedes intentar nuevamente cuando quieras.</p>
+            <p class="mb-0">No se realizo el cobro. Puedes intentar nuevamente cuando quieras.</p>
           </div>
         {% else %}
           <div class="alert alert-danger">
             <h4 class="alert-heading">Pago rechazado</h4>
-            <p>No se pudo autorizar tu pago.</p>
+            <p class="mb-0">No se pudo autorizar tu pago.</p>
           </div>
-          {% if result %}
-            <pre class="bg-light p-3 rounded">{{ result|safe }}</pre>
+          {% if result_pretty %}
+            <pre class="bg-light p-3 rounded">{{ result_pretty }}</pre>
           {% endif %}
         {% endif %}
         <div class="d-flex gap-2 mt-4">

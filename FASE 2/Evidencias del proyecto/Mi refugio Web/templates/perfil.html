@@ -8,9 +8,9 @@
         <div class="card shadow-soft border-0 h-100">
           <div class="card-body p-4 text-center">
             {% if cliente.avatar %}
-            <img class="avatar mb-3 rounded-circle" src="{{ cliente.avatar.url }}" alt="Avatar de {{ user.get_full_name|default:user.username }}" style="width:140px;height:140px;object-fit:cover;">
+            <img class="avatar mb-3" src="{{ cliente.avatar.url }}" alt="Avatar de {{ user.get_full_name|default:user.username }}" width="140" height="140" decoding="async" style="width:140px;height:140px;object-fit:cover;">
             {% else %}
-            <img class="avatar mb-3 rounded-circle" src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username|urlencode }}&background=1e40af&color=fff" alt="Avatar">
+            <img class="avatar mb-3" src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username|urlencode }}&background=1e40af&color=fff" alt="Avatar" width="140" height="140" loading="lazy" decoding="async" style="width:140px;height:140px;object-fit:cover;">
             {% endif %}
             <h5 class="mb-1">{{ user.get_full_name|default:user.username }}</h5>
             <div class="text-secondary small">{{ user.email }}</div>
@@ -27,20 +27,20 @@
               {% csrf_token %}
               <div class="col-md-6">
                 <label class="form-label" for="first_name">Nombre</label>
-                <input class="form-control" id="first_name" name="first_name" value="{{ user.first_name }}" required>
+                <input class="form-control" id="first_name" name="first_name" maxlength="150" value="{{ user.first_name }}" required>
               </div>
               <div class="col-md-6">
                 <label class="form-label" for="last_name">Apellido</label>
-                <input class="form-control" id="last_name" name="last_name" value="{{ user.last_name }}" required>
+                <input class="form-control" id="last_name" name="last_name" maxlength="150" value="{{ user.last_name }}" required>
               </div>
               <div class="col-12">
                 <label class="form-label" for="email">Correo</label>
-                <input type="email" class="form-control" id="email" value="{{ user.email }}" name="email" required>
+                <input type="email" class="form-control" id="email" maxlength="254" value="{{ user.email }}" name="email" required>
               </div>
               <div class="col-12">
                 <label class="form-label" for="avatar">Foto de perfil</label>
-                <input type="file" class="form-control" id="avatar" name="avatar" accept="image/*">
-                <div class="form-text">Usa imágenes cuadradas menores a 2MB para un mejor resultado.</div>
+                <input type="file" class="form-control" id="avatar" name="avatar" accept="image/jpeg,image/png,image/webp">
+                <div class="form-text">Usa imagenes cuadradas JPG, PNG o WEBP menores a 2MB.</div>
               </div>
               <div class="col-12 d-flex gap-2">
                 <button class="btn btn-mr">Guardar cambios</button>

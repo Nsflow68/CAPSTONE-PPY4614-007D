@@ -9,6 +9,7 @@ class SugerenciaAdmin(admin.ModelAdmin):
     list_display = ("id", "creado", "nombre", "email", "short_msg")
     search_fields = ("nombre", "email", "mensaje")
     list_filter = ("creado",)
+    list_per_page = 25
 
     def short_msg(self, obj):
         message = obj.mensaje or ""
@@ -22,12 +23,13 @@ class ClienteAdmin(admin.ModelAdmin):
     list_display = ("id", "creado", "user", "rut", "avatar_preview")
     search_fields = ("user__username", "user__email", "rut")
     list_filter = ("creado",)
+    list_per_page = 25
 
     def avatar_preview(self, obj):
         if not obj.avatar:
-            return "—"
+            return "-"
         return format_html(
-            '<img src="{}" alt="{}" style="height:48px;border-radius:50%;">',
+            '<img src="{}" alt="{}" loading="lazy" style="height:48px;border-radius:4px;">',
             obj.avatar.url,
             obj.user.username,
         )

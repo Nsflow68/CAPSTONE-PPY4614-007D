@@ -1,94 +1,173 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% load static %}
 {% block title %}Inicio | Mi Refugio{% endblock %}
 {% block content %}
 
 <!-- HERO -->
-<section id="hero" class="py-5 bg-light border-bottom">
+<section id="hero" class="py-4 hero-section">
   <div class="container">
-    <div id="mrCarousel" class="carousel slide">
+    <div id="mrCarousel" class="carousel slide" data-bs-ride="false">
       <div class="carousel-indicators">
         <button type="button" data-bs-target="#mrCarousel" data-bs-slide-to="0" class="active" aria-label="Slide 1"></button>
         <button type="button" data-bs-target="#mrCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
       </div>
-      <div class="carousel-inner rounded-4 shadow-sm overflow-hidden">
+      <div class="carousel-inner shadow-sm overflow-hidden">
         <!-- Slide 1 -->
         <div class="carousel-item active">
-          <div class="p-5 text-center bg-gradient">
-            <img src="{% static 'img/logoTEXTO.png' %}" class="d-block mx-auto mb-3" alt="Mi Refugio" style="height:128px;">
-            <h1 class="fw-bold mb-2">Mi Refugio</h1>
-            <p class="lead mb-4">Plataforma de bienestar emocional con recursos, acompañamiento y rutas de ayuda.</p>
-            <div class="d-flex justify-content-center gap-2">
-              <a class="btn btn-mr btn-lg" href="{% url 'payments:crear' %}">Donar al proyecto</a>
-              <a class="btn btn-outline-mr btn-lg" href="#que-es">Saber más</a>
+          <div class="p-4 p-md-5 hero-slide-dark">
+            <div class="row align-items-center g-4 py-2">
+              <div class="col-lg-8">
+                <span class="hero-kicker mb-3">Plataforma Web de Apoyo Emocional</span>
+                <h1 class="display-5 fw-bold mb-3">Bienestar emocional accesible, privado y oportuno</h1>
+                <p class="lead mb-4 opacity-75">
+                  Mi Refugio conecta recursos de autocuidado, rutas de ayuda psicológica en Chile y herramientas de acompañamiento universitario.
+                </p>
+                <div class="d-flex flex-wrap gap-2">
+                  <a class="btn btn-hero-light btn-lg" href="{% url 'payments:crear' %}">Donar al proyecto</a>
+                  <a class="btn btn-hero-outline btn-lg" href="#emergencias">Ver líneas de ayuda</a>
+                </div>
+              </div>
+              <div class="col-lg-4 text-center">
+                <div class="hero-logo-box">
+                  <img src="{% static 'img/logoTEXTO.png' %}" alt="Mi Refugio" height="120" decoding="async" fetchpriority="high" style="height:120px;width:auto;">
+                </div>
+              </div>
             </div>
           </div>
         </div>
         <!-- Slide 2 -->
         <div class="carousel-item">
-          <div class="p-5 text-center bg-white">
-            <h2 class="fw-semibold">Cuidarte también es un plan</h2>
-            <p class="lead mb-4">Diario emocional, ejercicios de respiración, números de emergencia y más.</p>
-            <a class="btn btn-outline-mr btn-lg" href="#incluye">Ver qué incluye</a>
+          <div class="p-4 p-md-5 hero-slide-light">
+            <div class="py-3">
+              <span class="badge-rect mb-3">Acompañamiento Integral</span>
+              <h2 class="display-6 fw-bold mb-3">Cuidarte también es parte de tu plan diario</h2>
+              <p class="lead text-secondary mb-4">
+                Accede a diario emocional, ejercicios de respiración guiados, directorio oficial de emergencias y apoyo mediante Webpay Plus.
+              </p>
+              <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-mr btn-lg" href="#incluye">Explorar módulos</a>
+                <a class="btn btn-outline-mr btn-lg" href="#contacto">Enviar consulta</a>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      <button class="carousel-control-prev" type="button" data-bs-target="#mrCarousel" data-bs-slide="prev">
-        <span class="carousel-control-prev-icon"></span>
+      <button class="carousel-control-prev" type="button" data-bs-target="#mrCarousel" data-bs-slide="prev" aria-label="Slide anterior">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
         <span class="visually-hidden">Anterior</span>
       </button>
-      <button class="carousel-control-next" type="button" data-bs-target="#mrCarousel" data-bs-slide="next">
-        <span class="carousel-control-next-icon"></span>
+      <button class="carousel-control-next" type="button" data-bs-target="#mrCarousel" data-bs-slide="next" aria-label="Siguiente slide">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
         <span class="visually-hidden">Siguiente</span>
       </button>
+    </div>
+
+    <!-- FRANJA DE ARQUITECTURA -->
+    <div class="row g-3 mt-3">
+      <div class="col-6 col-lg-3">
+        <div class="metric-tile">
+          <div class="metric-tile-label">Cobertura</div>
+          <div class="fw-bold mt-1">Líneas 24/7 Chile</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="metric-tile">
+          <div class="metric-tile-label">Privacidad</div>
+          <div class="fw-bold mt-1">Autenticación JWT HttpOnly</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="metric-tile">
+          <div class="metric-tile-label">Arquitectura</div>
+          <div class="fw-bold mt-1">APIs Asíncronas y Paginadas</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="metric-tile">
+          <div class="metric-tile-label">Transparencia</div>
+          <div class="fw-bold mt-1">Donaciones Webpay Plus</div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ¿QUÉ ES? -->
+<!-- QUE ES -->
 <section id="que-es" class="py-4">
   <div class="container">
-    <div class="card shadow-soft border-0">
+    <div class="card card-architectural">
       <div class="card-body p-4 p-md-5">
         <h2 class="section-title mb-3">¿Qué es <em>Mi Refugio</em>?</h2>
-        <p class="mb-0 text-secondary">
+        <p class="mb-0 text-secondary fs-6">
           Proyecto universitario orientado a <strong>apoyo y educación emocional</strong> en Chile.
-          Promueve un espacio <strong>seguro, accesible y empático</strong> con enfoque de privacidad por diseño y accesibilidad.
+          Promueve un espacio <strong>seguro, accesible y empático</strong> con enfoque de privacidad por diseño y accesibilidad continua.
         </p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- MASCOTA GUÍA -->
+<!-- MASCOTA GUIA -->
 <section id="guia" class="py-4">
   <div class="container">
     <div class="row g-4 align-items-center">
       <div class="col-md-4 text-center">
-        <img src="{% static 'img/pose2.png' %}" alt="Mascota de Mi Refugio" class="img-fluid" style="max-height:260px;">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Crect width='100%25' height='100%25' fill='%23e2e8f0'/%3E%3C/svg%3E"
+             data-lazy-src="{% static 'img/pose2.png' %}"
+             alt="Mascota de Mi Refugio"
+             class="img-fluid"
+             width="260"
+             height="260"
+             loading="lazy"
+             decoding="async"
+             style="max-height:260px;">
       </div>
       <div class="col-md-8">
-        <div class="card shadow-soft border-0">
+        <div class="card card-architectural">
           <div class="card-body p-4">
             <h2 class="section-title mb-3">Conoce a Refu, tu compañero emocional</h2>
             <p class="text-secondary">Refu es la mascota de Mi Refugio y está aquí para acompañarte en cada paso. Sigue sus consejos:</p>
             <ul class="list-unstyled mb-0">
               <li class="d-flex gap-3 mb-3">
-                <img src="{% static 'img/pose2b.png' %}" alt="Consejo Refu" style="height:56px;" class="flex-shrink-0">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56'%3E%3Crect width='100%25' height='100%25' fill='%23e2e8f0'/%3E%3C/svg%3E"
+                     data-lazy-src="{% static 'img/pose2b.png' %}"
+                     alt="Consejo Refu"
+                     width="56"
+                     height="56"
+                     loading="lazy"
+                     decoding="async"
+                     style="height:56px;width:56px;"
+                     class="flex-shrink-0">
                 <div>
                   <strong>Explora recursos</strong><br>
                   Refu te recuerda revisar las guías y ejercicios para encontrar calma cuando lo necesites.
                 </div>
               </li>
               <li class="d-flex gap-3 mb-3">
-                <img src="{% static 'img/pose2b.png' %}" alt="Consejo Refu" style="height:56px;" class="flex-shrink-0">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56'%3E%3Crect width='100%25' height='100%25' fill='%23e2e8f0'/%3E%3C/svg%3E"
+                     data-lazy-src="{% static 'img/pose2b.png' %}"
+                     alt="Consejo Refu"
+                     width="56"
+                     height="56"
+                     loading="lazy"
+                     decoding="async"
+                     style="height:56px;width:56px;"
+                     class="flex-shrink-0">
                 <div>
                   <strong>Comparte tus emociones</strong><br>
                   Usa el diario emocional para registrar cómo te sientes y reconocer patrones.
                 </div>
               </li>
               <li class="d-flex gap-3">
-                <img src="{% static 'img/pose2b.png' %}" alt="Consejo Refu" style="height:56px;" class="flex-shrink-0">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56'%3E%3Crect width='100%25' height='100%25' fill='%23e2e8f0'/%3E%3C/svg%3E"
+                     data-lazy-src="{% static 'img/pose2b.png' %}"
+                     alt="Consejo Refu"
+                     width="56"
+                     height="56"
+                     loading="lazy"
+                     decoding="async"
+                     style="height:56px;width:56px;"
+                     class="flex-shrink-0">
                 <div>
                   <strong>Pide ayuda a tiempo</strong><br>
                   Refu señala rutas de apoyo y teléfonos de emergencia cuando necesites más contención.
@@ -102,18 +181,18 @@
   </div>
 </section>
 
-<!-- ¿CÓMO USAR? -->
+<!-- COMO USAR -->
 <section id="como-usar" class="py-4">
   <div class="container">
-    <div class="card shadow-soft border-0">
+    <div class="card card-architectural">
       <div class="card-body p-4 p-md-5">
         <h2 class="section-title mb-4">¿Cómo usar la APP?</h2>
         <div class="row g-4">
           <div class="col-md-6">
             <div class="d-flex gap-3">
-              <span class="badge-step">1</span>
+              <span class="badge-step">01</span>
               <div>
-                <h5 class="mb-1">Descarga la app</h5>
+                <h5 class="mb-1 fw-bold">Descarga la app</h5>
                 <ul class="text-secondary mb-0">
                   <li>Disponible en Google Play</li>
                   <li>También puedes escanear el código QR.</li>
@@ -123,11 +202,11 @@
           </div>
           <div class="col-md-6">
             <div class="d-flex gap-3">
-              <span class="badge-step">2</span>
+              <span class="badge-step">02</span>
               <div>
-                <h5 class="mb-1">Crea tu perfil</h5>
+                <h5 class="mb-1 fw-bold">Crea tu perfil</h5>
                 <ul class="text-secondary mb-0">
-                  <li>Regístrate con correo o cuenta social.</li>
+                  <li>Regístrate con correo o cuenta de usuario y RUT.</li>
                   <li>Tus datos son privados y están bajo tu control.</li>
                 </ul>
               </div>
@@ -135,9 +214,9 @@
           </div>
           <div class="col-md-6">
             <div class="d-flex gap-3">
-              <span class="badge-step">3</span>
+              <span class="badge-step">03</span>
               <div>
-                <h5 class="mb-1">Registra tu estado emocional</h5>
+                <h5 class="mb-1 fw-bold">Registra tu estado emocional</h5>
                 <ul class="text-secondary mb-0">
                   <li>Elige emociones y agrega notas.</li>
                   <li>Visualiza tu historial y patrones.</li>
@@ -147,9 +226,9 @@
           </div>
           <div class="col-md-6">
             <div class="d-flex gap-3">
-              <span class="badge-step">4</span>
+              <span class="badge-step">04</span>
               <div>
-                <h5 class="mb-1">Recibe apoyo y sugerencias</h5>
+                <h5 class="mb-1 fw-bold">Recibe apoyo y sugerencias</h5>
                 <ul class="text-secondary mb-0">
                   <li>Mindfulness y respiración.</li>
                   <li>Consejos personalizados.</li>
@@ -158,27 +237,27 @@
               </div>
             </div>
           </div>
-        </div> <!-- row -->
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ¿QUÉ INCLUYE? -->
+<!-- QUE INCLUYE -->
 <section id="incluye" class="py-4">
   <div class="container">
     <h2 class="section-title mb-3">¿Qué incluye la app?</h2>
     <div class="row g-3">
       {% for card in "123456" %}
       <div class="col-md-6 col-lg-4">
-        <div class="card h-100 shadow-soft border-0">
+        <div class="card card-architectural card-accent-left h-100">
           <div class="card-body">
-            {% if forloop.counter == 1 %}<h5 class="card-title">Diario emocional</h5><p class="card-text text-secondary">Registra estados, notas y observa tu progreso.</p>{% endif %}
-            {% if forloop.counter == 2 %}<h5 class="card-title">Chatbot de apoyo</h5><p class="card-text text-secondary">Contención inicial y derivación clara.</p>{% endif %}
-            {% if forloop.counter == 3 %}<h5 class="card-title">Mindfulness</h5><p class="card-text text-secondary">Rutinas cortas para bajar la ansiedad.</p>{% endif %}
-            {% if forloop.counter == 4 %}<h5 class="card-title">Red de ayuda</h5><p class="card-text text-secondary">Directorios confiables y vigentes.</p>{% endif %}
-            {% if forloop.counter == 5 %}<h5 class="card-title">Privacidad</h5><p class="card-text text-secondary">Permisos mínimos y cifrado.</p>{% endif %}
-            {% if forloop.counter == 6 %}<h5 class="card-title">Recomendaciones con IA</h5><p class="card-text text-secondary">Hábitos y actividades sugeridas.</p>{% endif %}
+            {% if forloop.counter == 1 %}<h5 class="card-title fw-bold">Diario emocional</h5><p class="card-text text-secondary">Registra estados, notas y observa tu progreso.</p>{% endif %}
+            {% if forloop.counter == 2 %}<h5 class="card-title fw-bold">Chatbot de apoyo</h5><p class="card-text text-secondary">Contención inicial y derivación clara.</p>{% endif %}
+            {% if forloop.counter == 3 %}<h5 class="card-title fw-bold">Mindfulness</h5><p class="card-text text-secondary">Rutinas cortas para bajar la ansiedad.</p>{% endif %}
+            {% if forloop.counter == 4 %}<h5 class="card-title fw-bold">Red de ayuda</h5><p class="card-text text-secondary">Directorios confiables y vigentes.</p>{% endif %}
+            {% if forloop.counter == 5 %}<h5 class="card-title fw-bold">Privacidad</h5><p class="card-text text-secondary">Permisos mínimos y cifrado.</p>{% endif %}
+            {% if forloop.counter == 6 %}<h5 class="card-title fw-bold">Recomendaciones con IA</h5><p class="card-text text-secondary">Hábitos y actividades sugeridas.</p>{% endif %}
           </div>
         </div>
       </div>
@@ -188,42 +267,70 @@
 </section>
 
 <!-- EQUIPO -->
-<section id="equipo" class="py-4">
+<section id="equipo" class="py-4" data-lazy-section>
   <div class="container">
     <h2 class="section-title mb-3">¿Quiénes somos?</h2>
     <div class="row g-3">
       <div class="col-sm-6 col-lg-3">
-        <div class="card text-center shadow-soft border-0">
+        <div class="card card-architectural text-center h-100">
           <div class="card-body">
-            <img class="avatar mb-2" src="{% static 'img/mateo.jpg' %}" alt="Mateo Flores">
-            <h6 class="mb-0">Mateo Flores</h6>
+            <img class="avatar mb-2"
+                 src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Crect width='100%25' height='100%25' fill='%23e2e8f0'/%3E%3C/svg%3E"
+                 data-lazy-src="{% static 'img/mateo.jpg' %}"
+                 alt="Mateo Flores"
+                 width="96"
+                 height="96"
+                 loading="lazy"
+                 decoding="async">
+            <h6 class="mb-0 fw-bold">Mateo Flores</h6>
             <small class="text-secondary">Jefe de Proyecto</small>
           </div>
         </div>
       </div>
       <div class="col-sm-6 col-lg-3">
-        <div class="card text-center shadow-soft border-0">
+        <div class="card card-architectural text-center h-100">
           <div class="card-body">
-            <img class="avatar mb-2" src="{% static 'img/pierre.jpg' %}" alt="Pierre Salas">
-            <h6 class="mb-0">Pierre Salas</h6>
+            <img class="avatar mb-2"
+                 src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Crect width='100%25' height='100%25' fill='%23e2e8f0'/%3E%3C/svg%3E"
+                 data-lazy-src="{% static 'img/pierre.jpg' %}"
+                 alt="Pierre Salas"
+                 width="96"
+                 height="96"
+                 loading="lazy"
+                 decoding="async">
+            <h6 class="mb-0 fw-bold">Pierre Salas</h6>
             <small class="text-secondary">Jefe de Desarrollo</small>
           </div>
         </div>
       </div>
       <div class="col-sm-6 col-lg-3">
-        <div class="card text-center shadow-soft border-0">
+        <div class="card card-architectural text-center h-100">
           <div class="card-body">
-            <img class="avatar mb-2" src="{% static 'img/matias.png' %}" alt="Matías Rubilar">
-            <h6 class="mb-0">Matías Rubilar</h6>
+            <img class="avatar mb-2"
+                 src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Crect width='100%25' height='100%25' fill='%23e2e8f0'/%3E%3C/svg%3E"
+                 data-lazy-src="{% static 'img/matias.png' %}"
+                 alt="Matías Rubilar"
+                 width="96"
+                 height="96"
+                 loading="lazy"
+                 decoding="async">
+            <h6 class="mb-0 fw-bold">Matías Rubilar</h6>
             <small class="text-secondary">Analista de Calidad</small>
           </div>
         </div>
       </div>
       <div class="col-sm-6 col-lg-3">
-        <div class="card text-center shadow-soft border-0">
+        <div class="card card-architectural text-center h-100">
           <div class="card-body">
-            <img class="avatar mb-2" src="{% static 'img/isaias.jpg' %}" alt="Isaías Veloz">
-            <h6 class="mb-0">Isaías Veloz</h6>
+            <img class="avatar mb-2"
+                 src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Crect width='100%25' height='100%25' fill='%23e2e8f0'/%3E%3C/svg%3E"
+                 data-lazy-src="{% static 'img/isaias.jpg' %}"
+                 alt="Isaías Veloz"
+                 width="96"
+                 height="96"
+                 loading="lazy"
+                 decoding="async">
+            <h6 class="mb-0 fw-bold">Isaías Veloz</h6>
             <small class="text-secondary">Arquitecto de Software</small>
           </div>
         </div>
@@ -232,43 +339,69 @@
   </div>
 </section>
 
-<!-- EMERGENCIAS -->
-<section id="emergencias" class="py-5">
-  <div class="container">
-    <div class="p-4 p-md-5 bg-white rounded-4 shadow-sm">
-      <div class="d-flex align-items-center gap-3 mb-4">
-        <img src="{% static 'img/MINSAL.png' %}" alt="Gobierno de Chile" height="40" loading="lazy">
-        <h2 class="section-title mb-0">Emergencias psicológicas en Chile</h2>
+<!-- EMERGENCIAS (DIRECTORIO PAGINADO) -->
+<section id="emergencias" class="py-5" data-lazy-section>
+  <div class="container" id="emergencias-directory">
+    <div class="p-4 p-md-5 bg-white border shadow-sm">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div class="d-flex align-items-center gap-3">
+          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='40'%3E%3Crect width='100%25' height='100%25' fill='%23e2e8f0'/%3E%3C/svg%3E"
+               data-lazy-src="{% static 'img/MINSAL.png' %}"
+               alt="Gobierno de Chile"
+               height="40"
+               loading="lazy"
+               decoding="async">
+          <h2 class="section-title mb-0">Emergencias psicológicas en Chile</h2>
+        </div>
+        <div style="min-width: 240px;">
+          <input id="emergencias-search" type="search" class="form-control form-control-sm" placeholder="Filtrar línea, número o categoría...">
+        </div>
       </div>
 
-      <div class="row g-4">
-        <div class="col-md-6"><div class="card h-100 border-0 shadow-sm"><div class="card-body">
-          <h5 class="card-title"><strong>*4141</strong> — Prevención del suicidio</h5>
-          <p class="mb-0">Atención <strong>24/7</strong>, gratuita y confidencial por profesionales.</p>
-        </div></div></div>
-
-        <div class="col-md-6"><div class="card h-100 border-0 shadow-sm"><div class="card-body">
-          <h5 class="card-title"><strong>600 360 7777</strong> — Salud Responde (MINSAL)</h5>
-          <p class="mb-0">Orientación de salud <strong>24/7</strong> y derivación a la red pública.</p>
-        </div></div></div>
-
-        <div class="col-md-6"><div class="card h-100 border-0 shadow-sm"><div class="card-body">
-          <h5 class="card-title"><strong>1455</strong> — Violencias de género (Sernameg)</h5>
-          <p class="mb-0">Atención gratuita para víctimas o testigos. <strong>08:00-24:00</strong> todos los días.</p>
-        </div></div></div>
-
-        <div class="col-md-6"><div class="card h-100 border-0 shadow-sm"><div class="card-body">
-          <h5 class="card-title"><strong>Emergencias generales</strong></h5>
-          <p class="mb-0"><strong>131</strong> SAMU · <strong>132</strong> Bomberos · <strong>133</strong> Carabineros · <strong>134</strong> PDI.</p>
-        </div></div></div>
-
-        <div class="col-md-6"><div class="card h-100 border-0 shadow-sm"><div class="card-body">
-          <h5 class="card-title"><strong>800 200 818</strong> — Fono Infancia</h5>
-          <p class="mb-0">Apoyo psicológico en crianza de NNA.</p>
-        </div></div></div>
+      <div id="emergencias-grid" class="row g-3">
+        {% for item in emergencies_page %}
+        <div class="col-md-4">
+          <div class="card card-architectural card-accent-left h-100">
+            <div class="card-body d-flex flex-column">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge-rect">{{ item.category }}</span>
+                <small class="text-secondary fw-semibold">{{ item.schedule }}</small>
+              </div>
+              <h5 class="card-title fw-bold mb-1">{{ item.code }}</h5>
+              <div class="fw-semibold text-primary mb-2">{{ item.title }}</div>
+              <p class="text-secondary small mb-0 mt-auto">{{ item.description }}</p>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
       </div>
 
-      <p class="text-muted small mt-4">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-4">
+        <small id="emergencias-count" class="text-secondary fw-semibold">
+          Página {{ emergencies_page.number }} de {{ emergencies_paginator.num_pages }} ({{ emergencies_paginator.count }} registros)
+        </small>
+        <nav id="emergencias-pagination" aria-label="Paginación de líneas de emergencia">
+          <ul class="pagination pagination-sm mb-0 gap-1">
+            <li class="page-item {% if not emergencies_page.has_previous %}disabled{% endif %}">
+              <a class="page-link"
+                 href="?emergencias_page={% if emergencies_page.has_previous %}{{ emergencies_page.previous_page_number }}{% else %}1{% endif %}#emergencias"
+                 data-page="{% if emergencies_page.has_previous %}{{ emergencies_page.previous_page_number }}{% else %}1{% endif %}">Anterior</a>
+            </li>
+            {% for num in emergencies_paginator.page_range %}
+            <li class="page-item {% if emergencies_page.number == num %}active{% endif %}">
+              <a class="page-link" href="?emergencias_page={{ num }}#emergencias" data-page="{{ num }}">{{ num }}</a>
+            </li>
+            {% endfor %}
+            <li class="page-item {% if not emergencies_page.has_next %}disabled{% endif %}">
+              <a class="page-link"
+                 href="?emergencias_page={% if emergencies_page.has_next %}{{ emergencies_page.next_page_number }}{% else %}{{ emergencies_paginator.num_pages }}{% endif %}#emergencias"
+                 data-page="{% if emergencies_page.has_next %}{{ emergencies_page.next_page_number }}{% else %}{{ emergencies_paginator.num_pages }}{% endif %}">Siguiente</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      <p class="text-muted small mt-4 mb-0">
         Aviso: Mi Refugio ofrece contención y educación. <strong>No reemplaza</strong> atención psicológica o médica.
         En riesgo inminente, llama al <strong>131</strong> o acude a urgencias.
       </p>
@@ -277,9 +410,9 @@
 </section>
 
 <!-- DESCARGAS -->
-<section id="descargas" class="py-4">
+<section id="descargas" class="py-4" data-lazy-section>
   <div class="container">
-    <div class="card shadow-soft border-0">
+    <div class="card card-architectural">
       <div class="card-body p-4">
         <h2 class="section-title mb-3">Descarga la App</h2>
         <p class="text-secondary mb-3">Próximamente en tienda</p>
@@ -292,21 +425,21 @@
 </section>
 
 <!-- CONTACTO -->
-<section id="contacto" class="py-4">
+<section id="contacto" class="py-4" data-lazy-section>
   <div class="container" style="max-width: 960px;">
-    <div class="card shadow-soft border-0">
+    <div class="card card-architectural">
       <div class="card-body p-4">
         <h2 class="section-title mb-3">Preguntas y sugerencias</h2>
         <form id="form_contact" class="row g-3" method="POST" action="{% url 'api_sugerencias' %}" novalidate>
           {% csrf_token %}
           <div class="col-md-6">
             <label for="name" class="form-label">Nombre</label>
-            <input type="text" class="form-control" id="name" name="nombre" required placeholder="Tu nombre">
+            <input type="text" class="form-control" id="name" name="nombre" maxlength="120" required placeholder="Tu nombre">
             <div class="invalid-feedback">Ingresa tu nombre.</div>
           </div>
           <div class="col-md-6">
             <label for="email" class="form-label">Correo</label>
-            <input type="email" class="form-control" id="email" name="email" required placeholder="tu@correo.com">
+            <input type="email" class="form-control" id="email" name="email" maxlength="254" required placeholder="tu@correo.com">
             <div class="invalid-feedback">Ingresa un correo válido.</div>
           </div>
           <div class="col-md-6">
@@ -329,12 +462,15 @@
             <div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}"></div>
             <div class="form-text">Protegido por reCAPTCHA.</div>
             {% else %}
-            <div class="alert alert-warning mb-0">Configuracion de reCAPTCHA pendiente.</div>
+            <div class="alert alert-warning mb-0">Configuración de reCAPTCHA pendiente.</div>
             {% endif %}
           </div>
           <div class="col-12 d-flex gap-2">
             <button type="submit" class="btn btn-mr">Enviar</button>
             <button type="reset" class="btn btn-outline-secondary">Cancelar</button>
+          </div>
+          <div class="col-12">
+            <div id="contact-async-status" class="d-none" role="status" aria-live="polite"></div>
           </div>
         </form>
       </div>
@@ -342,10 +478,10 @@
   </div>
 </section>
 
-<!-- DONACIONES (form unificado) -->
-<section id="donar" class="py-5">
+<!-- DONACIONES -->
+<section id="donar" class="py-5" data-lazy-section>
   <div class="container" style="max-width: 960px;">
-    <div class="card shadow-soft border-0">
+    <div class="card card-architectural">
       <div class="card-body p-4 p-md-5">
         <h2 class="section-title mb-3">Apoya Mi Refugio</h2>
         <form id="donation-form" method="post" action="{% url 'payments:crear' %}" class="row g-3">
@@ -353,7 +489,7 @@
           <div class="col-12">
             <label class="form-label">Monto (CLP)</label>
             <input name="amount" type="number" min="{{ donation_min_amount }}" step="1" class="form-control" placeholder="Ej: 3000" required>
-            <div class="form-text">Minimo ${{ donation_min_amount }}</div>
+            <div class="form-text">Mínimo ${{ donation_min_amount }}</div>
           </div>
           <div class="col-md-6">
             <label class="form-label">Nombre (opcional)</label>
@@ -361,11 +497,11 @@
           </div>
           <div class="col-md-6">
             <label class="form-label">Email (opcional)</label>
-            <input name="email" type="email" class="form-control">
+            <input name="email" type="email" maxlength="254" class="form-control">
           </div>
           <div class="col-12">
             <label class="form-label">Mensaje (opcional)</label>
-            <textarea name="message" rows="3" class="form-control"></textarea>
+            <textarea name="message" rows="3" maxlength="1000" class="form-control"></textarea>
           </div>
           <div class="col-12 d-flex gap-2">
             <button class="btn btn-mr">Donar con Webpay</button>

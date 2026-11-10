@@ -1,17 +1,34 @@
 /* ============================================================
-   🎨 PALETA Y VARIABLES GLOBALES
+   SISTEMA DE DISENO ARQUITECTONICO Y LIMITE ESTRICTO (<= 4px)
    ============================================================ */
 :root {
-  --mr-blue: #1e40af;    /* Azul principal */
-  --mr-sky: #60a5fa;     /* Celeste medio */
-  --mr-sky-2: #dbeafe;   /* Celeste claro */
-  --mr-ink: #0f172a;     /* Texto fuerte */
+  --mr-blue: #1e40af;
+  --mr-blue-dark: #0f172a;
+  --mr-blue-mid: #1d4ed8;
+  --mr-sky: #0284c7;
+  --mr-sky-2: #e0f2fe;
+  --mr-surface: #ffffff;
+  --mr-bg: #f1f5f9;
+  --mr-border: #cbd5e1;
+  --mr-ink: #0f172a;
+  --mr-muted: #475569;
+  --mr-radius: 4px;
+  --mr-radius-sm: 2px;
+
+  /* Sobrescritura global de Bootstrap 5.3: ningun elemento supera 4px ni usa pildora */
+  --bs-border-radius: 4px;
+  --bs-border-radius-sm: 2px;
+  --bs-border-radius-lg: 4px;
+  --bs-border-radius-xl: 4px;
+  --bs-border-radius-xxl: 4px;
+  --bs-border-radius-pill: 4px;
 }
 
 /* ============================================================
-   🧩 BASE Y LAYOUT GENERAL
+   BASE Y TIPOGRAFIA
    ============================================================ */
-html, body {
+html,
+body {
   height: 100%;
 }
 
@@ -19,8 +36,8 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: #f2f6ff;
-  font-family: "Inter", "Segoe UI", sans-serif;
+  background: var(--mr-bg);
+  font-family: "Plus Jakarta Sans", "Inter", "Segoe UI", sans-serif;
   color: var(--mr-ink);
   margin: 0;
 }
@@ -31,38 +48,115 @@ main {
 
 section .container,
 #emergencias .container {
-  max-width: 1080px;
+  max-width: 1120px;
 }
 
 /* ============================================================
-   🧭 NAVBAR
+   LIMITE UNIVERSAL DE BORDES (MAX 4px) Y PROHIBICION DE PILDORAS
    ============================================================ */
+.btn,
+.btn-sm,
+.btn-lg,
+button,
+[type="button"],
+[type="submit"],
+[type="reset"],
+.card,
+.section-box,
+.feature-card,
+.metric-tile,
+.badge,
+.alert,
+.form-control,
+.form-select,
+.dropdown-menu,
+.dropdown-item,
+.list-group,
+.modal-content,
+.navbar-toggler,
+.page-link,
+.rounded,
+.rounded-1,
+.rounded-2,
+.rounded-3,
+.rounded-4,
+.rounded-5,
+.rounded-pill,
+.rounded-circle,
+.swal2-popup,
+.swal2-styled,
+.swal2-confirm,
+.swal2-cancel,
+.swal2-deny {
+  border-radius: var(--mr-radius) !important;
+}
+
+.form-check-input,
+.form-check-input[type="checkbox"],
+.form-check-input[type="radio"] {
+  border-radius: var(--mr-radius-sm) !important;
+}
+
+/* ============================================================
+   NAVBAR ESTRUCTURAL
+   ============================================================ */
+.navbar-architectural {
+  background: #ffffff;
+  border-bottom: 1px solid var(--mr-border);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--mr-blue);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  border-radius: var(--mr-radius);
+}
+
 .navbar .nav-link {
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--mr-ink);
+  padding: 0.45rem 0.75rem;
+  border-bottom: 2px solid transparent;
 }
 
 .navbar .nav-link.active,
 .navbar .nav-link:focus,
 .navbar .nav-link:hover {
-  color: #0d6efd;
+  color: var(--mr-blue);
+  border-bottom-color: var(--mr-blue);
 }
 
 /* ============================================================
-   🔘 BOTONES
+   BOTONES RECTANGULARES
    ============================================================ */
 .btn-mr {
   background: var(--mr-blue);
+  border: 1px solid var(--mr-blue);
   color: #fff;
+  font-weight: 600;
+  border-radius: var(--mr-radius);
 }
 
 .btn-mr:hover {
   background: #17348a;
+  border-color: #17348a;
   color: #fff;
 }
 
 .btn-outline-mr {
-  border-color: var(--mr-blue);
+  border: 1px solid var(--mr-blue);
   color: var(--mr-blue);
+  font-weight: 600;
+  border-radius: var(--mr-radius);
 }
 
 .btn-outline-mr:hover {
@@ -70,174 +164,258 @@ section .container,
   color: #fff;
 }
 
-/* Uniformidad Bootstrap */
-.btn-primary {
-  --bs-btn-bg: #0d6efd;
-  --bs-btn-border-color: #0d6efd;
-  --bs-btn-hover-bg: #0b5ed7;
-  --bs-btn-hover-border-color: #0a58ca;
-}
-
-/* ============================================================
-   📦 COMPONENTES GENERALES
-   ============================================================ */
-
-/* Sombra suave y esquinas redondeadas */
-.shadow-soft {
-  box-shadow: 0 12px 30px rgba(2, 6, 23, 0.08);
-}
-
-.rounded-4 {
-  border-radius: 1rem !important;
-}
-
-/* Tarjetas */
-.card {
-  border-radius: 1rem;
-}
-
-/* ============================================================
-   🪶 DECORATIVOS Y ESTILOS DE SECCIÓN
-   ============================================================ */
-
-/* Hero gradient */
-.bg-gradient {
-  background: linear-gradient(180deg, #ffffff 0%, #f2f7ff 100%);
-}
-
-/* Sección genérica con caja blanca */
-.section-box {
-  background: #fff;
-  border-radius: 1rem;
-  box-shadow: 0 12px 28px rgba(16, 24, 40, 0.08);
-  padding: 2rem 1.5rem;
-}
-
-@media (min-width: 768px) {
-  .section-box {
-    padding: 2.5rem 2rem;
-  }
-}
-
-/* Títulos de sección */
-.section-title {
-  color: var(--mr-blue);
+.btn-hero-light {
+  background: #ffffff;
+  color: var(--mr-blue-dark);
+  border: 1px solid #ffffff;
   font-weight: 700;
-  margin-bottom: 1rem;
 }
 
-.section-title em {
-  font-style: italic;
+.btn-hero-light:hover {
+  background: #e2e8f0;
+  color: var(--mr-blue-dark);
+}
+
+.btn-hero-outline {
+  background: transparent;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  font-weight: 600;
+}
+
+.btn-hero-outline:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.btn-primary {
+  --bs-btn-bg: #1e40af;
+  --bs-btn-border-color: #1e40af;
+  --bs-btn-hover-bg: #17348a;
+  --bs-btn-hover-border-color: #17348a;
 }
 
 /* ============================================================
-   💡 FEATURES / INFOBOXES
+   HERO Y CARRUSEL CON CONTROLES RECTANGULARES (NUNCA CIRCULARES)
    ============================================================ */
-.feature-card {
-  background: #fff;
-  border-radius: 0.85rem;
-  box-shadow: 0 6px 18px rgba(16, 24, 40, 0.06);
+.hero-section {
+  background: #ffffff;
+  border-bottom: 1px solid var(--mr-border);
+}
+
+.hero-slide-dark {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 65%, #1d4ed8 100%);
+  color: #ffffff;
+  border: 1px solid #1e3a8a;
+}
+
+.hero-slide-light {
+  background: #ffffff;
+  color: var(--mr-ink);
+  border: 1px solid var(--mr-border);
+  border-left: 4px solid var(--mr-blue);
+}
+
+.hero-kicker {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--mr-radius);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  color: #e0f2fe;
+}
+
+.hero-logo-box {
+  background: #ffffff;
+  border: 1px solid var(--mr-border);
+  border-radius: var(--mr-radius);
   padding: 1rem 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#mrCarousel .carousel-inner {
+  border-radius: var(--mr-radius);
+}
+
+#mrCarousel .carousel-indicators {
+  gap: 8px;
+  margin-bottom: 0.75rem;
+}
+
+#mrCarousel .carousel-indicators [data-bs-target] {
+  width: 36px;
+  height: 4px;
+  border-radius: 0 !important;
+  border: 0;
+  background-color: #94a3b8;
+  opacity: 0.5;
+}
+
+#mrCarousel .carousel-indicators .active {
+  background-color: #38bdf8;
+  opacity: 1;
+}
+
+#mrCarousel .carousel-control-prev,
+#mrCarousel .carousel-control-next {
+  width: 44px;
+  height: 44px;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--mr-radius) !important;
+  opacity: 0.92;
+}
+
+#mrCarousel .carousel-control-prev {
+  left: 14px;
+}
+
+#mrCarousel .carousel-control-next {
+  right: 14px;
+}
+
+#mrCarousel .carousel-control-prev:hover,
+#mrCarousel .carousel-control-next:hover {
+  background-color: var(--mr-blue);
+  opacity: 1;
+}
+
+/* ============================================================
+   TARJETAS, METRICAS Y PAGINADORES RECTANGULARES
+   ============================================================ */
+.metric-tile {
+  background: #ffffff;
+  border: 1px solid var(--mr-border);
+  border-top: 3px solid var(--mr-blue);
+  padding: 1rem 1.15rem;
   height: 100%;
 }
 
-/* ============================================================
-   🚨 EMERGENCIAS
-   ============================================================ */
-#emergencias .card {
-  border-radius: 1rem;
+.metric-tile-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--mr-blue);
 }
 
-#emergencias .card-title {
-  color: #1849d6;
+.card-architectural {
+  background: #ffffff;
+  border: 1px solid var(--mr-border) !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+  transition: border-color 0.15s ease;
 }
 
-#emergencias .p-4.p-md-5 {
-  background: #f7fbff;
+.card-architectural:hover {
+  border-color: var(--mr-blue) !important;
 }
 
-/* ============================================================
-   💬 FORMULARIOS Y DONAR
-   ============================================================ */
-#preguntas .bg-white,
-#donar .bg-white {
-  background: #fff;
+.card-accent-left {
+  border-left: 4px solid var(--mr-blue) !important;
 }
 
-#preguntas .container,
-#donar .container {
-  max-width: 980px;
+.shadow-soft {
+  border: 1px solid var(--mr-border);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
 }
 
-/* ============================================================
-   🧍‍♂️ ELEMENTOS ESPECIALES
-   ============================================================ */
+.section-title {
+  color: var(--mr-ink);
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  margin-bottom: 1rem;
+  padding-left: 0.75rem;
+  border-left: 4px solid var(--mr-blue);
+}
+
+.section-title em {
+  font-style: normal;
+  color: var(--mr-blue);
+}
+
+.badge-rect {
+  display: inline-block;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: var(--mr-sky-2);
+  color: var(--mr-blue);
+  border: 1px solid #bae6fd;
+  border-radius: var(--mr-radius);
+}
+
 .badge-step {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 44px;
   height: 44px;
-  border-radius: 0.75rem;
-  background: #fff;
+  border-radius: var(--mr-radius);
+  background: #eff6ff;
   border: 2px solid var(--mr-blue);
   color: var(--mr-blue);
   font-weight: 800;
+  flex-shrink: 0;
 }
 
-/* Pasos numerados */
-.step {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.9rem;
+.pagination .page-item .page-link {
+  border-radius: var(--mr-radius) !important;
+  min-width: 38px;
+  text-align: center;
+  color: var(--mr-blue);
+  border-color: var(--mr-border);
+  font-weight: 600;
 }
 
-.step .num {
-  flex: 0 0 36px;
-  width: 36px;
-  height: 36px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid #2f6ccc;
-  color: #2f6ccc;
-  border-radius: 0.75rem;
-  font-weight: 700;
-  line-height: 1;
+.pagination .page-item.active .page-link {
+  background-color: var(--mr-blue);
+  border-color: var(--mr-blue);
+  color: #fff;
 }
 
 /* ============================================================
-   🖼️ LOGOS, AVATARES Y PIE DE PÁGINA
+   AVATARES, LOGOS Y PIE DE PAGINA
    ============================================================ */
-.brand-logo {
-  width: 42px;
-  height: 42px;
-  object-fit: contain;
-}
-
 .avatar {
   width: 96px;
   height: 96px;
   object-fit: cover;
-  border-radius: 50%;
-  border: 2px solid rgba(15, 23, 42, 0.1);
-}
-
-.gov-logo {
-  max-height: 52px;
-  object-fit: contain;
+  border-radius: var(--mr-radius);
+  border: 1px solid var(--mr-border);
+  background: #e2e8f0;
 }
 
 footer {
-  background: #fff;
+  background: #ffffff;
   color: var(--mr-ink);
+  border-top: 1px solid var(--mr-border);
   flex-shrink: 0;
   margin-top: auto;
 }
 
 /* ============================================================
-   ♿ ACCESIBILIDAD
+   CARGA DIFERIDA PROGRESIVA Y ACCESIBILIDAD
    ============================================================ */
+[data-lazy-section] {
+  transition: opacity 0.25s ease-out;
+}
+
+[data-lazy-section].is-lazy-pending {
+  opacity: 0.94;
+}
+
+[data-lazy-section].is-lazy-hydrated {
+  opacity: 1;
+}
+
 :focus-visible {
   outline: 3px solid #0d6efd;
   outline-offset: 2px;
